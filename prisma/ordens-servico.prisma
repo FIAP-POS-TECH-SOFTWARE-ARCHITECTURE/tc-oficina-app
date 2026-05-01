@@ -31,9 +31,12 @@ model OsItemServico {
   id              String   @id @default(uuid()) @db.Uuid
   ordemServicoId  String   @map("ordem_servico_id") @db.Uuid
   servicoId       String   @map("servico_id") @db.Uuid
+  status          OsItemServicoStatus @default(PENDENTE)
   precoUnitario   Decimal  @map("preco_unitario") @db.Decimal(10, 2)
   quantidade      Int      @default(1)
   subtotal        Decimal  @db.Decimal(10, 2)
+  iniciadoExecucaoEm DateTime? @map("iniciado_execucao_em")
+  finalizadoExecucaoEm DateTime? @map("finalizado_execucao_em")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

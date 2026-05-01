@@ -55,11 +55,14 @@ export class OrdensServicoRepository {
 	tempoMedioPorMes() {
 		return this.prisma.$queryRaw<{ ano_mes: string; tempo_medio_min: number; total: number }[]>`
 			SELECT
-				to_char(finalizado_em, 'YYYY-MM') AS ano_mes,
-				AVG(EXTRACT(EPOCH FROM (finalizado_em - iniciado_execucao_em)) / 60)::float AS tempo_medio_min,
-				COUNT(*)::int AS total
-			FROM ordens_servico
-			WHERE finalizado_em IS NOT NULL AND iniciado_execucao_em IS NOT NULL
+				to_char(ois.finalizado_execucao_em, 'YYYY-MM') AS ano_mes,
+				AVG(EXTRACT(EPOCH FROM (ois.finalizado_execucao_em - ois.iniciado_execucao_em)) / 60)::float AS tempo_medio_min,
+				COUNT(ois.id)::int AS total
+			FROM os_itens_servico ois
+			INNER JOIN ordens_servico os ON os.id = ois.ordem_servico_id
+			WHERE ois.status = 'CONCLUIDO'
+				AND ois.finalizado_execucao_em IS NOT NULL
+				AND ois.iniciado_execucao_em IS NOT NULL
 			GROUP BY ano_mes
 			ORDER BY ano_mes DESC
 		`;

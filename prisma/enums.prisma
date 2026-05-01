@@ -15,6 +15,13 @@ enum OsStatus {
   CANCELADA
 }
 
+enum OsItemServicoStatus {
+  PENDENTE
+  EM_EXECUCAO
+  CONCLUIDO
+  CANCELADO
+}
+
 enum TipoMovimentoEstoque {
   ENTRADA
   SAIDA

@@ -2,7 +2,7 @@
 
 API REST para gestão de uma oficina mecânica: clientes, veículos, catálogo de serviços, estoque
 de peças/insumos e o ciclo completo da Ordem de Serviço (OS), incluindo consulta pública pelo
-cliente e métrica de tempo médio de execução.
+cliente e métrica de tempo médio de execução por serviço.
 
 ---
 
@@ -121,6 +121,10 @@ Toda transição roda numa transação Prisma que valida a transição, atualiza
 aprovada estorna). A matriz completa está em
 [src/modules/ordens-servico/fluxo-estados-os.ts](src/modules/ordens-servico/fluxo-estados-os.ts)
 e é coberta integralmente nos testes.
+
+Para itens de serviço da OS, o fluxo interno é `PENDENTE -> EM_EXECUCAO -> CONCLUIDO` (ou
+`CANCELADO`). A OS só pode ser finalizada quando todos os serviços estiverem concluídos ou
+cancelados.
 
 ---
 

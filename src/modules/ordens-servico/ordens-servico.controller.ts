@@ -69,6 +69,24 @@ export class OrdensServicoController {
 		return this.service.removerItemServico(id, itemId);
 	}
 
+	@Post(":id/itens-servico/:itemId/iniciar")
+	@Roles(Role.MECANICO)
+	iniciarItemServico(@Param("id", ParseUUIDPipe) id: string, @Param("itemId", ParseUUIDPipe) itemId: string) {
+		return this.service.iniciarItemServico(id, itemId);
+	}
+
+	@Post(":id/itens-servico/:itemId/concluir")
+	@Roles(Role.MECANICO)
+	concluirItemServico(@Param("id", ParseUUIDPipe) id: string, @Param("itemId", ParseUUIDPipe) itemId: string) {
+		return this.service.concluirItemServico(id, itemId);
+	}
+
+	@Post(":id/itens-servico/:itemId/cancelar")
+	@Roles(Role.MECANICO)
+	cancelarItemServico(@Param("id", ParseUUIDPipe) id: string, @Param("itemId", ParseUUIDPipe) itemId: string) {
+		return this.service.cancelarItemServico(id, itemId);
+	}
+
 	@Post(":id/itens-insumo")
 	@Roles(Role.MECANICO)
 	addItemInsumo(@Param("id", ParseUUIDPipe) id: string, @Body() dto: AddItemInsumoDto) {

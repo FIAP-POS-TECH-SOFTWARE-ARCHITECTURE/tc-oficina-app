@@ -1,0 +1,4 @@
+CREATE TYPE "OsItemServicoStatus" AS ENUM ('PENDENTE', 'EM_EXECUCAO', 'CONCLUIDO', 'CANCELADO');
+
+ALTER TABLE "os_itens_servico"
+ADD COLUMN "status" "OsItemServicoStatus" NOT NULL DEFAULT 'PENDENTE';

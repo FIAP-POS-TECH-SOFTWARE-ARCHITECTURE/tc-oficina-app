@@ -1,4 +1,4 @@
-import { OsStatus, Prisma, TipoMovimentoEstoque } from "@prisma/client";
+import { OsItemServicoStatus, OsStatus, Prisma, TipoMovimentoEstoque } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { ClientesRepository } from "../clientes/clientes.repository";
 import { InsumosRepository } from "../insumos/insumos.repository";
@@ -12,7 +12,7 @@ const D = (n: number | string) => new Prisma.Decimal(n);
 const baseTx = () => ({
 	ordemServico: { create: jest.fn(), update: jest.fn() },
 	osHistoricoStatus: { create: jest.fn() },
-	osItemServico: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },
+	osItemServico: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn(), updateMany: jest.fn(), update: jest.fn() },
 	osItemInsumo: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },
 	insumo: { update: jest.fn(), findUnique: jest.fn() },
 	movimentoEstoque: { create: jest.fn() },
@@ -40,7 +40,7 @@ describe("OrdensServicoService", () => {
 		prisma = {
 			$transaction: jest.fn(async (fn: any) => fn(baseTx())),
 			ordemServico: { update: jest.fn() },
-			osItemServico: { create: jest.fn(), findUnique: jest.fn(), delete: jest.fn() },
+			osItemServico: { create: jest.fn(), findUnique: jest.fn(), delete: jest.fn(), update: jest.fn() },
 			osItemInsumo: { create: jest.fn(), findUnique: jest.fn(), delete: jest.fn() },
 		};
 		clientes = { findById: jest.fn() } as unknown as jest.Mocked<ClientesRepository>;
@@ -245,9 +245,24 @@ describe("OrdensServicoService", () => {
 			expect(r.status).toBe(200);
 		});
 
-		it("finalizar 200 quando EM_EXECUCAO", async () => {
-			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
-			repo.findByIdFull.mockResolvedValueOnce({} as any);
+		it("finalizar 422 quando ainda há serviço pendente", async () => {
+			repo.findByIdFull.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.EM_EXECUCAO,
+				itensServico: [{ status: OsItemServicoStatus.PENDENTE }],
+			} as any);
+			const r = await service.finalizar("os1", "u1");
+			expect(r.status).toBe(422);
+		});
+
+		it("finalizar 200 quando todos serviços estão concluídos/cancelados", async () => {
+			repo.findByIdFull
+				.mockResolvedValueOnce({
+					id: "os1",
+					status: OsStatus.EM_EXECUCAO,
+					itensServico: [{ status: OsItemServicoStatus.CONCLUIDO }, { status: OsItemServicoStatus.CANCELADO }],
+				} as any)
+				.mockResolvedValueOnce({} as any);
 			const r = await service.finalizar("os1", "u1");
 			expect(r.status).toBe(200);
 		});
@@ -326,6 +341,42 @@ describe("OrdensServicoService", () => {
 			const r = await service.removerItemServico("os1", "i");
 			expect(r.status).toBe(200);
 		});
+
+		it("iniciarItemServico 200", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO, iniciadoExecucaoEm: null } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({
+				id: "i1",
+				ordemServicoId: "os1",
+				status: OsItemServicoStatus.PENDENTE,
+			});
+			repo.findByIdFull.mockResolvedValueOnce({} as any);
+			const r = await service.iniciarItemServico("os1", "i1");
+			expect(r.status).toBe(200);
+		});
+
+		it("concluirItemServico 422 se não estiver em execução", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({
+				id: "i1",
+				ordemServicoId: "os1",
+				status: OsItemServicoStatus.PENDENTE,
+			});
+			const r = await service.concluirItemServico("os1", "i1");
+			expect(r.status).toBe(422);
+		});
+
+		it("cancelarItemServico 200", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({
+				id: "i1",
+				ordemServicoId: "os1",
+				status: OsItemServicoStatus.EM_EXECUCAO,
+			});
+			prisma.osItemServico.update.mockResolvedValueOnce({});
+			repo.findByIdFull.mockResolvedValueOnce({} as any);
+			const r = await service.cancelarItemServico("os1", "i1");
+			expect(r.status).toBe(200);
+		});
 	});
 
 	describe("gerarOrcamento", () => {
@@ -344,12 +395,12 @@ describe("OrdensServicoService", () => {
 			expect((await service.gerarOrcamento("os1", "u1")).status).toBe(422);
 		});
 
-		it("422 sem itens", async () => {
+		it("422 sem serviços", async () => {
 			repo.findByIdFull.mockResolvedValueOnce({
 				id: "os1",
 				status: OsStatus.EM_DIAGNOSTICO,
 				itensServico: [],
-				itensInsumo: [],
+				itensInsumo: [{ subtotal: D(1) }],
 			} as any);
 			expect((await service.gerarOrcamento("os1", "u1")).status).toBe(422);
 		});
