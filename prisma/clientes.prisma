@@ -1,0 +1,17 @@
+model Cliente {
+  id            String               @id @default(uuid()) @db.Uuid
+  nome          String
+  documento     String               @unique
+  tipoDocumento TipoDocumentoCliente @map("tipo_documento")
+  email         String?
+  telefone      String?
+  endereco      String?
+  ativo         Boolean              @default(true)
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  veiculos       Veiculo[]
+  ordensServico  OrdemServico[]
+
+  @@map("clientes")
+}

@@ -1,0 +1,18 @@
+meta {
+  name: Aprovar Orcamento
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{url}}/os/{{osId}}/orcamento/aprovar
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "documento": "{{documentoCliente}}",
+    "observacao": "Aprovado pelo cliente via telefone"
+  }
+}

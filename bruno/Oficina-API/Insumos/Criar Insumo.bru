@@ -1,0 +1,32 @@
+meta {
+  name: Criar Insumo
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/insumos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "codigo": "P-001",
+    "nome": "Filtro de óleo",
+    "descricao": "Filtro de óleo motor 1.0",
+    "precoUnitario": 25.00,
+    "estoqueMinimo": 5,
+    "quantidadeEstoque": 10
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.data && res.body.data.id) {
+    bru.setEnvVar("insumoId", res.body.data.id);
+  }
+}

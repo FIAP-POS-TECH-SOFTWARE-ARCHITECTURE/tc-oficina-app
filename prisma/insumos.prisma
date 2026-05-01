@@ -1,0 +1,38 @@
+model Insumo {
+  id                String   @id @default(uuid()) @db.Uuid
+  codigo            String   @unique
+  nome              String
+  descricao         String?
+  precoUnitario     Decimal  @map("preco_unitario") @db.Decimal(10, 2)
+  quantidadeEstoque Int      @default(0) @map("quantidade_estoque")
+  estoqueMinimo     Int      @default(0) @map("estoque_minimo")
+  ativo             Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  movimentos MovimentoEstoque[]
+  itensOs    OsItemInsumo[]
+
+  @@map("insumos")
+}
+
+model MovimentoEstoque {
+  id                  String               @id @default(uuid()) @db.Uuid
+  insumoId            String               @map("insumo_id") @db.Uuid
+  tipo                TipoMovimentoEstoque
+  quantidade          Int
+  quantidadeAnterior  Int                  @map("quantidade_anterior")
+  quantidadePosterior Int                  @map("quantidade_posterior")
+  ordemServicoId      String?              @map("ordem_servico_id") @db.Uuid
+  motivo              String?
+  usuarioId           String?              @map("usuario_id") @db.Uuid
+  createdAt           DateTime             @default(now()) @map("created_at")
+
+  insumo       Insumo        @relation(fields: [insumoId], references: [id])
+  usuario      Usuario?      @relation(fields: [usuarioId], references: [id])
+  ordemServico OrdemServico? @relation(fields: [ordemServicoId], references: [id])
+
+  @@index([insumoId])
+  @@index([ordemServicoId])
+  @@map("movimentos_estoque")
+}

@@ -1,0 +1,449 @@
+import { Injectable, Logger } from "@nestjs/common";
+import { OsStatus, Prisma, TipoMovimentoEstoque } from "@prisma/client";
+import type { IServiceResponse } from "semantic-response";
+import { SR } from "../../common/utils/service-response.util";
+import { onlyDigits } from "../../common/validators/cpf-cnpj.validator";
+import { PrismaService } from "../../prisma/prisma.service";
+import { ClientesRepository } from "../clientes/clientes.repository";
+import { VeiculosRepository } from "../veiculos/veiculos.repository";
+import { InsumosRepository } from "../insumos/insumos.repository";
+import { ServicosRepository } from "../servicos/servicos.repository";
+import { AddItemInsumoDto, AddItemServicoDto } from "./dto/add-item.dto";
+import { CreateOsDto } from "./dto/create-os.dto";
+import { ListarOsDto } from "./dto/listar-os.dto";
+import { UpdateDiagnosticoDto } from "./dto/update-diagnostico.dto";
+import { AprovacaoPublicaDto, CancelarOsDto } from "./dto/transicao.dto";
+import { canTransition, nextStatus, OsTransition } from "./os-state-machine";
+import { OrdensServicoRepository } from "./ordens-servico.repository";
+
+@Injectable()
+export class OrdensServicoService {
+	private readonly logger = new Logger(OrdensServicoService.name);
+
+	constructor(
+		private readonly repo: OrdensServicoRepository,
+		private readonly prisma: PrismaService,
+		private readonly clientes: ClientesRepository,
+		private readonly veiculos: VeiculosRepository,
+		private readonly servicos: ServicosRepository,
+		private readonly insumos: InsumosRepository,
+	) {}
+
+	async create(dto: CreateOsDto): Promise<IServiceResponse<unknown>> {
+		const cliente = await this.clientes.findById(dto.clienteId);
+		if (!cliente) return SR.notFound(undefined, "Cliente não encontrado");
+		const veiculo = await this.veiculos.findById(dto.veiculoId);
+		if (!veiculo) return SR.notFound(undefined, "Veículo não encontrado");
+		if (veiculo.clienteId !== dto.clienteId) {
+			return SR.badRequest(undefined, "Veículo não pertence ao cliente informado");
+		}
+		const numero = await this.proximoNumero();
+		const created = await this.prisma.$transaction(async (tx) => {
+			const os = await tx.ordemServico.create({
+				data: { numero, clienteId: dto.clienteId, veiculoId: dto.veiculoId },
+			});
+			await tx.osHistoricoStatus.create({
+				data: {
+					ordemServicoId: os.id,
+					statusAnterior: null,
+					statusNovo: OsStatus.RECEBIDA,
+					observacao: "Ordem de serviço criada",
+				},
+			});
+			return os;
+		});
+		const detalhe = await this.repo.findByIdFull(created.id);
+		return SR.created(detalhe, "OS criada");
+	}
+
+	async findById(id: string): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByIdFull(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		return SR.ok(os);
+	}
+
+	async list(query: ListarOsDto): Promise<IServiceResponse<unknown>> {
+		const page = query.page ?? 1;
+		const pageSize = query.pageSize ?? 20;
+		const [total, items] = await this.repo.list({
+			status: query.status,
+			clienteId: query.clienteId,
+			skip: (page - 1) * pageSize,
+			take: pageSize,
+		});
+		return SR.ok({ total, page, pageSize, items });
+	}
+
+	async iniciarDiagnostico(id: string, usuarioId: string): Promise<IServiceResponse<unknown>> {
+		return this.transicao(id, "iniciar_diagnostico", usuarioId);
+	}
+
+	async atualizarDiagnostico(id: string, dto: UpdateDiagnosticoDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findById(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (os.status !== OsStatus.EM_DIAGNOSTICO) {
+			return SR.unprocessableEntity(undefined, "Diagnóstico só pode ser atualizado quando a OS está em diagnóstico");
+		}
+		await this.prisma.ordemServico.update({
+			where: { id },
+			data: { diagnostico: dto.diagnostico },
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "Diagnóstico atualizado");
+	}
+
+	async addItemServico(id: string, dto: AddItemServicoDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findById(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+			return SR.unprocessableEntity(undefined, "Itens só podem ser adicionados antes da geração do orçamento");
+		}
+		const servico = await this.servicos.findById(dto.servicoId);
+		if (!servico) return SR.notFound(undefined, "Serviço não encontrado");
+		const quantidade = dto.quantidade ?? 1;
+		const subtotal = new Prisma.Decimal(servico.preco).mul(quantidade);
+		await this.prisma.osItemServico.create({
+			data: {
+				ordemServicoId: id,
+				servicoId: servico.id,
+				precoUnitario: servico.preco,
+				quantidade,
+				subtotal,
+			},
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.created(detalhe, "Item de serviço adicionado");
+	}
+
+	async removerItemServico(id: string, itemId: string): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findById(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+			return SR.unprocessableEntity(undefined, "Itens só podem ser removidos antes da geração do orçamento");
+		}
+		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
+		if (!item || item.ordemServicoId !== id) {
+			return SR.notFound(undefined, "Item não encontrado");
+		}
+		await this.prisma.osItemServico.delete({ where: { id: itemId } });
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "Item removido");
+	}
+
+	async addItemInsumo(id: string, dto: AddItemInsumoDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findById(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+			return SR.unprocessableEntity(undefined, "Itens só podem ser adicionados antes da geração do orçamento");
+		}
+		const insumo = await this.insumos.findById(dto.insumoId);
+		if (!insumo) return SR.notFound(undefined, "Insumo não encontrado");
+		if (insumo.quantidadeEstoque < dto.quantidade) {
+			return SR.unprocessableEntity(undefined, `Estoque insuficiente. Disponível: ${insumo.quantidadeEstoque}`);
+		}
+		const subtotal = new Prisma.Decimal(insumo.precoUnitario).mul(dto.quantidade);
+		await this.prisma.osItemInsumo.create({
+			data: {
+				ordemServicoId: id,
+				insumoId: insumo.id,
+				precoUnitario: insumo.precoUnitario,
+				quantidade: dto.quantidade,
+				subtotal,
+			},
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.created(detalhe, "Insumo adicionado");
+	}
+
+	async removerItemInsumo(id: string, itemId: string): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findById(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+			return SR.unprocessableEntity(undefined, "Itens só podem ser removidos antes da geração do orçamento");
+		}
+		const item = await this.prisma.osItemInsumo.findUnique({ where: { id: itemId } });
+		if (!item || item.ordemServicoId !== id) {
+			return SR.notFound(undefined, "Item não encontrado");
+		}
+		await this.prisma.osItemInsumo.delete({ where: { id: itemId } });
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "Item removido");
+	}
+
+	async gerarOrcamento(id: string, usuarioId: string): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByIdFull(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (!canTransition(os.status, "gerar_orcamento")) {
+			return SR.unprocessableEntity(undefined, `Não é possível gerar orçamento a partir do status ${os.status}`);
+		}
+		if (os.itensServico.length === 0 && os.itensInsumo.length === 0) {
+			return SR.unprocessableEntity(undefined, "Adicione ao menos um item antes de gerar o orçamento");
+		}
+		const valorTotal = this.calcularTotal(os);
+		await this.prisma.$transaction(async (tx) => {
+			await tx.ordemServico.update({
+				where: { id },
+				data: { valorTotal, status: OsStatus.AGUARDANDO_APROVACAO },
+			});
+			await tx.osHistoricoStatus.create({
+				data: {
+					ordemServicoId: id,
+					statusAnterior: os.status,
+					statusNovo: OsStatus.AGUARDANDO_APROVACAO,
+					usuarioId,
+					observacao: "Orçamento gerado",
+				},
+			});
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "Orçamento gerado");
+	}
+
+	async aprovarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByIdFull(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (onlyDigits(dto.documento) !== os.cliente.documento) {
+			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
+		}
+		if (!canTransition(os.status, "aprovar_orcamento")) {
+			return SR.unprocessableEntity(undefined, `Não é possível aprovar a OS no status ${os.status}`);
+		}
+		const agora = new Date();
+		await this.prisma.$transaction(async (tx) => {
+			for (const item of os.itensInsumo) {
+				const insumo = await tx.insumo.findUnique({ where: { id: item.insumoId } });
+				if (!insumo) {
+					throw new Error(`Insumo ${item.insumoId} não encontrado`);
+				}
+				const posterior = insumo.quantidadeEstoque - item.quantidade;
+				if (posterior < 0) {
+					throw new Error(
+						`Estoque insuficiente para o insumo ${insumo.nome} (${insumo.quantidadeEstoque} disponíveis, ${item.quantidade} requisitados)`,
+					);
+				}
+				await tx.insumo.update({
+					where: { id: insumo.id },
+					data: { quantidadeEstoque: posterior },
+				});
+				await tx.movimentoEstoque.create({
+					data: {
+						insumoId: insumo.id,
+						tipo: TipoMovimentoEstoque.SAIDA,
+						quantidade: item.quantidade,
+						quantidadeAnterior: insumo.quantidadeEstoque,
+						quantidadePosterior: posterior,
+						ordemServicoId: id,
+						motivo: "Saída por aprovação de OS (cliente)",
+						usuarioId: null,
+					},
+				});
+				if (posterior < insumo.estoqueMinimo) {
+					this.logger.warn(`Insumo ${insumo.codigo} ficou abaixo do estoque mínimo (${posterior}/${insumo.estoqueMinimo})`);
+				}
+			}
+			await tx.ordemServico.update({
+				where: { id },
+				data: {
+					status: OsStatus.EM_EXECUCAO,
+					aprovadoEm: agora,
+					iniciadoExecucaoEm: agora,
+				},
+			});
+			await tx.osHistoricoStatus.create({
+				data: {
+					ordemServicoId: id,
+					statusAnterior: os.status,
+					statusNovo: OsStatus.EM_EXECUCAO,
+					observacao: dto.observacao ?? "Orçamento aprovado pelo cliente",
+				},
+			});
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "Orçamento aprovado");
+	}
+
+	async rejeitarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByIdFull(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (onlyDigits(dto.documento) !== os.cliente.documento) {
+			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
+		}
+		if (!canTransition(os.status, "rejeitar_orcamento")) {
+			return SR.unprocessableEntity(undefined, `Não é possível rejeitar a OS no status ${os.status}`);
+		}
+		await this.prisma.$transaction(async (tx) => {
+			await tx.ordemServico.update({
+				where: { id },
+				data: { status: OsStatus.CANCELADA, canceladoEm: new Date() },
+			});
+			await tx.osHistoricoStatus.create({
+				data: {
+					ordemServicoId: id,
+					statusAnterior: os.status,
+					statusNovo: OsStatus.CANCELADA,
+					observacao: dto.observacao ?? "Orçamento rejeitado pelo cliente",
+				},
+			});
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "Orçamento rejeitado");
+	}
+
+	async finalizar(id: string, usuarioId: string): Promise<IServiceResponse<unknown>> {
+		return this.transicao(id, "finalizar", usuarioId, {
+			finalizadoEm: new Date(),
+		});
+	}
+
+	async entregar(id: string, usuarioId: string): Promise<IServiceResponse<unknown>> {
+		return this.transicao(id, "entregar", usuarioId, {
+			entregueEm: new Date(),
+		});
+	}
+
+	async cancelar(id: string, usuarioId: string, dto: CancelarOsDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByIdFull(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (!canTransition(os.status, "cancelar")) {
+			return SR.unprocessableEntity(undefined, `Não é possível cancelar a OS no status ${os.status}`);
+		}
+		const precisaEstornar = !!os.aprovadoEm;
+		await this.prisma.$transaction(async (tx) => {
+			if (precisaEstornar) {
+				for (const item of os.itensInsumo) {
+					const insumo = await tx.insumo.findUnique({ where: { id: item.insumoId } });
+					if (!insumo) continue;
+					const posterior = insumo.quantidadeEstoque + item.quantidade;
+					await tx.insumo.update({
+						where: { id: insumo.id },
+						data: { quantidadeEstoque: posterior },
+					});
+					await tx.movimentoEstoque.create({
+						data: {
+							insumoId: insumo.id,
+							tipo: TipoMovimentoEstoque.ESTORNO,
+							quantidade: item.quantidade,
+							quantidadeAnterior: insumo.quantidadeEstoque,
+							quantidadePosterior: posterior,
+							ordemServicoId: id,
+							motivo: "Estorno por cancelamento de OS",
+							usuarioId,
+						},
+					});
+				}
+			}
+			await tx.ordemServico.update({
+				where: { id },
+				data: { status: OsStatus.CANCELADA, canceladoEm: new Date() },
+			});
+			await tx.osHistoricoStatus.create({
+				data: {
+					ordemServicoId: id,
+					statusAnterior: os.status,
+					statusNovo: OsStatus.CANCELADA,
+					observacao: dto.motivo ?? "OS cancelada",
+					usuarioId,
+				},
+			});
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "OS cancelada");
+	}
+
+	async consultaPublica(numero: string, documento: string): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByNumero(numero);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (onlyDigits(documento) !== os.cliente.documento) {
+			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
+		}
+		const nomeMascarado = this.mascararNome(os.cliente.nome);
+		return SR.ok({
+			numero: os.numero,
+			cliente: nomeMascarado,
+			veiculo: { placa: os.veiculo.placa, marca: os.veiculo.marca, modelo: os.veiculo.modelo },
+			status: os.status,
+			diagnostico: os.diagnostico,
+			valorTotal: os.valorTotal,
+			itensServico: os.itensServico.map((i) => ({
+				nome: i.servico.nome,
+				quantidade: i.quantidade,
+				precoUnitario: i.precoUnitario,
+				subtotal: i.subtotal,
+			})),
+			itensInsumo: os.itensInsumo.map((i) => ({
+				nome: i.insumo.nome,
+				quantidade: i.quantidade,
+				precoUnitario: i.precoUnitario,
+				subtotal: i.subtotal,
+			})),
+			historico: os.historico.map((h) => ({
+				statusAnterior: h.statusAnterior,
+				statusNovo: h.statusNovo,
+				observacao: h.observacao,
+				em: h.createdAt,
+			})),
+		});
+	}
+
+	async tempoMedioExecucao(): Promise<IServiceResponse<unknown>> {
+		const dados = await this.repo.tempoMedioPorMes();
+		return SR.ok(dados);
+	}
+
+	private async transicao(
+		id: string,
+		transition: OsTransition,
+		usuarioId: string,
+		extraData: Prisma.OrdemServicoUpdateInput = {},
+	): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findById(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (!canTransition(os.status, transition)) {
+			return SR.unprocessableEntity(undefined, `Transição inválida a partir do status ${os.status}`);
+		}
+		const novo = nextStatus(transition);
+		await this.prisma.$transaction(async (tx) => {
+			await tx.ordemServico.update({
+				where: { id },
+				data: { ...extraData, status: novo },
+			});
+			await tx.osHistoricoStatus.create({
+				data: {
+					ordemServicoId: id,
+					statusAnterior: os.status,
+					statusNovo: novo,
+					usuarioId,
+				},
+			});
+		});
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, `Status atualizado para ${novo}`);
+	}
+
+	private calcularTotal(os: {
+		itensServico: { subtotal: Prisma.Decimal }[];
+		itensInsumo: { subtotal: Prisma.Decimal }[];
+	}): Prisma.Decimal {
+		const zero = new Prisma.Decimal(0);
+		const totalServicos = os.itensServico.reduce((acc, i) => acc.add(i.subtotal), zero);
+		const totalInsumos = os.itensInsumo.reduce((acc, i) => acc.add(i.subtotal), zero);
+		return totalServicos.add(totalInsumos);
+	}
+
+	private mascararNome(nome: string): string {
+		const partes = nome.trim().split(/\s+/);
+		return partes
+			.map((p, i) => {
+				if (i === 0 || i === partes.length - 1) return p;
+				return p[0] + "*".repeat(Math.max(p.length - 1, 1));
+			})
+			.join(" ");
+	}
+
+	private async proximoNumero(): Promise<string> {
+		const ano = new Date().getUTCFullYear();
+		const count = await this.repo.contadorAno(ano);
+		const seq = String(count + 1).padStart(6, "0");
+		return `OS-${ano}-${seq}`;
+	}
+}

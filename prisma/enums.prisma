@@ -1,0 +1,28 @@
+enum Role {
+  ATENDENTE
+  MECANICO
+  ESTOQUISTA
+  ADMINISTRADOR
+}
+
+enum OsStatus {
+  RECEBIDA
+  EM_DIAGNOSTICO
+  AGUARDANDO_APROVACAO
+  EM_EXECUCAO
+  FINALIZADA
+  ENTREGUE
+  CANCELADA
+}
+
+enum TipoMovimentoEstoque {
+  ENTRADA
+  SAIDA
+  AJUSTE
+  ESTORNO
+}
+
+enum TipoDocumentoCliente {
+  CPF
+  CNPJ
+}

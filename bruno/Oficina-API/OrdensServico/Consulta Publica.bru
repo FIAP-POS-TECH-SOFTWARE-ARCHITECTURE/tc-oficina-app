@@ -1,0 +1,15 @@
+meta {
+  name: Consulta Publica
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{url}}/os/publica/{{osNumero}}?documento={{documentoCliente}}
+  body: none
+  auth: none
+}
+
+params:query {
+  documento: {{documentoCliente}}
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Iniciar Diagnostico
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/os/{{osId}}/diagnostico/iniciar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

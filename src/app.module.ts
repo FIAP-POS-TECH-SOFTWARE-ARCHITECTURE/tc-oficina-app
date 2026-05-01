@@ -12,7 +12,7 @@ import { JwtModule } from "@nestjs/jwt";
 		JwtModule.register({
 			global: true,
 			secret: process.env.JWT_SECRET,
-			signOptions: { expiresIn: "8h" },
+			signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN ?? "8h") as `${number}${"s" | "m" | "h" | "d"}` },
 		}),
 		PrismaModule,
 		ModulesModule,

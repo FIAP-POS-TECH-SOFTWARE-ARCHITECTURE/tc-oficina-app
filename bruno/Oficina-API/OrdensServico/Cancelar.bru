@@ -1,0 +1,21 @@
+meta {
+  name: Cancelar
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{url}}/os/{{osId}}/cancelar
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "motivo": "Cancelamento administrativo"
+  }
+}

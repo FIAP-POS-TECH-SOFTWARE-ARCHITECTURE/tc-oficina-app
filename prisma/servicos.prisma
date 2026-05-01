@@ -1,0 +1,14 @@
+model Servico {
+  id               String   @id @default(uuid()) @db.Uuid
+  nome             String   @unique
+  descricao        String?
+  preco            Decimal  @db.Decimal(10, 2)
+  tempoEstimadoMin Int      @map("tempo_estimado_min")
+  ativo            Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  itensOs OsItemServico[]
+
+  @@map("servicos")
+}

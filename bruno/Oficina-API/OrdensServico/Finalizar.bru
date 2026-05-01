@@ -1,0 +1,15 @@
+meta {
+  name: Finalizar
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{url}}/os/{{osId}}/finalizar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

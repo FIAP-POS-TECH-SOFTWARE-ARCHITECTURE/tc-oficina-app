@@ -1,0 +1,22 @@
+meta {
+  name: Adicionar Item Insumo
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{url}}/os/{{osId}}/itens-insumo
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "insumoId": "{{insumoId}}",
+    "quantidade": 1
+  }
+}

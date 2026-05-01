@@ -1,0 +1,29 @@
+meta {
+  name: Criar OS
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/os
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "clienteId": "{{clienteId}}",
+    "veiculoId": "{{veiculoId}}"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.data && res.body.data.id) {
+    bru.setEnvVar("osId", res.body.data.id);
+    bru.setEnvVar("osNumero", res.body.data.numero);
+  }
+}

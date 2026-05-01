@@ -1,0 +1,19 @@
+meta {
+  name: Buscar por Placa
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/veiculos/buscar?placa=ABC1D23
+  body: none
+  auth: bearer
+}
+
+params:query {
+  placa: ABC1D23
+}
+
+auth:bearer {
+  token: {{token}}
+}

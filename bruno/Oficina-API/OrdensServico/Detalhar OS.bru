@@ -1,0 +1,15 @@
+meta {
+  name: Detalhar OS
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{url}}/os/{{osId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

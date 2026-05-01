@@ -1,0 +1,78 @@
+model OrdemServico {
+  id                  String    @id @default(uuid()) @db.Uuid
+  numero              String    @unique
+  clienteId           String    @map("cliente_id") @db.Uuid
+  veiculoId           String    @map("veiculo_id") @db.Uuid
+  status              OsStatus  @default(RECEBIDA)
+  diagnostico         String?
+  valorTotal          Decimal   @default(0) @map("valor_total") @db.Decimal(10, 2)
+  aprovadoEm          DateTime? @map("aprovado_em")
+  iniciadoExecucaoEm  DateTime? @map("iniciado_execucao_em")
+  finalizadoEm        DateTime? @map("finalizado_em")
+  entregueEm          DateTime? @map("entregue_em")
+  canceladoEm         DateTime? @map("cancelado_em")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  cliente        Cliente             @relation(fields: [clienteId], references: [id])
+  veiculo        Veiculo             @relation(fields: [veiculoId], references: [id])
+  itensServico   OsItemServico[]
+  itensInsumo    OsItemInsumo[]
+  historico      OsHistoricoStatus[]
+  movimentos     MovimentoEstoque[]
+
+  @@index([clienteId])
+  @@index([veiculoId])
+  @@index([status])
+  @@map("ordens_servico")
+}
+
+model OsItemServico {
+  id              String   @id @default(uuid()) @db.Uuid
+  ordemServicoId  String   @map("ordem_servico_id") @db.Uuid
+  servicoId       String   @map("servico_id") @db.Uuid
+  precoUnitario   Decimal  @map("preco_unitario") @db.Decimal(10, 2)
+  quantidade      Int      @default(1)
+  subtotal        Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  servico      Servico      @relation(fields: [servicoId], references: [id])
+
+  @@index([ordemServicoId])
+  @@map("os_itens_servico")
+}
+
+model OsItemInsumo {
+  id              String   @id @default(uuid()) @db.Uuid
+  ordemServicoId  String   @map("ordem_servico_id") @db.Uuid
+  insumoId        String   @map("insumo_id") @db.Uuid
+  precoUnitario   Decimal  @map("preco_unitario") @db.Decimal(10, 2)
+  quantidade      Int
+  subtotal        Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  insumo       Insumo       @relation(fields: [insumoId], references: [id])
+
+  @@index([ordemServicoId])
+  @@map("os_itens_insumo")
+}
+
+model OsHistoricoStatus {
+  id              String    @id @default(uuid()) @db.Uuid
+  ordemServicoId  String    @map("ordem_servico_id") @db.Uuid
+  statusAnterior  OsStatus? @map("status_anterior")
+  statusNovo      OsStatus  @map("status_novo")
+  observacao      String?
+  usuarioId       String?   @map("usuario_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  usuario      Usuario?     @relation(fields: [usuarioId], references: [id])
+
+  @@index([ordemServicoId])
+  @@map("os_historico_status")
+}
