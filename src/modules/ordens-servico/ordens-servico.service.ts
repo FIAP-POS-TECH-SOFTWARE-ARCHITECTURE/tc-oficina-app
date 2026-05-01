@@ -13,7 +13,7 @@ import { CreateOsDto } from "./dto/create-os.dto";
 import { ListarOsDto } from "./dto/listar-os.dto";
 import { UpdateDiagnosticoDto } from "./dto/update-diagnostico.dto";
 import { AprovacaoPublicaDto, CancelarOsDto } from "./dto/transicao.dto";
-import { canTransition, nextStatus, OsTransition } from "./os-state-machine";
+import { canTransition, nextStatus, OsTransition } from "./fluxo-estados-os";
 import { OrdensServicoRepository } from "./ordens-servico.repository";
 
 @Injectable()

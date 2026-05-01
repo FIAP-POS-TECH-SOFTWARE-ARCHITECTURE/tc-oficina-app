@@ -108,7 +108,7 @@ Camadas transversais ficam em [src/common/](src/common/):
 - [common/filters/all-exceptions.filter.ts](src/common/filters/all-exceptions.filter.ts) — captura exceções não previstas
 - [common/validators/](src/common/validators/) — `@IsCpfOrCnpj`, `@IsPlacaVeiculo`
 
-### Máquina de estados da OS
+### Fluxo de estados da OS
 
 ```
 RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → EM_EXECUCAO → FINALIZADA → ENTREGUE
@@ -119,7 +119,7 @@ RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → EM_EXECUCAO → FINALIZ
 Toda transição roda numa transação Prisma que valida a transição, atualiza `status`, registra
 `OsHistoricoStatus` e executa efeitos colaterais (aprovação baixa estoque; cancelamento de OS
 aprovada estorna). A matriz completa está em
-[src/modules/ordens-servico/os-state-machine.ts](src/modules/ordens-servico/os-state-machine.ts)
+[src/modules/ordens-servico/fluxo-estados-os.ts](src/modules/ordens-servico/fluxo-estados-os.ts)
 e é coberta integralmente nos testes.
 
 ---
@@ -164,7 +164,7 @@ npm run test:cov  # com cobertura
 
 `coverageThreshold` no [package.json](package.json) garante **≥80%** em
 `ordens-servico.service`, `insumos.service` e `auth.service` — abaixo disso o pipeline falha.
-Total atual: 120 testes unitários, incluindo a matriz completa da máquina de estados da OS.
+Total atual: 120 testes unitários, incluindo a matriz completa do fluxo de estados da OS.
 
 ---
 

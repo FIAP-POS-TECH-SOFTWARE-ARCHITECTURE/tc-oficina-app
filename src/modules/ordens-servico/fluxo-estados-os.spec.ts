@@ -1,7 +1,7 @@
 import { OsStatus } from "../../common/enums/os-status.enum";
-import { canTransition, nextStatus, OsTransition } from "./os-state-machine";
+import { canTransition, nextStatus, OsTransition } from "./fluxo-estados-os";
 
-describe("OS state machine", () => {
+describe("Fluxo de estados da OS", () => {
 	const todasTransicoes: OsTransition[] = [
 		"iniciar_diagnostico",
 		"gerar_orcamento",
