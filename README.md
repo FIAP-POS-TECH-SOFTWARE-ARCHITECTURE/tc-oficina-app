@@ -78,7 +78,7 @@ A migration seguinte (`movimento_usuario_optional`) torna `usuario_id` opcional 
 | Resposta     | `semantic-response`                     | Envelope HTTP uniforme em todos os endpoints                                                    |
 | Validação    | `class-validator` + `class-transformer` | DTOs declarativos, validators custom (CPF/CNPJ com suporte a CNPJ alfanumérico, placa)          |
 | Documentação | Bruno                                   | Coleção versionada em texto plano (substitui Swagger e vai pro Git)                             |
-| Testes       | Jest                                    | Unitários + cobertura mínima nos domínios críticos                                              |
+| Testes       | Jest + Supertest                        | Unitários com threshold de cobertura + e2e integração completa contra Postgres real             |
 
 ---
 
@@ -150,16 +150,49 @@ docker compose -f dev/docker-compose.yml up -d
 # 4. migrations
 npx prisma migrate dev
 
-# 5. servidor
+# 5. seed (opcional — popula com dados base)
+npm run db:seed
+
+# 6. servidor
 npm run start:dev
 ```
 
 A API sobe em `http://localhost:3000`. No primeiro boot, se não houver `ADMINISTRADOR` ativo,
 um admin padrão é criado a partir de `ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`.
 
+### Seed de dados base
+
+O script [`prisma/seed.ts`](prisma/seed.ts) popula o banco com dados prontos para uso:
+
+| Tipo | Registros |
+| ---- | --------- |
+| Usuários | 1 por role (`admin`, `atendente`, `mecanico`, `estoquista` — sufixo `@oficina.local`) |
+| Clientes | João Silva (CPF), Maria Souza (CPF), Auto Peças XYZ Ltda (CNPJ) |
+| Veículos | 4 veículos distribuídos entre os clientes |
+| Serviços | Troca de óleo, Alinhamento, Revisão geral, Pastilhas de freio, Correia dentada |
+| Insumos | 8 peças com estoque inicial (óleo, filtros, pastilhas, correia, velas, etc.) |
+
+```bash
+npm run db:seed        # executa o seed
+npx prisma db seed     # equivalente direto via Prisma CLI
+```
+
+O seed usa `upsert` — pode ser rodado quantas vezes quiser sem duplicar dados.
+
+**Credenciais do seed:**
+
+| Email | Senha | Role |
+| ----- | ----- | ---- |
+| admin@oficina.local | Admin@2024 | ADMINISTRADOR |
+| atendente@oficina.local | Atendente@2024 | ATENDENTE |
+| mecanico@oficina.local | Mecanico@2024 | MECANICO |
+| estoquista@oficina.local | Estoquista@2024 | ESTOQUISTA |
+
 ---
 
 ## Testes
+
+### Unitários
 
 ```bash
 npm test          # unitários
@@ -169,6 +202,55 @@ npm run test:cov  # com cobertura
 `coverageThreshold` no [package.json](package.json) garante **≥80%** em
 `ordens-servico.service`, `insumos.service` e `auth.service` — abaixo disso o pipeline falha.
 Total atual: 120 testes unitários, incluindo a matriz completa do fluxo de estados da OS.
+
+### E2E (integração completa)
+
+Os testes e2e sobem a aplicação NestJS completa contra um banco PostgreSQL real e cobrem
+os fluxos cross-módulo de ponta a ponta.
+
+#### Pré-requisitos
+
+Um banco Postgres separado para testes. O arquivo [`.env.test`](.env.test.example) deve existir
+(copie o exemplo abaixo ou `.env.test.example`):
+
+```bash
+cp .env.test.example .env.test
+```
+
+Por padrão aponta para `oficina_test` no mesmo Postgres de dev:
+
+```
+DATABASE_URL=postgresql://postgres:password@localhost:5432/oficina_test
+```
+
+O banco `oficina_test` precisa existir (crie com `createdb oficina_test` ou via psql).
+As migrations são aplicadas automaticamente antes dos testes pelo `globalSetup`.
+
+#### Executar
+
+```bash
+npm run test:e2e
+```
+
+#### O que é coberto
+
+| Arquivo | Foco |
+| ------- | ---- |
+| `auth.e2e-spec.ts` | Login, token JWT, credenciais inválidas |
+| `auth-matrix.e2e-spec.ts` | Matriz de autorização por role em todos os endpoints |
+| `usuarios.e2e-spec.ts` | CRUD de usuários internos |
+| `clientes.e2e-spec.ts` | CRUD de clientes (CPF/CNPJ, busca por documento) |
+| `veiculos.e2e-spec.ts` | CRUD de veículos vinculados a clientes |
+| `servicos.e2e-spec.ts` | CRUD do catálogo de serviços |
+| `insumos.e2e-spec.ts` | CRUD, entrada de estoque, ajuste, movimentos, alertas |
+| `ordens-servico.e2e-spec.ts` | Endpoints individuais da OS (criar, diagnóstico, itens, orçamento, etc.) |
+| `ordens-servico-fluxos.e2e-spec.ts` | Fluxos cross-módulo: smoke completo, bloqueio/desbloqueio, cancelamento com estorno, consulta pública |
+| `registros-compra.e2e-spec.ts` | Criação e ciclo de vida de registros de compra |
+| `app.e2e-spec.ts` | Health check da aplicação |
+
+Cada suite roda `truncateAll` + recria usuários por role no `beforeEach`, garantindo
+isolamento total entre testes. O `maxWorkers: 1` do `jest-e2e.json` força execução serial
+para evitar conflitos no banco compartilhado.
 
 ---
 
