@@ -74,11 +74,27 @@
 			"^.+\\.(t|j)s$": "ts-jest"
 		},
 		"collectCoverageFrom": [
-			"**/*.(t|j)s"
+			"**/*.(t|j)s",
+			"!**/*.spec.ts"
+		],
+		"coveragePathIgnorePatterns": [
+			"/node_modules/",
+			"src/main.ts",
+			".*\\.module\\.ts$",
+			".*\\.dto\\.ts$",
+			"src/common/enums/",
+			"src/prisma/prisma.service.ts",
+			"src/result/"
 		],
 		"coverageDirectory": "../coverage",
 		"testEnvironment": "node",
 		"coverageThreshold": {
+			"global": {
+				"statements": 80,
+				"branches": 70,
+				"functions": 80,
+				"lines": 80
+			},
 			"src/modules/ordens-servico/ordens-servico.service.ts": {
 				"statements": 80,
 				"branches": 70,

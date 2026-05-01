@@ -462,6 +462,238 @@ describe("OrdensServicoService", () => {
 			const r = await service.cancelarItemServico("os1", "i1");
 			expect(r.status).toBe(200);
 		});
+
+		it("iniciarItemServico 404 quando OS não existe", async () => {
+			repo.findById.mockResolvedValueOnce(null);
+			expect((await service.iniciarItemServico("x", "i1")).status).toBe(404);
+		});
+
+		it("iniciarItemServico 422 quando OS não está em execução", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.RECEBIDA } as any);
+			expect((await service.iniciarItemServico("os1", "i1")).status).toBe(422);
+		});
+
+		it("iniciarItemServico 404 quando item de outra OS", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({ id: "i1", ordemServicoId: "outra" });
+			expect((await service.iniciarItemServico("os1", "i1")).status).toBe(404);
+		});
+
+		it("iniciarItemServico 422 quando item não está PENDENTE", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({
+				id: "i1",
+				ordemServicoId: "os1",
+				status: OsItemServicoStatus.EM_EXECUCAO,
+			});
+			expect((await service.iniciarItemServico("os1", "i1")).status).toBe(422);
+		});
+
+		it("concluirItemServico 404 OS", async () => {
+			repo.findById.mockResolvedValueOnce(null);
+			expect((await service.concluirItemServico("x", "i1")).status).toBe(404);
+		});
+
+		it("concluirItemServico 422 status OS errado", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.RECEBIDA } as any);
+			expect((await service.concluirItemServico("os1", "i1")).status).toBe(422);
+		});
+
+		it("concluirItemServico 404 item de outra OS", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({ id: "i1", ordemServicoId: "outra" });
+			expect((await service.concluirItemServico("os1", "i1")).status).toBe(404);
+		});
+
+		it("concluirItemServico 200 sem iniciadoExecucaoEm prévio", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({
+				id: "i1",
+				ordemServicoId: "os1",
+				status: OsItemServicoStatus.EM_EXECUCAO,
+				iniciadoExecucaoEm: null,
+			});
+			prisma.osItemServico.update.mockResolvedValueOnce({});
+			repo.findByIdFull.mockResolvedValueOnce({} as any);
+			expect((await service.concluirItemServico("os1", "i1")).status).toBe(200);
+		});
+
+		it("cancelarItemServico 404 OS", async () => {
+			repo.findById.mockResolvedValueOnce(null);
+			expect((await service.cancelarItemServico("x", "i1")).status).toBe(404);
+		});
+
+		it("cancelarItemServico 422 status OS errado", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.RECEBIDA } as any);
+			expect((await service.cancelarItemServico("os1", "i1")).status).toBe(422);
+		});
+
+		it("cancelarItemServico 404 item de outra OS", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({ id: "i1", ordemServicoId: "outra" });
+			expect((await service.cancelarItemServico("os1", "i1")).status).toBe(404);
+		});
+
+		it("cancelarItemServico 422 já concluído", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.osItemServico.findUnique.mockResolvedValueOnce({
+				id: "i1",
+				ordemServicoId: "os1",
+				status: OsItemServicoStatus.CONCLUIDO,
+			});
+			expect((await service.cancelarItemServico("os1", "i1")).status).toBe(422);
+		});
+
+		it("removerItemInsumo 404 OS", async () => {
+			repo.findById.mockResolvedValueOnce(null);
+			expect((await service.removerItemInsumo("x", "ii1")).status).toBe(404);
+		});
+
+		it("removerItemInsumo 422 status fechado", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.AGUARDANDO_APROVACAO } as any);
+			expect((await service.removerItemInsumo("os1", "ii1")).status).toBe(422);
+		});
+
+		it("removerItemInsumo 404 quando item de outra OS", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_DIAGNOSTICO } as any);
+			prisma.osItemInsumo.findUnique.mockResolvedValueOnce({ id: "ii1", ordemServicoId: "outra" });
+			expect((await service.removerItemInsumo("os1", "ii1")).status).toBe(404);
+		});
+
+		it("removerItemInsumo 200", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_DIAGNOSTICO } as any);
+			prisma.osItemInsumo.findUnique.mockResolvedValueOnce({ id: "ii1", ordemServicoId: "os1" });
+			prisma.osItemInsumo.delete.mockResolvedValueOnce({});
+			repo.findByIdFull.mockResolvedValueOnce({} as any);
+			expect((await service.removerItemInsumo("os1", "ii1")).status).toBe(200);
+		});
+
+		it("addItemInsumo 404 OS", async () => {
+			repo.findById.mockResolvedValueOnce(null);
+			expect((await service.addItemInsumo("x", { insumoId: "i1", quantidade: 1 })).status).toBe(404);
+		});
+
+		it("addItemInsumo 404 insumo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_DIAGNOSTICO } as any);
+			insumos.findById.mockResolvedValueOnce(null);
+			expect((await service.addItemInsumo("os1", { insumoId: "i1", quantidade: 1 })).status).toBe(404);
+		});
+	});
+
+	describe("baixa de estoque - branches extras", () => {
+		it("aprovação dispara warn quando posterior ficaria abaixo do estoque mínimo", async () => {
+			repo.findByIdFull
+				.mockResolvedValueOnce({
+					id: "os1",
+					status: OsStatus.AGUARDANDO_APROVACAO,
+					cliente: { id: "c1", documento: "52998224725", nome: "Fulano" },
+					itensServico: [],
+					itensInsumo: [{ id: "ii1", insumoId: "i1", quantidade: 5 }],
+				} as any)
+				.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
+				const tx = baseTx();
+				tx.insumo.findUnique.mockResolvedValueOnce({
+					id: "i1",
+					nome: "Filtro",
+					codigo: "P-001",
+					quantidadeEstoque: 6,
+					estoqueMinimo: 10,
+				});
+				return fn(tx);
+			});
+			const warn = jest.spyOn((service as any).logger, "warn").mockImplementation(() => undefined);
+			const r = await service.aprovarOrcamento("os1", { documento: "52998224725" });
+			expect(r.status).toBe(200);
+			expect(warn).toHaveBeenCalled();
+		});
+
+		it("aprovação reporta insumo inexistente como faltante", async () => {
+			repo.findByIdFull
+				.mockResolvedValueOnce({
+					id: "os1",
+					status: OsStatus.AGUARDANDO_APROVACAO,
+					cliente: { id: "c1", documento: "52998224725", nome: "Fulano" },
+					itensServico: [],
+					itensInsumo: [{ id: "ii1", insumoId: "iX", quantidade: 1 }],
+				} as any)
+				.mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
+			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
+				const tx = baseTx();
+				tx.insumo.findUnique.mockResolvedValueOnce(null);
+				return fn(tx);
+			});
+			const r = await service.aprovarOrcamento("os1", { documento: "52998224725" });
+			expect(r.status).toBe(200);
+			expect(r.message).toContain("bloqueada");
+		});
+	});
+
+	describe("cancelar e finalizar - cobertura adicional", () => {
+		it("finalizar 404 quando OS não existe", async () => {
+			repo.findByIdFull.mockResolvedValueOnce(null);
+			expect((await service.finalizar("x", "u1")).status).toBe(404);
+		});
+
+		it("finalizar 422 sem itensServico", async () => {
+			repo.findByIdFull.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.EM_EXECUCAO,
+				itensServico: [],
+			} as any);
+			expect((await service.finalizar("os1", "u1")).status).toBe(422);
+		});
+
+		it("cancelar 404", async () => {
+			repo.findByIdFull.mockResolvedValueOnce(null);
+			expect((await service.cancelar("x", "u1", {})).status).toBe(404);
+		});
+
+		it("cancelar quando ainda não aprovada não estorna estoque", async () => {
+			repo.findByIdFull
+				.mockResolvedValueOnce({
+					id: "os1",
+					status: OsStatus.RECEBIDA,
+					aprovadoEm: null,
+					itensInsumo: [],
+				} as any)
+				.mockResolvedValueOnce({ id: "os1", status: OsStatus.CANCELADA } as any);
+			const movs: any[] = [];
+			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
+				const tx = baseTx();
+				tx.movimentoEstoque.create.mockImplementation((arg: any) => {
+					movs.push(arg.data);
+					return arg.data;
+				});
+				return fn(tx);
+			});
+			expect((await service.cancelar("os1", "u1", { motivo: "x" })).status).toBe(200);
+			expect(movs).toHaveLength(0);
+		});
+
+		it("aprovarOrcamento 404 quando OS não existe", async () => {
+			repo.findByIdFull.mockResolvedValueOnce(null);
+			expect((await service.aprovarOrcamento("x", { documento: "52998224725" })).status).toBe(404);
+		});
+
+		it("rejeitarOrcamento 404 quando OS não existe", async () => {
+			repo.findByIdFull.mockResolvedValueOnce(null);
+			expect((await service.rejeitarOrcamento("x", { documento: "52998224725" })).status).toBe(404);
+		});
+
+		it("rejeitarOrcamento 422 quando status inválido", async () => {
+			repo.findByIdFull.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.EM_EXECUCAO,
+				cliente: { documento: "52998224725" },
+			} as any);
+			expect((await service.rejeitarOrcamento("os1", { documento: "52998224725" })).status).toBe(422);
+		});
+
+		it("desbloquear 404 quando OS não existe", async () => {
+			repo.findByIdFull.mockResolvedValueOnce(null);
+			expect((await service.desbloquear("x", "u1", {})).status).toBe(404);
+		});
 	});
 
 	describe("gerarOrcamento", () => {
