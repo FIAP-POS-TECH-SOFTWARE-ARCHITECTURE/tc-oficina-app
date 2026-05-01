@@ -1,7 +1,7 @@
 info:
   name: Atualizar Senha
   type: http
-  seq: 1
+  seq: 5
 
 http:
   method: PATCH

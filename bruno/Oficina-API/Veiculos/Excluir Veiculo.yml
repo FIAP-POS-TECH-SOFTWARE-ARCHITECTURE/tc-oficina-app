@@ -1,7 +1,7 @@
 info:
   name: Excluir Veiculo
   type: http
-  seq: 1
+  seq: 6
 
 http:
   method: DELETE

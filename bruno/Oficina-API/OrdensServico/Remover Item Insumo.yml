@@ -1,7 +1,7 @@
 info:
   name: Remover Item Insumo
   type: http
-  seq: 1
+  seq: 7
 
 http:
   method: DELETE
