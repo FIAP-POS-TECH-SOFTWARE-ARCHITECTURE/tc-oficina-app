@@ -1,0 +1,27 @@
+info:
+  name: Criar Usuario
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{url}}/usuarios"
+  body:
+    type: json
+    data: |-
+      {
+          "nome": "João Atendente",
+          "email": "joao@oficina.local",
+          "senha": "12345678",
+          "role": "ATENDENTE"
+        }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+

@@ -1,0 +1,22 @@
+info:
+  name: Aprovar Orcamento
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{url}}/os/{{osId}}/orcamento/aprovar"
+  body:
+    type: json
+    data: |-
+      {
+          "documento": "{{documentoCliente}}",
+          "observacao": "Aprovado pelo cliente via telefone"
+        }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

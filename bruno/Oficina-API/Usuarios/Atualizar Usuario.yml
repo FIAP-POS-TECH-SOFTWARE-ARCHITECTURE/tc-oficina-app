@@ -1,0 +1,24 @@
+info:
+  name: Atualizar Usuario
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{url}}/usuarios/{{usuarioId}}"
+  body:
+    type: json
+    data: |-
+      {
+          "nome": "Administrador Atualizado",
+          "email": "admin.atualizado@oficina.local",
+          "role": "ADMINISTRADOR",
+          "ativo": true
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

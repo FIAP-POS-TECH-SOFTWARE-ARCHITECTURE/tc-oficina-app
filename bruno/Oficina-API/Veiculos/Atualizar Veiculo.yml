@@ -1,0 +1,24 @@
+info:
+  name: Atualizar Veiculo
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{url}}/veiculos/{{veiculoId}}"
+  body:
+    type: json
+    data: |-
+      {
+          "marca": "Toyota",
+          "modelo": "Corolla XEi",
+          "ano": 2021,
+          "ativo": true
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

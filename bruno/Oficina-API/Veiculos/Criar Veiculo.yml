@@ -1,0 +1,33 @@
+info:
+  name: Criar Veiculo
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{url}}/clientes/{{clienteId}}/veiculos"
+  body:
+    type: json
+    data: |-
+      {
+          "placa": "ABC1D23",
+          "marca": "Volkswagen",
+          "modelo": "Gol",
+          "ano": 2020
+        }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+script:
+  post-response: |-
+      if (res.body && res.body.data && res.body.data.id) {
+        bru.setEnvVar("veiculoId", res.body.data.id);
+      }
+

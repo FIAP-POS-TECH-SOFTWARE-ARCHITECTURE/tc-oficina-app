@@ -1,0 +1,25 @@
+info:
+  name: Atualizar Cliente
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{url}}/clientes/{{clienteId}}"
+  body:
+    type: json
+    data: |-
+      {
+          "nome": "Fulano da Silva Atualizado",
+          "email": "fulano.atualizado@email.com",
+          "telefone": "(11) 98888-7777",
+          "endereco": "Rua Atualizada, 200",
+          "ativo": true
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

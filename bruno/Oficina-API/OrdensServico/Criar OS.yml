@@ -1,0 +1,32 @@
+info:
+  name: Criar OS
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{url}}/os"
+  body:
+    type: json
+    data: |-
+      {
+          "clienteId": "{{clienteId}}",
+          "veiculoId": "{{veiculoId}}"
+        }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+script:
+  post-response: |-
+      if (res.body && res.body.data && res.body.data.id) {
+        bru.setEnvVar("osId", res.body.data.id);
+        bru.setEnvVar("osNumero", res.body.data.numero);
+      }
+

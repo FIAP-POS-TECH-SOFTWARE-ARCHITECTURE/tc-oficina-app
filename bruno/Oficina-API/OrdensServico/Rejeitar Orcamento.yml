@@ -1,0 +1,22 @@
+info:
+  name: Rejeitar Orcamento
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{url}}/os/{{osId}}/orcamento/rejeitar"
+  body:
+    type: json
+    data: |-
+      {
+          "documento": "{{documentoCliente}}",
+          "observacao": "Cliente desistiu do reparo"
+        }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

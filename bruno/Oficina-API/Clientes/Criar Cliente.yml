@@ -1,0 +1,35 @@
+info:
+  name: Criar Cliente
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{url}}/clientes"
+  body:
+    type: json
+    data: |-
+      {
+          "nome": "Fulano da Silva",
+          "documento": "529.982.247-25",
+          "email": "fulano@email.com",
+          "telefone": "(11) 99999-9999",
+          "endereco": "Rua das Flores, 100"
+        }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+script:
+  post-response: |-
+      if (res.body && res.body.data && res.body.data.id) {
+        bru.setEnvVar("clienteId", res.body.data.id);
+        bru.setEnvVar("documentoCliente", res.body.data.documento);
+      }
+

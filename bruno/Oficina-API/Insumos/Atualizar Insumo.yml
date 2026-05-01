@@ -1,0 +1,25 @@
+info:
+  name: Atualizar Insumo
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{url}}/insumos/{{insumoId}}"
+  body:
+    type: json
+    data: |-
+      {
+          "nome": "Filtro de óleo premium",
+          "descricao": "Filtro de óleo para motor 1.0 e 1.6",
+          "precoUnitario": 28.9,
+          "estoqueMinimo": 8,
+          "ativo": true
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

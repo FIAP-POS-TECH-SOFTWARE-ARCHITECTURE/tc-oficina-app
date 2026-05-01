@@ -1,0 +1,13 @@
+vars:
+  url: http://localhost:3000
+  token: ""
+  clienteId: ""
+  usuarioId: ""
+  veiculoId: ""
+  servicoId: ""
+  insumoId: ""
+  osId: ""
+  osNumero: ""
+  itemServicoId: ""
+  itemInsumoId: ""
+  documentoCliente: ""

@@ -1,0 +1,21 @@
+info:
+  name: Atualizar Diagnostico
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{url}}/os/{{osId}}/diagnostico"
+  body:
+    type: json
+    data: |-
+      {
+          "diagnostico": "Veiculo com desgaste acentuado nas pastilhas de freio dianteiras."
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

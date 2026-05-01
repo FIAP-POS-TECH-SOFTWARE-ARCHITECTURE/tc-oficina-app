@@ -1,0 +1,21 @@
+info:
+  name: Atualizar Senha
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{url}}/usuarios/{{usuarioId}}/senha"
+  body:
+    type: json
+    data: |-
+      {
+          "senha": "NovaSenha@123"
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -14,6 +14,14 @@ http:
         "senha": "123"
       }
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.data && res.body.data.accessToken) {
+          bru.setEnvVar("token", res.body.data.accessToken);
+        }
+
 settings:
   encodeUrl: true
   timeout: 0

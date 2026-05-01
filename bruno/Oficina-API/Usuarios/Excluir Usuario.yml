@@ -1,11 +1,11 @@
 info:
-  name: Todos
+  name: Excluir Usuario
   type: http
   seq: 1
 
 http:
-  method: GET
-  url: "{{url}}/clientes"
+  method: DELETE
+  url: "{{url}}/usuarios/{{usuarioId}}"
   auth: inherit
 
 settings:

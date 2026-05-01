@@ -17,7 +17,7 @@ config:
 request:
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYzIzZGVkOS1kZjVkLTRiZGMtODQ2Yy03MjU3OGM4ZWFmZjAiLCJlbWFpbCI6ImFkbUBhZG0uY29tIiwicm9sZSI6IkFETUlOSVNUUkFET1IiLCJpYXQiOjE3Nzc2NDU1ODUsImV4cCI6MTc3NzY3NDM4NX0.xNirfUEOpx_eD02MJfTvjeeVCQIXdeJtEnr3gc5PPeE
+    token: "{{token}}"
   variables:
     - name: url
       value: http://localhost:3000

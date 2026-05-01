@@ -1,0 +1,25 @@
+info:
+  name: Atualizar Servico
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{url}}/servicos/{{servicoId}}"
+  body:
+    type: json
+    data: |-
+      {
+          "nome": "Alinhamento e Balanceamento",
+          "descricao": "Alinhamento completo e balanceamento das rodas",
+          "preco": 180,
+          "tempoEstimadoMin": 90,
+          "ativo": true
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
