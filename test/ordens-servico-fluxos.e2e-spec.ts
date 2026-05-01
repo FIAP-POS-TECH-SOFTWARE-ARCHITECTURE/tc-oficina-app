@@ -281,10 +281,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		expect(cancel.status).toBe(422);
 	});
 
-	it("FIXME: cancelar OS em BLOQUEADA gera estorno mesmo sem baixa real (estoque fantasma)", async () => {
-		// FIXME: comportamento atual gera estoque fantasma quando OS é BLOQUEADA.
-		//        Issue separada deve ajustar o gatilho do estorno (ex: campo `estoqueBaixado` ou checar status).
-		//        Quando o fix sair, este teste precisa virar "não estorna se OS estava BLOQUEADA".
+	it("Cancelar OS em BLOQUEADA → não estorna (sem baixa real de estoque)", async () => {
 		const { cliente, servico, insumo, os } = await setupBaseOS({ quantidadeEstoque: 5 });
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/diagnostico/iniciar`)
@@ -316,10 +313,9 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		expect(cancel.status).toBe(200);
 
 		const after = (await prisma.insumo.findUnique({ where: { id: insumo.id } }))!.quantidadeEstoque;
-		// comportamento atual: estorno gera estoque fantasma
-		expect(after).toBe(before + 5);
+		expect(after).toBe(before);
 		const movs = await prisma.movimentoEstoque.findMany({ where: { insumoId: insumo.id } });
-		expect(movs.some((m) => m.tipo === "ESTORNO")).toBe(true);
+		expect(movs.some((m) => m.tipo === "ESTORNO")).toBe(false);
 	});
 
 	it("Finalizar com itens pendentes → 422", async () => {

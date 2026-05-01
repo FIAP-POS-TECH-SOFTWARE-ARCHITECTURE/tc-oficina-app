@@ -468,7 +468,7 @@ export class OrdensServicoService {
 		if (!canTransition(os.status, "cancelar"))
 			return SR.unprocessableEntity(undefined, `Não é possível cancelar a OS no status ${os.status}`);
 
-		const precisaEstornar = !!os.aprovadoEm;
+		const precisaEstornar = !!os.aprovadoEm && os.status !== OsStatus.BLOQUEADA;
 		await this.prisma.$transaction(async (tx) => {
 			if (precisaEstornar) {
 				for (const item of os.itensInsumo) {
