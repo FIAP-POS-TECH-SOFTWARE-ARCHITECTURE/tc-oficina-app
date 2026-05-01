@@ -1,11 +1,11 @@
 info:
-  name: Login
+  name: Todos
   type: http
   seq: 1
 
 http:
-  method: POST
-  url: "{{url}}/auth/login"
+  method: GET
+  url: "{{url}}/clientes"
   body:
     type: json
     data: |-
@@ -13,6 +13,7 @@ http:
         "email": "adm@adm.com",
         "senha": "123"
       }
+  auth: inherit
 
 settings:
   encodeUrl: true
