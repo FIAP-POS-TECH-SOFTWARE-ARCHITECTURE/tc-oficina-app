@@ -23,3 +23,10 @@ settings:
   followRedirects: true
   maxRedirects: 5
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.data && res.body.data.id) {
+          bru.setEnvVar("itemServicoId", res.body.data.id);
+        }

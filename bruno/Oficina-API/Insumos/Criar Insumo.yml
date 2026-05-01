@@ -27,9 +27,11 @@ settings:
   followRedirects: true
   maxRedirects: 5
 
-script:
-  post-response: |-
-      if (res.body && res.body.data && res.body.data.id) {
-        bru.setEnvVar("insumoId", res.body.data.id);
-      }
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.data && res.body.data.id) {
+          bru.setEnvVar("insumoId", res.body.data.id);
+        }
 

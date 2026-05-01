@@ -23,10 +23,12 @@ settings:
   followRedirects: true
   maxRedirects: 5
 
-script:
-  post-response: |-
-      if (res.body && res.body.data && res.body.data.id) {
-        bru.setEnvVar("osId", res.body.data.id);
-        bru.setEnvVar("osNumero", res.body.data.numero);
-      }
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.data && res.body.data.id) {
+          bru.setEnvVar("osId", res.body.data.id);
+          bru.setEnvVar("osNumero", res.body.data.numero);
+        }
 

@@ -26,10 +26,11 @@ settings:
   followRedirects: true
   maxRedirects: 5
 
-script:
-  post-response: |-
-      if (res.body && res.body.data && res.body.data.id) {
-        bru.setEnvVar("clienteId", res.body.data.id);
-        bru.setEnvVar("documentoCliente", res.body.data.documento);
-      }
-
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.data && res.body.data.id) {
+          bru.setEnvVar("clienteId", res.body.data.id);
+          bru.setEnvVar("documentoCliente", res.body.data.documento);
+        }

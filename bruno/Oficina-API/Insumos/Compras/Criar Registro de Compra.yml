@@ -23,3 +23,11 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.data && res.body.data.id) {
+          bru.setEnvVar("registroCompraId", res.body.data.id);
+        }
