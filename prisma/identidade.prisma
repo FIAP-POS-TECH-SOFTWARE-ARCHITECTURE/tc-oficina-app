@@ -10,6 +10,8 @@ model Usuario {
 
   movimentosEstoque MovimentoEstoque[]
   historicoStatusOs OsHistoricoStatus[]
+  comprasSolicitadas RegistroCompra[] @relation("registro_compra_solicitado_por")
+  comprasRecebidas   RegistroCompra[] @relation("registro_compra_recebido_por")
 
   @@map("usuarios")
 }

@@ -1,16 +1,16 @@
 info:
-  name: Cancelar
+  name: Cancelar Registro de Compra
   type: http
-  seq: 17
+  seq: 5
 
 http:
   method: POST
-  url: "{{url}}/os/{{osId}}/cancelar"
+  url: "{{url}}/insumos/compras/{{registroCompraId}}/cancelar"
   body:
     type: json
     data: |-
       {
-          "motivo": "Cancelamento administrativo"
+          "motivo": "Insumo não mais necessário"
         }
   auth:
     type: bearer
@@ -21,4 +21,3 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-

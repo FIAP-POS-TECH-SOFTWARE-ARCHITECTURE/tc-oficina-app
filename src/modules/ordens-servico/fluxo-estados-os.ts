@@ -4,6 +4,7 @@ export type OsTransition =
 	| "iniciar_diagnostico"
 	| "gerar_orcamento"
 	| "aprovar_orcamento"
+	| "desbloquear"
 	| "rejeitar_orcamento"
 	| "finalizar"
 	| "entregar"
@@ -13,11 +14,19 @@ const TRANSITIONS: Record<OsTransition, { from: OsStatus[]; to: OsStatus }> = {
 	iniciar_diagnostico: { from: [OsStatus.RECEBIDA], to: OsStatus.EM_DIAGNOSTICO },
 	gerar_orcamento: { from: [OsStatus.EM_DIAGNOSTICO], to: OsStatus.AGUARDANDO_APROVACAO },
 	aprovar_orcamento: { from: [OsStatus.AGUARDANDO_APROVACAO], to: OsStatus.EM_EXECUCAO },
+	desbloquear: { from: [OsStatus.BLOQUEADA], to: OsStatus.EM_EXECUCAO },
 	rejeitar_orcamento: { from: [OsStatus.AGUARDANDO_APROVACAO], to: OsStatus.CANCELADA },
 	finalizar: { from: [OsStatus.EM_EXECUCAO], to: OsStatus.FINALIZADA },
 	entregar: { from: [OsStatus.FINALIZADA], to: OsStatus.ENTREGUE },
 	cancelar: {
-		from: [OsStatus.RECEBIDA, OsStatus.EM_DIAGNOSTICO, OsStatus.AGUARDANDO_APROVACAO, OsStatus.EM_EXECUCAO, OsStatus.FINALIZADA],
+		from: [
+			OsStatus.RECEBIDA,
+			OsStatus.EM_DIAGNOSTICO,
+			OsStatus.AGUARDANDO_APROVACAO,
+			OsStatus.BLOQUEADA,
+			OsStatus.EM_EXECUCAO,
+			OsStatus.FINALIZADA,
+		],
 		to: OsStatus.CANCELADA,
 	},
 };

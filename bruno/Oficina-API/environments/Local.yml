@@ -11,3 +11,4 @@ vars:
   itemServicoId: ""
   itemInsumoId: ""
   documentoCliente: ""
+  registroCompraId: ""

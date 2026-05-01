@@ -12,7 +12,7 @@ import { AddItemInsumoDto, AddItemServicoDto } from "./dto/add-item.dto";
 import { CreateOsDto } from "./dto/create-os.dto";
 import { ListarOsDto } from "./dto/listar-os.dto";
 import { UpdateDiagnosticoDto } from "./dto/update-diagnostico.dto";
-import { AprovacaoPublicaDto, CancelarOsDto } from "./dto/transicao.dto";
+import { AprovacaoPublicaDto, CancelarOsDto, DesbloquearOsDto } from "./dto/transicao.dto";
 import { canTransition, nextStatus, OsTransition } from "./fluxo-estados-os";
 import { OrdensServicoRepository } from "./ordens-servico.repository";
 
@@ -282,38 +282,31 @@ export class OrdensServicoService {
 			return SR.unprocessableEntity(undefined, `Não é possível aprovar a OS no status ${os.status}`);
 		}
 		const agora = new Date();
+		let bloqueadaPorFaltaEstoque = false;
 		await this.prisma.$transaction(async (tx) => {
-			for (const item of os.itensInsumo) {
-				const insumo = await tx.insumo.findUnique({ where: { id: item.insumoId } });
-				if (!insumo) {
-					throw new Error(`Insumo ${item.insumoId} não encontrado`);
-				}
-				const posterior = insumo.quantidadeEstoque - item.quantidade;
-				if (posterior < 0) {
-					throw new Error(
-						`Estoque insuficiente para o insumo ${insumo.nome} (${insumo.quantidadeEstoque} disponíveis, ${item.quantidade} requisitados)`,
-					);
-				}
-				await tx.insumo.update({
-					where: { id: insumo.id },
-					data: { quantidadeEstoque: posterior },
-				});
-				await tx.movimentoEstoque.create({
+			const planoBaixa = await this.montarPlanoBaixaEstoque(tx, os.itensInsumo);
+			if (planoBaixa.faltantes.length > 0) {
+				bloqueadaPorFaltaEstoque = true;
+				await tx.ordemServico.update({
+					where: { id },
 					data: {
-						insumoId: insumo.id,
-						tipo: TipoMovimentoEstoque.SAIDA,
-						quantidade: item.quantidade,
-						quantidadeAnterior: insumo.quantidadeEstoque,
-						quantidadePosterior: posterior,
-						ordemServicoId: id,
-						motivo: "Saída por aprovação de OS (cliente)",
-						usuarioId: null,
+						status: OsStatus.BLOQUEADA,
+						aprovadoEm: agora,
 					},
 				});
-				if (posterior < insumo.estoqueMinimo) {
-					this.logger.warn(`Insumo ${insumo.codigo} ficou abaixo do estoque mínimo (${posterior}/${insumo.estoqueMinimo})`);
-				}
+				await tx.osHistoricoStatus.create({
+					data: {
+						ordemServicoId: id,
+						statusAnterior: os.status,
+						statusNovo: OsStatus.BLOQUEADA,
+						observacao:
+							dto.observacao ??
+							`Orçamento aprovado, OS bloqueada por falta de estoque: ${planoBaixa.faltantes.join("; ")}`,
+					},
+				});
+				return;
 			}
+			await this.aplicarBaixaEstoque(tx, id, planoBaixa.reservas, "Saída por aprovação de OS (cliente)", null);
 			await tx.ordemServico.update({
 				where: { id },
 				data: {
@@ -332,6 +325,9 @@ export class OrdensServicoService {
 			});
 		});
 		const detalhe = await this.repo.findByIdFull(id);
+		if (bloqueadaPorFaltaEstoque) {
+			return SR.ok(detalhe, "Orçamento aprovado e OS bloqueada por falta de estoque");
+		}
 		return SR.ok(detalhe, "Orçamento aprovado");
 	}
 
@@ -375,7 +371,10 @@ export class OrdensServicoService {
 			(item) => item.status !== OsItemServicoStatus.CONCLUIDO && item.status !== OsItemServicoStatus.CANCELADO,
 		);
 		if (pendentes) {
-			return SR.unprocessableEntity(undefined, "Só é possível finalizar a OS quando todos os serviços estiverem concluídos ou cancelados");
+			return SR.unprocessableEntity(
+				undefined,
+				"Só é possível finalizar a OS quando todos os serviços estiverem concluídos ou cancelados",
+			);
 		}
 		const novo = nextStatus("finalizar");
 		const agora = new Date();
@@ -401,6 +400,47 @@ export class OrdensServicoService {
 		return this.transicao(id, "entregar", usuarioId, {
 			entregueEm: new Date(),
 		});
+	}
+
+	async desbloquear(id: string, usuarioId: string, dto: DesbloquearOsDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByIdFull(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+		if (!canTransition(os.status, "desbloquear")) {
+			return SR.unprocessableEntity(undefined, `Não é possível desbloquear a OS no status ${os.status}`);
+		}
+		const agora = new Date();
+		const resultado = await this.prisma.$transaction(async (tx) => {
+			const planoBaixa = await this.montarPlanoBaixaEstoque(tx, os.itensInsumo);
+			if (planoBaixa.faltantes.length > 0) {
+				return { faltantes: planoBaixa.faltantes };
+			}
+			await this.aplicarBaixaEstoque(tx, id, planoBaixa.reservas, "Saída por desbloqueio de OS", usuarioId);
+			await tx.ordemServico.update({
+				where: { id },
+				data: {
+					status: nextStatus("desbloquear"),
+					iniciadoExecucaoEm: os.iniciadoExecucaoEm ?? agora,
+				},
+			});
+			await tx.osHistoricoStatus.create({
+				data: {
+					ordemServicoId: id,
+					statusAnterior: os.status,
+					statusNovo: nextStatus("desbloquear"),
+					observacao: dto.observacao ?? "OS desbloqueada após validação de estoque",
+					usuarioId,
+				},
+			});
+			return { faltantes: [] as string[] };
+		});
+		if (resultado.faltantes.length > 0) {
+			return SR.unprocessableEntity(
+				undefined,
+				`Não é possível desbloquear a OS sem estoque disponível: ${resultado.faltantes.join("; ")}`,
+			);
+		}
+		const detalhe = await this.repo.findByIdFull(id);
+		return SR.ok(detalhe, "OS desbloqueada");
 	}
 
 	async cancelar(id: string, usuarioId: string, dto: CancelarOsDto): Promise<IServiceResponse<unknown>> {
@@ -523,6 +563,72 @@ export class OrdensServicoService {
 		});
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, `Status atualizado para ${novo}`);
+	}
+
+	private async montarPlanoBaixaEstoque(
+		tx: Prisma.TransactionClient,
+		itens: { insumoId: string; quantidade: number }[],
+	): Promise<{
+		faltantes: string[];
+		reservas: { insumoId: string; codigo: string; nome: string; quantidade: number; anterior: number; posterior: number; estoqueMinimo: number }[];
+	}> {
+		const faltantes: string[] = [];
+		const reservas: { insumoId: string; codigo: string; nome: string; quantidade: number; anterior: number; posterior: number; estoqueMinimo: number }[] =
+			[];
+
+		for (const item of itens) {
+			const insumo = await tx.insumo.findUnique({ where: { id: item.insumoId } });
+			if (!insumo) {
+				faltantes.push(`Insumo ${item.insumoId} não encontrado`);
+				continue;
+			}
+			const posterior = insumo.quantidadeEstoque - item.quantidade;
+			if (posterior < 0) {
+				faltantes.push(`${insumo.nome} (${insumo.quantidadeEstoque} disponíveis, ${item.quantidade} requisitados)`);
+				continue;
+			}
+			reservas.push({
+				insumoId: insumo.id,
+				codigo: insumo.codigo,
+				nome: insumo.nome,
+				quantidade: item.quantidade,
+				anterior: insumo.quantidadeEstoque,
+				posterior,
+				estoqueMinimo: insumo.estoqueMinimo,
+			});
+		}
+
+		return { faltantes, reservas };
+	}
+
+	private async aplicarBaixaEstoque(
+		tx: Prisma.TransactionClient,
+		ordemServicoId: string,
+		reservas: { insumoId: string; codigo: string; nome: string; quantidade: number; anterior: number; posterior: number; estoqueMinimo: number }[],
+		motivo: string,
+		usuarioId: string | null,
+	): Promise<void> {
+		for (const reserva of reservas) {
+			await tx.insumo.update({
+				where: { id: reserva.insumoId },
+				data: { quantidadeEstoque: reserva.posterior },
+			});
+			await tx.movimentoEstoque.create({
+				data: {
+					insumoId: reserva.insumoId,
+					tipo: TipoMovimentoEstoque.SAIDA,
+					quantidade: reserva.quantidade,
+					quantidadeAnterior: reserva.anterior,
+					quantidadePosterior: reserva.posterior,
+					ordemServicoId,
+					motivo,
+					usuarioId,
+				},
+			});
+			if (reserva.posterior < reserva.estoqueMinimo) {
+				this.logger.warn(`Insumo ${reserva.codigo} ficou abaixo do estoque mínimo (${reserva.posterior}/${reserva.estoqueMinimo})`);
+			}
+		}
 	}
 
 	private calcularTotal(os: {

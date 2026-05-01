@@ -1,0 +1,28 @@
+info:
+  name: Receber Compra
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{url}}/insumos/compras/{{registroCompraId}}/receber"
+  body:
+    type: json
+    data: |-
+      {
+          "notaFiscalNumero": "NF-001",
+          "notaFiscalChave": "35260500000000000000550010000000011000000019",
+          "arquivoNome": "nota-fiscal-001.pdf",
+          "arquivoTipo": "application/pdf",
+          "arquivoTamanho": 204800,
+          "arquivoUrl": "s3://oficina-docs/notas-fiscais/nota-fiscal-001.pdf"
+        }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

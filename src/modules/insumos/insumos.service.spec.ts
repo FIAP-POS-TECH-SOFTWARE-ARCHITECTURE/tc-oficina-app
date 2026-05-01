@@ -38,7 +38,7 @@ describe("InsumosService", () => {
 			codigo: "P-001",
 			nome: "Filtro",
 			precoUnitario: 10,
-		} as any);
+		});
 		expect(r.status).toBe(409);
 	});
 
@@ -49,7 +49,7 @@ describe("InsumosService", () => {
 			codigo: "P-001",
 			nome: "Filtro",
 			precoUnitario: 10,
-		} as any);
+		});
 		expect(r.status).toBe(201);
 	});
 
@@ -63,7 +63,7 @@ describe("InsumosService", () => {
 			movimentoEstoque: { create: jest.fn() },
 		};
 		prisma.$transaction.mockImplementationOnce(async (fn: any) => fn(txMock));
-		const r = await service.entrada("i1", { quantidade: 3 } as any, "user-1");
+		const r = await service.entrada("i1", { quantidade: 3 }, "user-1");
 		expect(r.status).toBe(200);
 		expect(txMock.movimentoEstoque.create).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -79,7 +79,7 @@ describe("InsumosService", () => {
 
 	it("ajuste rejeita quantidade negativa", async () => {
 		repo.findById.mockResolvedValueOnce({ id: "i1", quantidadeEstoque: 5 } as any);
-		const r = await service.ajuste("i1", { novaQuantidade: -1, motivo: "erro" } as any, "u1");
+		const r = await service.ajuste("i1", { novaQuantidade: -1, motivo: "erro" }, "u1");
 		expect(r.status).toBe(400);
 	});
 
@@ -130,13 +130,13 @@ describe("InsumosService", () => {
 
 	it("entrada 404 quando insumo não existe", async () => {
 		repo.findById.mockResolvedValueOnce(null);
-		const r = await service.entrada("x", { quantidade: 1 } as any, "u1");
+		const r = await service.entrada("x", { quantidade: 1 }, "u1");
 		expect(r.status).toBe(404);
 	});
 
 	it("ajuste 404 quando insumo não existe", async () => {
 		repo.findById.mockResolvedValueOnce(null);
-		const r = await service.ajuste("x", { novaQuantidade: 1, motivo: "x" } as any, "u1");
+		const r = await service.ajuste("x", { novaQuantidade: 1, motivo: "x" }, "u1");
 		expect(r.status).toBe(404);
 	});
 
@@ -147,7 +147,7 @@ describe("InsumosService", () => {
 			movimentoEstoque: { create: jest.fn() },
 		};
 		prisma.$transaction.mockImplementationOnce(async (fn: any) => fn(txMock));
-		const r = await service.ajuste("i1", { novaQuantidade: 8, motivo: "contagem" } as any, "u1");
+		const r = await service.ajuste("i1", { novaQuantidade: 8, motivo: "contagem" }, "u1");
 		expect(r.status).toBe(200);
 	});
 
@@ -159,7 +159,7 @@ describe("InsumosService", () => {
 
 	it("listarMovimentos 200", async () => {
 		repo.findById.mockResolvedValueOnce({ id: "i1" } as any);
-		repo.listarMovimentos.mockResolvedValueOnce([] as any);
+		repo.listarMovimentos.mockResolvedValueOnce([]);
 		const r = await service.listarMovimentos("i1");
 		expect(r.status).toBe(200);
 	});

@@ -12,6 +12,7 @@ model Insumo {
 
   movimentos MovimentoEstoque[]
   itensOs    OsItemInsumo[]
+  compras    RegistroCompra[]
 
   @@map("insumos")
 }
@@ -35,4 +36,41 @@ model MovimentoEstoque {
   @@index([insumoId])
   @@index([ordemServicoId])
   @@map("movimentos_estoque")
+}
+
+model RegistroCompra {
+  id                       String               @id @default(uuid()) @db.Uuid
+  insumoId                 String               @map("insumo_id") @db.Uuid
+  ordemServicoId           String?              @map("ordem_servico_id") @db.Uuid
+  quantidadeSolicitada     Int                  @map("quantidade_solicitada")
+  status                   RegistroCompraStatus @default(CRIADO)
+  fornecedorRespostaCodigo String?              @map("fornecedor_resposta_codigo")
+  fornecedorMensagem       String?              @map("fornecedor_mensagem")
+  fornecedorPayload        Json?                @map("fornecedor_payload")
+  motivoRecusa             String?              @map("motivo_recusa")
+  motivoCancelamento       String?              @map("motivo_cancelamento")
+  solicitadoPorId          String?              @map("solicitado_por_id") @db.Uuid
+  recebidoPorId            String?              @map("recebido_por_id") @db.Uuid
+  notaFiscalNumero         String?              @map("nota_fiscal_numero")
+  notaFiscalChave          String?              @map("nota_fiscal_chave")
+  notaFiscalArquivoNome    String?              @map("nota_fiscal_arquivo_nome")
+  notaFiscalArquivoTipo    String?              @map("nota_fiscal_arquivo_tipo")
+  notaFiscalArquivoTamanho Int?                 @map("nota_fiscal_arquivo_tamanho")
+  notaFiscalArquivoUrl     String?              @map("nota_fiscal_arquivo_url")
+  aprovadoEm               DateTime?            @map("aprovado_em")
+  recusadoEm               DateTime?            @map("recusado_em")
+  canceladoEm              DateTime?            @map("cancelado_em")
+  recebidoEm               DateTime?            @map("recebido_em")
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+
+  insumo       Insumo        @relation(fields: [insumoId], references: [id])
+  ordemServico OrdemServico? @relation(fields: [ordemServicoId], references: [id])
+  solicitadoPor Usuario?     @relation("registro_compra_solicitado_por", fields: [solicitadoPorId], references: [id])
+  recebidoPor   Usuario?     @relation("registro_compra_recebido_por", fields: [recebidoPorId], references: [id])
+
+  @@index([insumoId])
+  @@index([ordemServicoId])
+  @@index([status])
+  @@map("registros_compra")
 }

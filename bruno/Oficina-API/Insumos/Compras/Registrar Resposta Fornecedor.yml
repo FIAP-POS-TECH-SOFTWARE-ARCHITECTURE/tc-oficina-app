@@ -1,0 +1,25 @@
+info:
+  name: Registrar Resposta Fornecedor
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{url}}/insumos/compras/{{registroCompraId}}/resposta-fornecedor"
+  body:
+    type: json
+    data: |-
+      {
+          "aprovado": true,
+          "codigo": "APR-001",
+          "mensagem": "Compra aprovada pelo fornecedor"
+        }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

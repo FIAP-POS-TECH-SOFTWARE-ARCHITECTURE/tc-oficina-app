@@ -47,7 +47,7 @@ describe("OrdensServicoService", () => {
 		veiculos = { findById: jest.fn() } as unknown as jest.Mocked<VeiculosRepository>;
 		servicos = { findById: jest.fn() } as unknown as jest.Mocked<ServicosRepository>;
 		insumos = { findById: jest.fn() } as unknown as jest.Mocked<InsumosRepository>;
-		service = new OrdensServicoService(repo, prisma as unknown as PrismaService, clientes, veiculos, servicos, insumos);
+		service = new OrdensServicoService(repo, prisma, clientes, veiculos, servicos, insumos);
 	});
 
 	describe("create", () => {
@@ -122,22 +122,20 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("403 quando documento não confere", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(osMock() as any);
+			repo.findByIdFull.mockResolvedValueOnce(osMock());
 			const r = await service.aprovarOrcamento("os1", { documento: "11111111111" });
 			expect(r.status).toBe(403);
 		});
 
 		it("422 quando status não é AGUARDANDO_APROVACAO", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(osMock({ status: OsStatus.EM_EXECUCAO }) as any);
+			repo.findByIdFull.mockResolvedValueOnce(osMock({ status: OsStatus.EM_EXECUCAO }));
 			const r = await service.aprovarOrcamento("os1", { documento: "52998224725" });
 			expect(r.status).toBe(422);
 		});
 
 		it("aprova e baixa estoque criando movimento SAIDA", async () => {
-			repo.findByIdFull
-				.mockResolvedValueOnce(osMock() as any)
-				.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
-			let movs: any[] = [];
+			repo.findByIdFull.mockResolvedValueOnce(osMock()).mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			const movs: any[] = [];
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
 				tx.insumo.findUnique.mockResolvedValueOnce({
@@ -158,6 +156,93 @@ describe("OrdensServicoService", () => {
 			expect(movs[0]).toMatchObject({
 				tipo: TipoMovimentoEstoque.SAIDA,
 				quantidade: 2,
+				quantidadeAnterior: 10,
+				quantidadePosterior: 8,
+			});
+		});
+
+		it("bloqueia OS quando cliente aprova mas falta estoque", async () => {
+			repo.findByIdFull
+				.mockResolvedValueOnce(osMock() as any)
+				.mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
+			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
+				const tx = baseTx();
+				tx.insumo.findUnique.mockResolvedValueOnce({
+					id: "i1",
+					nome: "Filtro",
+					codigo: "P-001",
+					quantidadeEstoque: 1,
+					estoqueMinimo: 1,
+				});
+				return fn(tx);
+			});
+			const r = await service.aprovarOrcamento("os1", { documento: "52998224725" });
+			expect(r.status).toBe(200);
+			expect(r.message).toContain("bloqueada");
+		});
+	});
+
+	describe("desbloquear", () => {
+		it("422 quando OS não está bloqueada", async () => {
+			repo.findByIdFull.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.EM_EXECUCAO,
+				itensInsumo: [],
+			} as any);
+			const r = await service.desbloquear("os1", "u1", {});
+			expect(r.status).toBe(422);
+		});
+
+		it("422 quando segue sem estoque suficiente", async () => {
+			repo.findByIdFull.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.BLOQUEADA,
+				itensInsumo: [{ id: "ii1", insumoId: "i1", quantidade: 5 }],
+			} as any);
+			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
+				const tx = baseTx();
+				tx.insumo.findUnique.mockResolvedValueOnce({
+					id: "i1",
+					nome: "Filtro",
+					codigo: "P-001",
+					quantidadeEstoque: 1,
+					estoqueMinimo: 0,
+				});
+				return fn(tx);
+			});
+			const r = await service.desbloquear("os1", "u1", {});
+			expect(r.status).toBe(422);
+		});
+
+		it("200 quando há estoque e realiza baixa ao desbloquear", async () => {
+			repo.findByIdFull
+				.mockResolvedValueOnce({
+					id: "os1",
+					status: OsStatus.BLOQUEADA,
+					iniciadoExecucaoEm: null,
+					itensInsumo: [{ id: "ii1", insumoId: "i1", quantidade: 2 }],
+				} as any)
+				.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			let movs: any[] = [];
+			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
+				const tx = baseTx();
+				tx.insumo.findUnique.mockResolvedValueOnce({
+					id: "i1",
+					nome: "Filtro",
+					codigo: "P-001",
+					quantidadeEstoque: 10,
+					estoqueMinimo: 1,
+				});
+				tx.movimentoEstoque.create.mockImplementation((arg: any) => {
+					movs.push(arg.data);
+					return arg.data;
+				});
+				return fn(tx);
+			});
+			const r = await service.desbloquear("os1", "u1", {});
+			expect(r.status).toBe(200);
+			expect(movs[0]).toMatchObject({
+				tipo: TipoMovimentoEstoque.SAIDA,
 				quantidadeAnterior: 10,
 				quantidadePosterior: 8,
 			});
@@ -184,7 +269,7 @@ describe("OrdensServicoService", () => {
 					itensInsumo: [{ id: "ii1", insumoId: "i1", quantidade: 3 }],
 				} as any)
 				.mockResolvedValueOnce({ id: "os1", status: OsStatus.CANCELADA } as any);
-			let movs: any[] = [];
+			const movs: any[] = [];
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
 				tx.insumo.findUnique.mockResolvedValueOnce({ id: "i1", quantidadeEstoque: 5 });
@@ -225,7 +310,7 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("metricas retorna agregado", async () => {
-			repo.tempoMedioPorMes.mockResolvedValueOnce([{ ano_mes: "2026-04", tempo_medio_min: 60, total: 2 }] as any);
+			repo.tempoMedioPorMes.mockResolvedValueOnce([{ ano_mes: "2026-04", tempo_medio_min: 60, total: 2 }]);
 			const r = await service.tempoMedioExecucao();
 			expect(r.status).toBe(200);
 		});

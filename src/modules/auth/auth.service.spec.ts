@@ -48,7 +48,7 @@ describe("AuthService", () => {
 			role: Role.ATENDENTE,
 			createdAt: new Date(),
 			updatedAt: new Date(),
-		} as any);
+		});
 		const r = await service.login({ email: "x@x.com", senha: "errada" });
 		expect(r.status).toBe(401);
 	});
@@ -64,7 +64,7 @@ describe("AuthService", () => {
 			role: Role.ATENDENTE,
 			createdAt: new Date(),
 			updatedAt: new Date(),
-		} as any);
+		});
 		const r = await service.login({ email: "x@x.com", senha: "certa" });
 		expect(r.status).toBe(200);
 		expect(r.data?.accessToken).toBe("token-123");

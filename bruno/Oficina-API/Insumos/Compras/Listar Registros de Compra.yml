@@ -1,11 +1,11 @@
 info:
-  name: Cancelar Item Servico
+  name: Listar Registros de Compra
   type: http
-  seq: 14
+  seq: 6
 
 http:
-  method: POST
-  url: "{{url}}/os/{{osId}}/itens-servico/{{itemServicoId}}/cancelar"
+  method: GET
+  url: "{{url}}/insumos/compras"
   auth:
     type: bearer
     token: "{{token}}"
@@ -15,4 +15,3 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-

@@ -17,3 +17,10 @@ export class AprovacaoPublicaDto {
 	@MaxLength(255)
 	observacao?: string;
 }
+
+export class DesbloquearOsDto {
+	@IsOptional()
+	@IsString()
+	@MaxLength(255)
+	observacao?: string;
+}

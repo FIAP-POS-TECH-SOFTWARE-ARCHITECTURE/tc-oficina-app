@@ -9,6 +9,7 @@ enum OsStatus {
   RECEBIDA
   EM_DIAGNOSTICO
   AGUARDANDO_APROVACAO
+  BLOQUEADA
   EM_EXECUCAO
   FINALIZADA
   ENTREGUE
@@ -32,4 +33,12 @@ enum TipoMovimentoEstoque {
 enum TipoDocumentoCliente {
   CPF
   CNPJ
+}
+
+enum RegistroCompraStatus {
+  CRIADO
+  APROVADO_FORNECEDOR
+  RECUSADO_FORNECEDOR
+  CANCELADO
+  RECEBIDO
 }

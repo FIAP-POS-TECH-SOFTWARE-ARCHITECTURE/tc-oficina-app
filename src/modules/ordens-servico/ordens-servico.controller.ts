@@ -7,7 +7,7 @@ import { Role } from "../../common/enums/role.enum";
 import { AddItemInsumoDto, AddItemServicoDto } from "./dto/add-item.dto";
 import { CreateOsDto } from "./dto/create-os.dto";
 import { ListarOsDto } from "./dto/listar-os.dto";
-import { AprovacaoPublicaDto, CancelarOsDto } from "./dto/transicao.dto";
+import { AprovacaoPublicaDto, CancelarOsDto, DesbloquearOsDto } from "./dto/transicao.dto";
 import { UpdateDiagnosticoDto } from "./dto/update-diagnostico.dto";
 import { OrdensServicoService } from "./ordens-servico.service";
 
@@ -127,6 +127,16 @@ export class OrdensServicoController {
 	@Roles(Role.ATENDENTE, Role.ADMINISTRADOR)
 	entregar(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
 		return this.service.entregar(id, user.id);
+	}
+
+	@Post(":id/desbloquear")
+	@Roles(Role.ATENDENTE, Role.ADMINISTRADOR)
+	desbloquear(
+		@Param("id", ParseUUIDPipe) id: string,
+		@Body() dto: DesbloquearOsDto,
+		@CurrentUser() user: AuthenticatedUser,
+	) {
+		return this.service.desbloquear(id, user.id, dto);
 	}
 
 	@Post(":id/cancelar")

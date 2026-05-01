@@ -1,16 +1,16 @@
 info:
-  name: Cancelar
+  name: Desbloquear OS
   type: http
-  seq: 17
+  seq: 10
 
 http:
   method: POST
-  url: "{{url}}/os/{{osId}}/cancelar"
+  url: "{{url}}/os/{{osId}}/desbloquear"
   body:
     type: json
     data: |-
       {
-          "motivo": "Cancelamento administrativo"
+          "observacao": "Estoque reposto, OS liberada para execução"
         }
   auth:
     type: bearer
@@ -21,4 +21,3 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
