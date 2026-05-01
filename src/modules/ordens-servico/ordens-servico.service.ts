@@ -696,7 +696,7 @@ export class OrdensServicoService {
 		const partes = nome.trim().split(/\s+/);
 		return partes
 			.map((p, i) => {
-				if (i === 0 || i === partes.length - 1) return p;
+				if (i === 0) return p;
 				return p[0] + "*".repeat(Math.max(p.length - 1, 1));
 			})
 			.join(" ");

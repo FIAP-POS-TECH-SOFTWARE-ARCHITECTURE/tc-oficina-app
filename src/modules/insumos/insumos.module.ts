@@ -8,7 +8,7 @@ import { RegistrosCompraRepository } from "./registros-compra.repository";
 import { RegistrosCompraService } from "./registros-compra.service";
 
 @Module({
-	controllers: [InsumosController, RegistrosCompraController],
+	controllers: [RegistrosCompraController, InsumosController],
 	providers: [InsumosService, InsumosRepository, RegistrosCompraService, RegistrosCompraRepository, FornecedorStubService],
 	exports: [InsumosService, InsumosRepository, RegistrosCompraService, RegistrosCompraRepository],
 })
