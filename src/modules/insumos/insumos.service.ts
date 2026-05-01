@@ -18,6 +18,7 @@ export class InsumosService {
 	async create(dto: CreateInsumoDto): Promise<IServiceResponse<Insumo>> {
 		const exists = await this.repo.findByCodigo(dto.codigo);
 		if (exists) return SR.conflict<Insumo>(undefined, "Código de insumo já cadastrado");
+
 		const created = await this.repo.create({
 			codigo: dto.codigo,
 			nome: dto.nome,
@@ -26,6 +27,7 @@ export class InsumosService {
 			estoqueMinimo: dto.estoqueMinimo ?? 0,
 			quantidadeEstoque: dto.quantidadeEstoque ?? 0,
 		});
+
 		return SR.created(created, "Insumo cadastrado");
 	}
 
@@ -36,12 +38,14 @@ export class InsumosService {
 	async findById(id: string): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+
 		return SR.ok(insumo);
 	}
 
 	async update(id: string, dto: UpdateInsumoDto): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+
 		const updated = await this.repo.update(id, dto);
 		return SR.ok(updated, "Insumo atualizado");
 	}
@@ -49,6 +53,7 @@ export class InsumosService {
 	async remove(id: string): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+
 		const updated = await this.repo.softDelete(id);
 		return SR.ok(updated, "Insumo inativado");
 	}
@@ -56,8 +61,10 @@ export class InsumosService {
 	async entrada(id: string, dto: EntradaInsumoDto, usuarioId: string): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+
 		const anterior = insumo.quantidadeEstoque;
 		const posterior = anterior + dto.quantidade;
+
 		const updated = await this.prisma.$transaction(async (tx) => {
 			const u = await tx.insumo.update({
 				where: { id },
@@ -76,18 +83,20 @@ export class InsumosService {
 			});
 			return u;
 		});
+
 		return SR.ok(updated, "Entrada registrada");
 	}
 
 	async ajuste(id: string, dto: AjusteInsumoDto, usuarioId: string): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
-		if (dto.novaQuantidade < 0) {
-			return SR.badRequest<Insumo>(undefined, "Quantidade não pode ser negativa");
-		}
+
+		if (dto.novaQuantidade < 0) return SR.badRequest<Insumo>(undefined, "Quantidade não pode ser negativa");
+
 		const anterior = insumo.quantidadeEstoque;
 		const posterior = dto.novaQuantidade;
 		const delta = posterior - anterior;
+
 		const updated = await this.prisma.$transaction(async (tx) => {
 			const u = await tx.insumo.update({
 				where: { id },
@@ -106,12 +115,14 @@ export class InsumosService {
 			});
 			return u;
 		});
+
 		return SR.ok(updated, "Ajuste realizado");
 	}
 
 	async listarMovimentos(id: string): Promise<IServiceResponse<MovimentoEstoque[]>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<MovimentoEstoque[]>(undefined, "Insumo não encontrado");
+
 		return SR.ok(await this.repo.listarMovimentos(id));
 	}
 

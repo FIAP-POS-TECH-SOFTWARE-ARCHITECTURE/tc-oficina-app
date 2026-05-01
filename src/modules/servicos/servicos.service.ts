@@ -13,12 +13,14 @@ export class ServicosService {
 	async create(dto: CreateServicoDto): Promise<IServiceResponse<Servico>> {
 		const exists = await this.repo.findByNome(dto.nome);
 		if (exists) return SR.conflict<Servico>(undefined, "Já existe serviço com esse nome");
+		
 		const created = await this.repo.create({
 			nome: dto.nome,
 			descricao: dto.descricao,
 			preco: dto.preco,
 			tempoEstimadoMin: dto.tempoEstimadoMin,
 		});
+		
 		return SR.created(created, "Serviço cadastrado");
 	}
 
@@ -29,16 +31,19 @@ export class ServicosService {
 	async findById(id: string): Promise<IServiceResponse<Servico>> {
 		const s = await this.repo.findById(id);
 		if (!s) return SR.notFound<Servico>(undefined, "Serviço não encontrado");
+		
 		return SR.ok(s);
 	}
 
 	async update(id: string, dto: UpdateServicoDto): Promise<IServiceResponse<Servico>> {
 		const s = await this.repo.findById(id);
 		if (!s) return SR.notFound<Servico>(undefined, "Serviço não encontrado");
+		
 		if (dto.nome && dto.nome !== s.nome) {
 			const conflict = await this.repo.findByNome(dto.nome);
 			if (conflict) return SR.conflict<Servico>(undefined, "Já existe serviço com esse nome");
 		}
+		
 		const updated = await this.repo.update(id, dto);
 		return SR.ok(updated, "Serviço atualizado");
 	}
@@ -46,6 +51,7 @@ export class ServicosService {
 	async remove(id: string): Promise<IServiceResponse<Servico>> {
 		const s = await this.repo.findById(id);
 		if (!s) return SR.notFound<Servico>(undefined, "Serviço não encontrado");
+		
 		const updated = await this.repo.softDelete(id);
 		return SR.ok(updated, "Serviço inativado");
 	}

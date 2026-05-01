@@ -18,9 +18,11 @@ export class VeiculosService {
 	async create(clienteId: string, dto: CreateVeiculoDto): Promise<IServiceResponse<Veiculo>> {
 		const cliente = await this.clientes.findById(clienteId);
 		if (!cliente) return SR.notFound<Veiculo>(undefined, "Cliente não encontrado");
+
 		const placa = normalizarPlaca(dto.placa);
 		const exists = await this.repo.findByPlaca(placa);
 		if (exists) return SR.conflict<Veiculo>(undefined, "Placa já cadastrada");
+
 		const created = await this.repo.create({
 			placa,
 			marca: dto.marca,
@@ -28,30 +30,35 @@ export class VeiculosService {
 			ano: dto.ano,
 			clienteId,
 		});
+
 		return SR.created(created, "Veículo cadastrado");
 	}
 
 	async findByCliente(clienteId: string): Promise<IServiceResponse<Veiculo[]>> {
 		const cliente = await this.clientes.findById(clienteId);
 		if (!cliente) return SR.notFound<Veiculo[]>(undefined, "Cliente não encontrado");
+
 		return SR.ok(await this.repo.findByCliente(clienteId));
 	}
 
 	async findById(id: string): Promise<IServiceResponse<Veiculo>> {
 		const veiculo = await this.repo.findById(id);
 		if (!veiculo) return SR.notFound<Veiculo>(undefined, "Veículo não encontrado");
+
 		return SR.ok(veiculo);
 	}
 
 	async findByPlaca(placa: string): Promise<IServiceResponse<Veiculo>> {
 		const veiculo = await this.repo.findByPlaca(normalizarPlaca(placa));
 		if (!veiculo) return SR.notFound<Veiculo>(undefined, "Veículo não encontrado");
+
 		return SR.ok(veiculo);
 	}
 
 	async update(id: string, dto: UpdateVeiculoDto): Promise<IServiceResponse<Veiculo>> {
 		const veiculo = await this.repo.findById(id);
 		if (!veiculo) return SR.notFound<Veiculo>(undefined, "Veículo não encontrado");
+
 		const updated = await this.repo.update(id, dto);
 		return SR.ok(updated, "Veículo atualizado");
 	}
@@ -59,10 +66,10 @@ export class VeiculosService {
 	async remove(id: string): Promise<IServiceResponse<Veiculo>> {
 		const veiculo = await this.repo.findById(id);
 		if (!veiculo) return SR.notFound<Veiculo>(undefined, "Veículo não encontrado");
+
 		const aberto = await this.repo.hasOrdensAbertas(id);
-		if (aberto > 0) {
-			return SR.conflict<Veiculo>(undefined, "Veículo possui ordens de serviço abertas e não pode ser inativado");
-		}
+		if (aberto > 0) return SR.conflict<Veiculo>(undefined, "Veículo possui ordens de serviço abertas e não pode ser inativado");
+
 		const updated = await this.repo.softDelete(id);
 		return SR.ok(updated, "Veículo inativado");
 	}

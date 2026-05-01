@@ -32,11 +32,11 @@ export class OrdensServicoService {
 	async create(dto: CreateOsDto): Promise<IServiceResponse<unknown>> {
 		const cliente = await this.clientes.findById(dto.clienteId);
 		if (!cliente) return SR.notFound(undefined, "Cliente não encontrado");
+
 		const veiculo = await this.veiculos.findById(dto.veiculoId);
 		if (!veiculo) return SR.notFound(undefined, "Veículo não encontrado");
-		if (veiculo.clienteId !== dto.clienteId) {
-			return SR.badRequest(undefined, "Veículo não pertence ao cliente informado");
-		}
+		if (veiculo.clienteId !== dto.clienteId) return SR.badRequest(undefined, "Veículo não pertence ao cliente informado");
+
 		const numero = await this.proximoNumero();
 		const created = await this.prisma.$transaction(async (tx) => {
 			const os = await tx.ordemServico.create({
@@ -52,6 +52,7 @@ export class OrdensServicoService {
 			});
 			return os;
 		});
+
 		const detalhe = await this.repo.findByIdFull(created.id);
 		return SR.created(detalhe, "OS criada");
 	}
@@ -59,18 +60,21 @@ export class OrdensServicoService {
 	async findById(id: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
+
 		return SR.ok(os);
 	}
 
 	async list(query: ListarOsDto): Promise<IServiceResponse<unknown>> {
 		const page = query.page ?? 1;
 		const pageSize = query.pageSize ?? 20;
+
 		const [total, items] = await this.repo.list({
 			status: query.status,
 			clienteId: query.clienteId,
 			skip: (page - 1) * pageSize,
 			take: pageSize,
 		});
+
 		return SR.ok({ total, page, pageSize, items });
 	}
 
@@ -81,13 +85,14 @@ export class OrdensServicoService {
 	async atualizarDiagnostico(id: string, dto: UpdateDiagnosticoDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.EM_DIAGNOSTICO) {
+		if (os.status !== OsStatus.EM_DIAGNOSTICO)
 			return SR.unprocessableEntity(undefined, "Diagnóstico só pode ser atualizado quando a OS está em diagnóstico");
-		}
+
 		await this.prisma.ordemServico.update({
 			where: { id },
 			data: { diagnostico: dto.diagnostico },
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Diagnóstico atualizado");
 	}
@@ -95,13 +100,15 @@ export class OrdensServicoService {
 	async addItemServico(id: string, dto: AddItemServicoDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO)
 			return SR.unprocessableEntity(undefined, "Itens só podem ser adicionados antes da geração do orçamento");
-		}
+
 		const servico = await this.servicos.findById(dto.servicoId);
 		if (!servico) return SR.notFound(undefined, "Serviço não encontrado");
+
 		const quantidade = dto.quantidade ?? 1;
 		const subtotal = new Prisma.Decimal(servico.preco).mul(quantidade);
+
 		await this.prisma.osItemServico.create({
 			data: {
 				ordemServicoId: id,
@@ -112,6 +119,7 @@ export class OrdensServicoService {
 				subtotal,
 			},
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.created(detalhe, "Item de serviço adicionado");
 	}
@@ -119,14 +127,14 @@ export class OrdensServicoService {
 	async removerItemServico(id: string, itemId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO)
 			return SR.unprocessableEntity(undefined, "Itens só podem ser removidos antes da geração do orçamento");
-		}
+
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
-		if (!item || item.ordemServicoId !== id) {
-			return SR.notFound(undefined, "Item não encontrado");
-		}
+		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
+
 		await this.prisma.osItemServico.delete({ where: { id: itemId } });
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Item removido");
 	}
@@ -134,14 +142,14 @@ export class OrdensServicoService {
 	async iniciarItemServico(id: string, itemId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.EM_EXECUCAO) {
+		if (os.status !== OsStatus.EM_EXECUCAO)
 			return SR.unprocessableEntity(undefined, "Serviço só pode ser iniciado com a OS em execução");
-		}
+
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
 		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
-		if (item.status !== OsItemServicoStatus.PENDENTE) {
+		if (item.status !== OsItemServicoStatus.PENDENTE)
 			return SR.unprocessableEntity(undefined, "Somente serviço pendente pode ser iniciado");
-		}
+
 		const agora = new Date();
 		await this.prisma.$transaction(async (tx) => {
 			await tx.osItemServico.update({
@@ -155,6 +163,7 @@ export class OrdensServicoService {
 				});
 			}
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Serviço iniciado");
 	}
@@ -162,14 +171,14 @@ export class OrdensServicoService {
 	async concluirItemServico(id: string, itemId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.EM_EXECUCAO) {
+		if (os.status !== OsStatus.EM_EXECUCAO)
 			return SR.unprocessableEntity(undefined, "Serviço só pode ser concluído com a OS em execução");
-		}
+
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
 		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
-		if (item.status !== OsItemServicoStatus.EM_EXECUCAO) {
+		if (item.status !== OsItemServicoStatus.EM_EXECUCAO)
 			return SR.unprocessableEntity(undefined, "Somente serviço em execução pode ser concluído");
-		}
+
 		const agora = new Date();
 		const iniciadoExecucaoEm = item.iniciadoExecucaoEm ?? agora;
 		await this.prisma.osItemServico.update({
@@ -180,6 +189,7 @@ export class OrdensServicoService {
 				finalizadoExecucaoEm: agora,
 			},
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Serviço concluído");
 	}
@@ -187,18 +197,19 @@ export class OrdensServicoService {
 	async cancelarItemServico(id: string, itemId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.EM_EXECUCAO) {
+		if (os.status !== OsStatus.EM_EXECUCAO)
 			return SR.unprocessableEntity(undefined, "Serviço só pode ser cancelado com a OS em execução");
-		}
+
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
 		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
-		if (item.status === OsItemServicoStatus.CONCLUIDO || item.status === OsItemServicoStatus.CANCELADO) {
+		if (item.status === OsItemServicoStatus.CONCLUIDO || item.status === OsItemServicoStatus.CANCELADO)
 			return SR.unprocessableEntity(undefined, "Serviço já concluído ou cancelado");
-		}
+
 		await this.prisma.osItemServico.update({
 			where: { id: itemId },
 			data: { status: OsItemServicoStatus.CANCELADO },
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Serviço cancelado");
 	}
@@ -206,14 +217,14 @@ export class OrdensServicoService {
 	async addItemInsumo(id: string, dto: AddItemInsumoDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO)
 			return SR.unprocessableEntity(undefined, "Itens só podem ser adicionados antes da geração do orçamento");
-		}
+
 		const insumo = await this.insumos.findById(dto.insumoId);
 		if (!insumo) return SR.notFound(undefined, "Insumo não encontrado");
-		if (insumo.quantidadeEstoque < dto.quantidade) {
+		if (insumo.quantidadeEstoque < dto.quantidade)
 			return SR.unprocessableEntity(undefined, `Estoque insuficiente. Disponível: ${insumo.quantidadeEstoque}`);
-		}
+
 		const subtotal = new Prisma.Decimal(insumo.precoUnitario).mul(dto.quantidade);
 		await this.prisma.osItemInsumo.create({
 			data: {
@@ -224,6 +235,7 @@ export class OrdensServicoService {
 				subtotal,
 			},
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.created(detalhe, "Insumo adicionado");
 	}
@@ -231,14 +243,14 @@ export class OrdensServicoService {
 	async removerItemInsumo(id: string, itemId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO) {
+		if (os.status !== OsStatus.RECEBIDA && os.status !== OsStatus.EM_DIAGNOSTICO)
 			return SR.unprocessableEntity(undefined, "Itens só podem ser removidos antes da geração do orçamento");
-		}
+
 		const item = await this.prisma.osItemInsumo.findUnique({ where: { id: itemId } });
-		if (!item || item.ordemServicoId !== id) {
-			return SR.notFound(undefined, "Item não encontrado");
-		}
+		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
+
 		await this.prisma.osItemInsumo.delete({ where: { id: itemId } });
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Item removido");
 	}
@@ -246,12 +258,13 @@ export class OrdensServicoService {
 	async gerarOrcamento(id: string, usuarioId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (!canTransition(os.status, "gerar_orcamento")) {
+
+		if (!canTransition(os.status, "gerar_orcamento"))
 			return SR.unprocessableEntity(undefined, `Não é possível gerar orçamento a partir do status ${os.status}`);
-		}
-		if (os.itensServico.length === 0) {
+
+		if (os.itensServico.length === 0)
 			return SR.unprocessableEntity(undefined, "Adicione ao menos um serviço antes de gerar o orçamento");
-		}
+
 		const valorTotal = this.calcularTotal(os);
 		await this.prisma.$transaction(async (tx) => {
 			await tx.ordemServico.update({
@@ -268,6 +281,7 @@ export class OrdensServicoService {
 				},
 			});
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Orçamento gerado");
 	}
@@ -275,12 +289,13 @@ export class OrdensServicoService {
 	async aprovarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento) {
+
+		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento)
 			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
-		}
-		if (!canTransition(os.status, "aprovar_orcamento")) {
+
+		if (!canTransition(os.status, "aprovar_orcamento"))
 			return SR.unprocessableEntity(undefined, `Não é possível aprovar a OS no status ${os.status}`);
-		}
+
 		const agora = new Date();
 		let bloqueadaPorFaltaEstoque = false;
 		await this.prisma.$transaction(async (tx) => {
@@ -299,9 +314,7 @@ export class OrdensServicoService {
 						ordemServicoId: id,
 						statusAnterior: os.status,
 						statusNovo: OsStatus.BLOQUEADA,
-						observacao:
-							dto.observacao ??
-							`Orçamento aprovado, OS bloqueada por falta de estoque: ${planoBaixa.faltantes.join("; ")}`,
+						observacao: dto.observacao ?? `Orçamento aprovado, OS bloqueada por falta de estoque: ${planoBaixa.faltantes.join("; ")}`,
 					},
 				});
 				return;
@@ -324,22 +337,23 @@ export class OrdensServicoService {
 				},
 			});
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
-		if (bloqueadaPorFaltaEstoque) {
-			return SR.ok(detalhe, "Orçamento aprovado e OS bloqueada por falta de estoque");
-		}
+		if (bloqueadaPorFaltaEstoque) return SR.ok(detalhe, "Orçamento aprovado e OS bloqueada por falta de estoque");
+
 		return SR.ok(detalhe, "Orçamento aprovado");
 	}
 
 	async rejeitarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento) {
+
+		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento)
 			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
-		}
-		if (!canTransition(os.status, "rejeitar_orcamento")) {
+
+		if (!canTransition(os.status, "rejeitar_orcamento"))
 			return SR.unprocessableEntity(undefined, `Não é possível rejeitar a OS no status ${os.status}`);
-		}
+
 		await this.prisma.$transaction(async (tx) => {
 			await tx.ordemServico.update({
 				where: { id },
@@ -354,6 +368,7 @@ export class OrdensServicoService {
 				},
 			});
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "Orçamento rejeitado");
 	}
@@ -361,12 +376,12 @@ export class OrdensServicoService {
 	async finalizar(id: string, usuarioId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (!canTransition(os.status, "finalizar")) {
+
+		if (!canTransition(os.status, "finalizar"))
 			return SR.unprocessableEntity(undefined, `Transição inválida a partir do status ${os.status}`);
-		}
-		if (os.itensServico.length === 0) {
-			return SR.unprocessableEntity(undefined, "A OS precisa ter ao menos um serviço");
-		}
+
+		if (os.itensServico.length === 0) return SR.unprocessableEntity(undefined, "A OS precisa ter ao menos um serviço");
+
 		const pendentes = os.itensServico.some(
 			(item) => item.status !== OsItemServicoStatus.CONCLUIDO && item.status !== OsItemServicoStatus.CANCELADO,
 		);
@@ -376,6 +391,7 @@ export class OrdensServicoService {
 				"Só é possível finalizar a OS quando todos os serviços estiverem concluídos ou cancelados",
 			);
 		}
+
 		const novo = nextStatus("finalizar");
 		const agora = new Date();
 		await this.prisma.$transaction(async (tx) => {
@@ -392,6 +408,7 @@ export class OrdensServicoService {
 				},
 			});
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, `Status atualizado para ${novo}`);
 	}
@@ -405,15 +422,14 @@ export class OrdensServicoService {
 	async desbloquear(id: string, usuarioId: string, dto: DesbloquearOsDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (!canTransition(os.status, "desbloquear")) {
+
+		if (!canTransition(os.status, "desbloquear"))
 			return SR.unprocessableEntity(undefined, `Não é possível desbloquear a OS no status ${os.status}`);
-		}
+
 		const agora = new Date();
 		const resultado = await this.prisma.$transaction(async (tx) => {
 			const planoBaixa = await this.montarPlanoBaixaEstoque(tx, os.itensInsumo);
-			if (planoBaixa.faltantes.length > 0) {
-				return { faltantes: planoBaixa.faltantes };
-			}
+			if (planoBaixa.faltantes.length > 0) return { faltantes: planoBaixa.faltantes };
 			await this.aplicarBaixaEstoque(tx, id, planoBaixa.reservas, "Saída por desbloqueio de OS", usuarioId);
 			await tx.ordemServico.update({
 				where: { id },
@@ -433,12 +449,14 @@ export class OrdensServicoService {
 			});
 			return { faltantes: [] as string[] };
 		});
+
 		if (resultado.faltantes.length > 0) {
 			return SR.unprocessableEntity(
 				undefined,
 				`Não é possível desbloquear a OS sem estoque disponível: ${resultado.faltantes.join("; ")}`,
 			);
 		}
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "OS desbloqueada");
 	}
@@ -446,9 +464,10 @@ export class OrdensServicoService {
 	async cancelar(id: string, usuarioId: string, dto: CancelarOsDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (!canTransition(os.status, "cancelar")) {
+
+		if (!canTransition(os.status, "cancelar"))
 			return SR.unprocessableEntity(undefined, `Não é possível cancelar a OS no status ${os.status}`);
-		}
+
 		const precisaEstornar = !!os.aprovadoEm;
 		await this.prisma.$transaction(async (tx) => {
 			if (precisaEstornar) {
@@ -488,6 +507,7 @@ export class OrdensServicoService {
 				},
 			});
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, "OS cancelada");
 	}
@@ -495,10 +515,12 @@ export class OrdensServicoService {
 	async consultaPublica(numero: string, documento: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByNumero(numero);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (normalizeCpfOrCnpj(documento) !== os.cliente.documento) {
+
+		if (normalizeCpfOrCnpj(documento) !== os.cliente.documento)
 			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
-		}
+
 		const nomeMascarado = this.mascararNome(os.cliente.nome);
+
 		return SR.ok({
 			numero: os.numero,
 			cliente: nomeMascarado,
@@ -543,9 +565,10 @@ export class OrdensServicoService {
 	): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findById(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (!canTransition(os.status, transition)) {
+
+		if (!canTransition(os.status, transition))
 			return SR.unprocessableEntity(undefined, `Transição inválida a partir do status ${os.status}`);
-		}
+
 		const novo = nextStatus(transition);
 		await this.prisma.$transaction(async (tx) => {
 			await tx.ordemServico.update({
@@ -561,6 +584,7 @@ export class OrdensServicoService {
 				},
 			});
 		});
+
 		const detalhe = await this.repo.findByIdFull(id);
 		return SR.ok(detalhe, `Status atualizado para ${novo}`);
 	}
@@ -570,11 +594,26 @@ export class OrdensServicoService {
 		itens: { insumoId: string; quantidade: number }[],
 	): Promise<{
 		faltantes: string[];
-		reservas: { insumoId: string; codigo: string; nome: string; quantidade: number; anterior: number; posterior: number; estoqueMinimo: number }[];
+		reservas: {
+			insumoId: string;
+			codigo: string;
+			nome: string;
+			quantidade: number;
+			anterior: number;
+			posterior: number;
+			estoqueMinimo: number;
+		}[];
 	}> {
 		const faltantes: string[] = [];
-		const reservas: { insumoId: string; codigo: string; nome: string; quantidade: number; anterior: number; posterior: number; estoqueMinimo: number }[] =
-			[];
+		const reservas: {
+			insumoId: string;
+			codigo: string;
+			nome: string;
+			quantidade: number;
+			anterior: number;
+			posterior: number;
+			estoqueMinimo: number;
+		}[] = [];
 
 		for (const item of itens) {
 			const insumo = await tx.insumo.findUnique({ where: { id: item.insumoId } });
@@ -582,11 +621,13 @@ export class OrdensServicoService {
 				faltantes.push(`Insumo ${item.insumoId} não encontrado`);
 				continue;
 			}
+
 			const posterior = insumo.quantidadeEstoque - item.quantidade;
 			if (posterior < 0) {
 				faltantes.push(`${insumo.nome} (${insumo.quantidadeEstoque} disponíveis, ${item.quantidade} requisitados)`);
 				continue;
 			}
+
 			reservas.push({
 				insumoId: insumo.id,
 				codigo: insumo.codigo,
@@ -604,7 +645,15 @@ export class OrdensServicoService {
 	private async aplicarBaixaEstoque(
 		tx: Prisma.TransactionClient,
 		ordemServicoId: string,
-		reservas: { insumoId: string; codigo: string; nome: string; quantidade: number; anterior: number; posterior: number; estoqueMinimo: number }[],
+		reservas: {
+			insumoId: string;
+			codigo: string;
+			nome: string;
+			quantidade: number;
+			anterior: number;
+			posterior: number;
+			estoqueMinimo: number;
+		}[],
 		motivo: string,
 		usuarioId: string | null,
 	): Promise<void> {
@@ -613,6 +662,7 @@ export class OrdensServicoService {
 				where: { id: reserva.insumoId },
 				data: { quantidadeEstoque: reserva.posterior },
 			});
+
 			await tx.movimentoEstoque.create({
 				data: {
 					insumoId: reserva.insumoId,
@@ -625,6 +675,7 @@ export class OrdensServicoService {
 					usuarioId,
 				},
 			});
+
 			if (reserva.posterior < reserva.estoqueMinimo) {
 				this.logger.warn(`Insumo ${reserva.codigo} ficou abaixo do estoque mínimo (${reserva.posterior}/${reserva.estoqueMinimo})`);
 			}
