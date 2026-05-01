@@ -1,22 +1,26 @@
-import { Test, TestingModule } from "@nestjs/testing";
 import { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { App } from "supertest/types";
-import { AppModule } from "./../src/app.module";
+import { PrismaService } from "../src/prisma/prisma.service";
+import { setupApp } from "./helpers/app-factory";
+import { truncateAll } from "./helpers/db";
 
-describe("AppController (e2e)", () => {
-	let app: INestApplication<App>;
+describe("App (e2e) — healthcheck público", () => {
+	let app: INestApplication;
+	let prisma: PrismaService;
 
-	beforeEach(async () => {
-		const moduleFixture: TestingModule = await Test.createTestingModule({
-			imports: [AppModule],
-		}).compile();
-
-		app = moduleFixture.createNestApplication();
-		await app.init();
+	beforeAll(async () => {
+		app = await setupApp();
+		prisma = app.get(PrismaService);
+		await truncateAll(prisma);
 	});
 
-	it("/ (GET)", () => {
-		return request(app.getHttpServer()).get("/").expect(200).expect("Hello World!");
+	afterAll(async () => {
+		await app.close();
+	});
+
+	it("GET / retorna 200 sem token (rota pública)", async () => {
+		const res = await request(app.getHttpServer()).get("/");
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual({ status: 200, success: true, data: "API Online!" });
 	});
 });
