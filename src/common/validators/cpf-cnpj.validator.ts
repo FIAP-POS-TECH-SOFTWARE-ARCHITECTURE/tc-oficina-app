@@ -4,6 +4,10 @@ export function onlyDigits(value: string): string {
 	return (value ?? "").replace(/\D/g, "");
 }
 
+export function normalizeCpfOrCnpj(value: string): string {
+	return (value ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+}
+
 export function isValidCpf(cpf: string): boolean {
 	const digits = onlyDigits(cpf);
 	if (digits.length !== 11) return false;
@@ -24,17 +28,21 @@ export function isValidCpf(cpf: string): boolean {
 }
 
 export function isValidCnpj(cnpj: string): boolean {
-	const digits = onlyDigits(cnpj);
-	if (digits.length !== 14) return false;
-	if (/^(\d)\1{13}$/.test(digits)) return false;
+	const normalized = normalizeCpfOrCnpj(cnpj);
+	if (normalized.length !== 14) return false;
+	if (!/^[A-Z0-9]{14}$/.test(normalized)) return false;
+	if (!/^[A-Z0-9]{12}\d{2}$/.test(normalized)) return false;
+	if (/^([A-Z0-9])\1{13}$/.test(normalized)) return false;
 
 	const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
 	const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
 
+	const getCnpjCharValue = (char: string): number => char.charCodeAt(0) - 48;
+
 	const calc = (weights: number[]) => {
 		let total = 0;
 		for (let i = 0; i < weights.length; i++) {
-			total += parseInt(digits[i], 10) * weights[i];
+			total += getCnpjCharValue(normalized[i]) * weights[i];
 		}
 		const rest = total % 11;
 		return rest < 2 ? 0 : 11 - rest;
@@ -42,13 +50,13 @@ export function isValidCnpj(cnpj: string): boolean {
 
 	const d1 = calc(weights1);
 	const d2 = calc(weights2);
-	return d1 === parseInt(digits[12], 10) && d2 === parseInt(digits[13], 10);
+	return d1 === parseInt(normalized[12], 10) && d2 === parseInt(normalized[13], 10);
 }
 
 export function isValidCpfOrCnpj(value: string): boolean {
-	const digits = onlyDigits(value);
-	if (digits.length === 11) return isValidCpf(digits);
-	if (digits.length === 14) return isValidCnpj(digits);
+	const normalized = normalizeCpfOrCnpj(value);
+	if (normalized.length === 11 && /^\d{11}$/.test(normalized)) return isValidCpf(normalized);
+	if (normalized.length === 14) return isValidCnpj(normalized);
 	return false;
 }
 

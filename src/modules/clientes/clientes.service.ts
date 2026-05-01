@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Cliente, TipoDocumentoCliente } from "@prisma/client";
 import type { IServiceResponse } from "semantic-response";
 import { SR } from "../../common/utils/service-response.util";
-import { onlyDigits } from "../../common/validators/cpf-cnpj.validator";
+import { normalizeCpfOrCnpj } from "../../common/validators/cpf-cnpj.validator";
 import { ClientesRepository } from "./clientes.repository";
 import { CreateClienteDto } from "./dto/create-cliente.dto";
 import { UpdateClienteDto } from "./dto/update-cliente.dto";
@@ -12,8 +12,8 @@ export class ClientesService {
 	constructor(private readonly repo: ClientesRepository) {}
 
 	async create(dto: CreateClienteDto): Promise<IServiceResponse<Cliente>> {
-		const documento = onlyDigits(dto.documento);
-		const tipoDocumento: TipoDocumentoCliente = documento.length === 11 ? "CPF" : "CNPJ";
+		const documento = normalizeCpfOrCnpj(dto.documento);
+		const tipoDocumento: TipoDocumentoCliente = documento.length === 11 ? TipoDocumentoCliente.CPF : TipoDocumentoCliente.CNPJ;
 		const exists = await this.repo.findByDocumento(documento);
 		if (exists) return SR.conflict<Cliente>(undefined, "Documento já cadastrado");
 		const created = await this.repo.create({
@@ -38,7 +38,7 @@ export class ClientesService {
 	}
 
 	async findByDocumento(documento: string): Promise<IServiceResponse<Cliente>> {
-		const cliente = await this.repo.findByDocumento(onlyDigits(documento));
+		const cliente = await this.repo.findByDocumento(normalizeCpfOrCnpj(documento));
 		if (!cliente) return SR.notFound<Cliente>(undefined, "Cliente não encontrado");
 		return SR.ok(cliente);
 	}

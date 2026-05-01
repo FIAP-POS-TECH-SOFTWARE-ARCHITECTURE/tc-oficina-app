@@ -76,7 +76,7 @@ A migration seguinte (`movimento_usuario_optional`) torna `usuario_id` opcional 
 | ORM          | Prisma 6 (multi-arquivo)                | Type-safe, migrations versionadas, schema por BC                                                |
 | Auth         | JWT (HS256) + argon2                    | Stateless, alinhado a APIs REST; argon2 é o vencedor do PHC                                     |
 | Resposta     | `semantic-response`                     | Envelope HTTP uniforme em todos os endpoints                                                    |
-| Validação    | `class-validator` + `class-transformer` | DTOs declarativos, validators custom (CPF/CNPJ, placa)                                          |
+| Validação    | `class-validator` + `class-transformer` | DTOs declarativos, validators custom (CPF/CNPJ com suporte a CNPJ alfanumérico, placa)          |
 | Documentação | Bruno                                   | Coleção versionada em texto plano (substitui Swagger e vai pro Git)                             |
 | Testes       | Jest                                    | Unitários + cobertura mínima nos domínios críticos                                              |
 

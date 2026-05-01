@@ -430,5 +430,21 @@ describe("OrdensServicoService", () => {
 			expect(data.cliente.startsWith("Fulano")).toBe(true);
 			expect(data.cliente.endsWith("Santos")).toBe(true);
 		});
+
+		it("200 quando documento é CNPJ alfanumérico com máscara", async () => {
+			repo.findByNumero.mockResolvedValueOnce({
+				numero: "OS-2026-000002",
+				cliente: { documento: "12ABC34501DE35", nome: "Oficina Exemplo LTDA" },
+				veiculo: { placa: "ABC1234", marca: "X", modelo: "Y" },
+				status: OsStatus.EM_EXECUCAO,
+				diagnostico: null,
+				valorTotal: D(0),
+				itensServico: [],
+				itensInsumo: [],
+				historico: [],
+			} as any);
+			const r = await service.consultaPublica("OS-2026-000002", "12.ABC.345/01DE-35");
+			expect(r.status).toBe(200);
+		});
 	});
 });

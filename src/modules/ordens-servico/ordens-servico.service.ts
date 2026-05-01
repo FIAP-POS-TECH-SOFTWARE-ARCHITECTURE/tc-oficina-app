@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { OsStatus, Prisma, TipoMovimentoEstoque } from "@prisma/client";
 import type { IServiceResponse } from "semantic-response";
 import { SR } from "../../common/utils/service-response.util";
-import { onlyDigits } from "../../common/validators/cpf-cnpj.validator";
+import { normalizeCpfOrCnpj } from "../../common/validators/cpf-cnpj.validator";
 import { PrismaService } from "../../prisma/prisma.service";
 import { ClientesRepository } from "../clientes/clientes.repository";
 import { VeiculosRepository } from "../veiculos/veiculos.repository";
@@ -202,7 +202,7 @@ export class OrdensServicoService {
 	async aprovarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (onlyDigits(dto.documento) !== os.cliente.documento) {
+		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento) {
 			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
 		}
 		if (!canTransition(os.status, "aprovar_orcamento")) {
@@ -265,7 +265,7 @@ export class OrdensServicoService {
 	async rejeitarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByIdFull(id);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (onlyDigits(dto.documento) !== os.cliente.documento) {
+		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento) {
 			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
 		}
 		if (!canTransition(os.status, "rejeitar_orcamento")) {
@@ -353,7 +353,7 @@ export class OrdensServicoService {
 	async consultaPublica(numero: string, documento: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.repo.findByNumero(numero);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
-		if (onlyDigits(documento) !== os.cliente.documento) {
+		if (normalizeCpfOrCnpj(documento) !== os.cliente.documento) {
 			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
 		}
 		const nomeMascarado = this.mascararNome(os.cliente.nome);
