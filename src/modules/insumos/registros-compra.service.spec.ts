@@ -1,5 +1,4 @@
 import { RegistroCompraStatus, TipoMovimentoEstoque } from "@prisma/client";
-import { PrismaService } from "../../prisma/prisma.service";
 import { FornecedorStubService } from "./fornecedor-stub.service";
 import { InsumosRepository } from "./insumos.repository";
 import { RegistrosCompraRepository } from "./registros-compra.repository";
