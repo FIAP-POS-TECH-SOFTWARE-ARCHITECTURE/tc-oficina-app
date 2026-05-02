@@ -7,6 +7,7 @@ import { AllExceptionsFilter } from "../../src/common/filters/all-exceptions.fil
 import { JwtAuthGuard } from "../../src/common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../src/common/guards/roles.guard";
 import { ResponseInterceptor } from "../../src/common/interceptors/response.interceptor";
+import { PrismaService } from "../../src/prisma/prisma.service";
 
 export async function setupApp(): Promise<INestApplication> {
 	const moduleFixture = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -24,8 +25,9 @@ export async function setupApp(): Promise<INestApplication> {
 
 	const reflector = app.get(Reflector);
 	const jwtService = app.get(JwtService);
+	const prismaService = app.get(PrismaService);
 
-	app.useGlobalGuards(new JwtAuthGuard(jwtService, reflector), new RolesGuard(reflector));
+	app.useGlobalGuards(new JwtAuthGuard(jwtService, reflector, prismaService), new RolesGuard(reflector));
 	app.useGlobalInterceptors(new ResponseInterceptor());
 	app.useGlobalFilters(new AllExceptionsFilter());
 
