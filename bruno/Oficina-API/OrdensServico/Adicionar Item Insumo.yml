@@ -25,6 +25,11 @@ runtime:
   scripts:
     - type: after-response
       code: |-
-        if (res.body && res.body.data && res.body.data.id) {
-          bru.setEnvVar("itemInsumoId", res.body.data.id);
+        if (res.body && res.body.data && Array.isArray(res.body.data.itensInsumo)) {
+          const itens = res.body.data.itensInsumo;
+          const insumoId = bru.getEnvVar("insumoId");
+          const item = itens.slice().reverse().find((i) => !insumoId || i.insumoId === insumoId) || itens[itens.length - 1];
+          if (item && item.id) {
+            bru.setEnvVar("itemInsumoId", item.id);
+          }
         }
