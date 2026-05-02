@@ -41,7 +41,7 @@ describe("RegistrosCompraRepository", () => {
 	});
 
 	it("update delega where+data", async () => {
-		await repo.update("rc1", { motivoCancelamento: "x" } as any);
+		await repo.update("rc1", { motivoCancelamento: "x" });
 		expect(prisma.registroCompra.update).toHaveBeenCalledWith({ where: { id: "rc1" }, data: { motivoCancelamento: "x" } });
 	});
 });

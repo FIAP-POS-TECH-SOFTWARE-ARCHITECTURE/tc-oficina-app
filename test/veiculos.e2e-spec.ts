@@ -79,18 +79,14 @@ describe("Veiculos (e2e)", () => {
 	it("GET /clientes/:cId/veiculos (mecânico) → 200", async () => {
 		const c = await createCliente(app, atendenteToken);
 		await createVeiculo(app, atendenteToken, c.id);
-		const res = await request(app.getHttpServer())
-			.get(`/clientes/${c.id}/veiculos`)
-			.set("Authorization", bearer(mecanicoToken));
+		const res = await request(app.getHttpServer()).get(`/clientes/${c.id}/veiculos`).set("Authorization", bearer(mecanicoToken));
 		expect(res.status).toBe(200);
 	});
 
 	it("GET /veiculos/buscar?placa=… happy → 200", async () => {
 		const c = await createCliente(app, atendenteToken);
 		const v = await createVeiculo(app, atendenteToken, c.id, { placa: "ABC1234" });
-		const res = await request(app.getHttpServer())
-			.get(`/veiculos/buscar?placa=ABC1234`)
-			.set("Authorization", bearer(atendenteToken));
+		const res = await request(app.getHttpServer()).get(`/veiculos/buscar?placa=ABC1234`).set("Authorization", bearer(atendenteToken));
 		expect(res.status).toBe(200);
 		expect(res.body.data.id).toBe(v.id);
 	});
@@ -125,9 +121,7 @@ describe("Veiculos (e2e)", () => {
 	it("DELETE /veiculos/:id (admin) sem OS → 200", async () => {
 		const c = await createCliente(app, atendenteToken);
 		const v = await createVeiculo(app, atendenteToken, c.id);
-		const res = await request(app.getHttpServer())
-			.delete(`/veiculos/${v.id}`)
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).delete(`/veiculos/${v.id}`).set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(200);
 	});
 
@@ -135,9 +129,7 @@ describe("Veiculos (e2e)", () => {
 		const c = await createCliente(app, atendenteToken);
 		const v = await createVeiculo(app, atendenteToken, c.id);
 		await createOS(app, atendenteToken, c.id, v.id);
-		const res = await request(app.getHttpServer())
-			.delete(`/veiculos/${v.id}`)
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).delete(`/veiculos/${v.id}`).set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(409);
 	});
 });

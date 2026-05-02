@@ -77,9 +77,7 @@ describe("Clientes (e2e)", () => {
 	});
 
 	it("GET /clientes (mecânico) → 200", async () => {
-		const res = await request(app.getHttpServer())
-			.get("/clientes")
-			.set("Authorization", bearer(mecanicoToken));
+		const res = await request(app.getHttpServer()).get("/clientes").set("Authorization", bearer(mecanicoToken));
 		expect(res.status).toBe(200);
 	});
 
@@ -127,9 +125,7 @@ describe("Clientes (e2e)", () => {
 
 	it("DELETE /clientes/:id (admin) sem OS → 200 soft-delete", async () => {
 		const c = await createCliente(app, atendenteToken, { documento: CPF_VALIDOS[0] });
-		const res = await request(app.getHttpServer())
-			.delete(`/clientes/${c.id}`)
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).delete(`/clientes/${c.id}`).set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(200);
 		expect(res.body.data.ativo).toBe(false);
 	});
@@ -139,9 +135,7 @@ describe("Clientes (e2e)", () => {
 		const v = await createVeiculo(app, atendenteToken, c.id);
 		await createOS(app, atendenteToken, c.id, v.id);
 
-		const res = await request(app.getHttpServer())
-			.delete(`/clientes/${c.id}`)
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).delete(`/clientes/${c.id}`).set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(409);
 	});
 });

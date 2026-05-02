@@ -25,7 +25,7 @@ describe("RegistrosCompraService", () => {
 		} as unknown as jest.Mocked<InsumosRepository>;
 		fornecedorStub = {
 			enviarCompra: jest.fn(),
-		} as unknown as jest.Mocked<FornecedorStubService>;
+		};
 		prisma = {
 			ordemServico: { findUnique: jest.fn() },
 			$transaction: jest.fn(async (fn: any) =>
@@ -36,7 +36,7 @@ describe("RegistrosCompraService", () => {
 				}),
 			),
 		};
-		service = new RegistrosCompraService(repo, insumos, fornecedorStub, prisma as unknown as PrismaService);
+		service = new RegistrosCompraService(repo, insumos, fornecedorStub, prisma);
 	});
 
 	it("create retorna 404 quando insumo não existe", async () => {
@@ -59,9 +59,7 @@ describe("RegistrosCompraService", () => {
 		repo.findByIdFull.mockResolvedValueOnce({ id: "rc1" } as any);
 		const r = await service.create({ insumoId: "i1", quantidadeSolicitada: 2, ordemServicoId: "os1" }, "u1");
 		expect(r.status).toBe(201);
-		expect(repo.create).toHaveBeenCalledWith(
-			expect.objectContaining({ ordemServico: { connect: { id: "os1" } } }),
-		);
+		expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ ordemServico: { connect: { id: "os1" } } }));
 	});
 
 	it("create 201 sem ordemServicoId", async () => {
@@ -140,10 +138,7 @@ describe("RegistrosCompraService", () => {
 		repo.findByIdFull.mockResolvedValueOnce({ id: "rc1" } as any);
 		const r = await service.registrarRespostaFornecedor("rc1", { aprovado: true, codigo: "X", mensagem: "ok" });
 		expect(r.status).toBe(200);
-		expect(repo.update).toHaveBeenCalledWith(
-			"rc1",
-			expect.objectContaining({ status: RegistroCompraStatus.APROVADO_FORNECEDOR }),
-		);
+		expect(repo.update).toHaveBeenCalledWith("rc1", expect.objectContaining({ status: RegistroCompraStatus.APROVADO_FORNECEDOR }));
 	});
 
 	it("registrarRespostaFornecedor 200 recusando com motivoRecusa", async () => {
@@ -250,10 +245,7 @@ describe("RegistrosCompraService", () => {
 
 		const r = await service.enviarFornecedor("rc1");
 		expect(r.status).toBe(200);
-		expect(repo.update).toHaveBeenCalledWith(
-			"rc1",
-			expect.objectContaining({ status: RegistroCompraStatus.APROVADO_FORNECEDOR }),
-		);
+		expect(repo.update).toHaveBeenCalledWith("rc1", expect.objectContaining({ status: RegistroCompraStatus.APROVADO_FORNECEDOR }));
 	});
 
 	it("cancelar rejeita registro já recebido", async () => {

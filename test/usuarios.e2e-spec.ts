@@ -48,10 +48,7 @@ describe("Usuarios (e2e)", () => {
 	it("POST /usuarios email duplicado → 409", async () => {
 		const body = payload({ email: "dup@e2e.test" });
 		await request(app.getHttpServer()).post("/usuarios").set("Authorization", bearer(adminToken)).send(body);
-		const res = await request(app.getHttpServer())
-			.post("/usuarios")
-			.set("Authorization", bearer(adminToken))
-			.send(body);
+		const res = await request(app.getHttpServer()).post("/usuarios").set("Authorization", bearer(adminToken)).send(body);
 		expect(res.status).toBe(409);
 	});
 
@@ -64,10 +61,7 @@ describe("Usuarios (e2e)", () => {
 	});
 
 	it("POST /usuarios (atendente) → 403", async () => {
-		const res = await request(app.getHttpServer())
-			.post("/usuarios")
-			.set("Authorization", bearer(atendenteToken))
-			.send(payload());
+		const res = await request(app.getHttpServer()).post("/usuarios").set("Authorization", bearer(atendenteToken)).send(payload());
 		expect(res.status).toBe(403);
 	});
 
@@ -86,9 +80,7 @@ describe("Usuarios (e2e)", () => {
 	});
 
 	it("GET /usuarios/:id UUID inválido → 400 (ParseUUIDPipe)", async () => {
-		const res = await request(app.getHttpServer())
-			.get("/usuarios/nao-uuid")
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).get("/usuarios/nao-uuid").set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(400);
 	});
 
@@ -136,9 +128,7 @@ describe("Usuarios (e2e)", () => {
 
 	it("DELETE /usuarios/:id (admin) → 200 soft-delete", async () => {
 		const alvo = await loginAs(app, prisma, Role.MECANICO);
-		const res = await request(app.getHttpServer())
-			.delete(`/usuarios/${alvo.user.id}`)
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).delete(`/usuarios/${alvo.user.id}`).set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(200);
 		expect(res.body.data.ativo).toBe(false);
 	});

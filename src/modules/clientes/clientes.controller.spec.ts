@@ -21,7 +21,7 @@ describe("ClientesController", () => {
 
 	it("create delega", async () => {
 		service.create.mockResolvedValueOnce({ status: 201 } as any);
-		await controller.create({ nome: "X", documento: "529.982.247-25" } as any);
+		await controller.create({ nome: "X", documento: "529.982.247-25" });
 		expect(service.create).toHaveBeenCalled();
 	});
 
@@ -44,7 +44,7 @@ describe("ClientesController", () => {
 
 	it("update delega", async () => {
 		service.update.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.update("c1", { nome: "X" } as any);
+		await controller.update("c1", { nome: "X" });
 		expect(service.update).toHaveBeenCalledWith("c1", { nome: "X" });
 	});
 
@@ -59,9 +59,6 @@ describe("ClientesController", () => {
 	});
 
 	it("@Roles em create permite ATENDENTE e ADMINISTRADOR", () => {
-		expect(Reflect.getMetadata(ROLES_KEY, ClientesController.prototype.create)).toEqual([
-			Role.ATENDENTE,
-			Role.ADMINISTRADOR,
-		]);
+		expect(Reflect.getMetadata(ROLES_KEY, ClientesController.prototype.create)).toEqual([Role.ATENDENTE, Role.ADMINISTRADOR]);
 	});
 });

@@ -19,7 +19,7 @@ describe("InsumosRepository", () => {
 	});
 
 	it("create delega", async () => {
-		await repo.create({ codigo: "P-001", nome: "Filtro", precoUnitario: 10 } as any);
+		await repo.create({ codigo: "P-001", nome: "Filtro", precoUnitario: 10 });
 		expect(prisma.insumo.create).toHaveBeenCalled();
 	});
 

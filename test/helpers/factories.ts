@@ -43,11 +43,7 @@ export interface CreateClienteOverrides {
 	endereco?: string;
 }
 
-export async function createCliente(
-	app: INestApplication,
-	token: string,
-	overrides: CreateClienteOverrides = {},
-): Promise<any> {
+export async function createCliente(app: INestApplication, token: string, overrides: CreateClienteOverrides = {}): Promise<any> {
 	const res = await request(app.getHttpServer())
 		.post("/clientes")
 		.set("Authorization", bearer(token))
@@ -96,11 +92,7 @@ export interface CreateServicoOverrides {
 }
 
 let servicoSeq = 0;
-export async function createServico(
-	app: INestApplication,
-	adminToken: string,
-	overrides: CreateServicoOverrides = {},
-): Promise<any> {
+export async function createServico(app: INestApplication, adminToken: string, overrides: CreateServicoOverrides = {}): Promise<any> {
 	servicoSeq++;
 	const res = await request(app.getHttpServer())
 		.post("/servicos")
@@ -125,11 +117,7 @@ export interface CreateInsumoOverrides {
 }
 
 let insumoSeq = 0;
-export async function createInsumo(
-	app: INestApplication,
-	token: string,
-	overrides: CreateInsumoOverrides = {},
-): Promise<any> {
+export async function createInsumo(app: INestApplication, token: string, overrides: CreateInsumoOverrides = {}): Promise<any> {
 	insumoSeq++;
 	const res = await request(app.getHttpServer())
 		.post("/insumos")
@@ -146,16 +134,8 @@ export async function createInsumo(
 	return res.body.data;
 }
 
-export async function createOS(
-	app: INestApplication,
-	token: string,
-	clienteId: string,
-	veiculoId: string,
-): Promise<any> {
-	const res = await request(app.getHttpServer())
-		.post("/os")
-		.set("Authorization", bearer(token))
-		.send({ clienteId, veiculoId });
+export async function createOS(app: INestApplication, token: string, clienteId: string, veiculoId: string): Promise<any> {
+	const res = await request(app.getHttpServer()).post("/os").set("Authorization", bearer(token)).send({ clienteId, veiculoId });
 	expectStatus(res, 201);
 	return res.body.data;
 }

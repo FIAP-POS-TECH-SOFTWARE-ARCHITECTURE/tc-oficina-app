@@ -131,11 +131,7 @@ export class OrdensServicoController {
 
 	@Post(":id/desbloquear")
 	@Roles(Role.ATENDENTE, Role.ADMINISTRADOR)
-	desbloquear(
-		@Param("id", ParseUUIDPipe) id: string,
-		@Body() dto: DesbloquearOsDto,
-		@CurrentUser() user: AuthenticatedUser,
-	) {
+	desbloquear(@Param("id", ParseUUIDPipe) id: string, @Body() dto: DesbloquearOsDto, @CurrentUser() user: AuthenticatedUser) {
 		return this.service.desbloquear(id, user.id, dto);
 	}
 

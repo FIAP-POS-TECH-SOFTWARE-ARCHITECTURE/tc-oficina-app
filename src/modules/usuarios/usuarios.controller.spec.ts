@@ -39,17 +39,21 @@ describe("UsuariosController", () => {
 
 	it("update delega", async () => {
 		service.update.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.update("u1", { nome: "novo" } as any);
+		await controller.update("u1", { nome: "novo" });
 		expect(service.update).toHaveBeenCalledWith("u1", { nome: "novo" });
 	});
 
 	it("updateSenha delega passando ator", async () => {
 		service.updateSenha.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.updateSenha("u1", { senha: "abcd1234" } as any, {
-			id: "u9",
-			email: "x@x",
-			role: Role.ADMINISTRADOR,
-		});
+		await controller.updateSenha(
+			"u1",
+			{ senha: "abcd1234" },
+			{
+				id: "u9",
+				email: "x@x",
+				role: Role.ADMINISTRADOR,
+			},
+		);
 		expect(service.updateSenha).toHaveBeenCalledWith("u1", { senha: "abcd1234" }, { id: "u9", role: Role.ADMINISTRADOR });
 	});
 

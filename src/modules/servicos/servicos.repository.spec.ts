@@ -17,7 +17,7 @@ describe("ServicosRepository", () => {
 	});
 
 	it("create delega", async () => {
-		await repo.create({ nome: "X", preco: 10, tempoEstimadoMin: 30 } as any);
+		await repo.create({ nome: "X", preco: 10, tempoEstimadoMin: 30 });
 		expect(prisma.servico.create).toHaveBeenCalled();
 	});
 

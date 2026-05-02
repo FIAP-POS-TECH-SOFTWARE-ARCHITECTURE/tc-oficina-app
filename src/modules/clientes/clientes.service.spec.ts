@@ -50,9 +50,7 @@ describe("ClientesService", () => {
 				documento: "11.444.777/0001-61",
 			});
 			expect(r.status).toBe(201);
-			expect(repo.create).toHaveBeenCalledWith(
-				expect.objectContaining({ tipoDocumento: TipoDocumentoCliente.CNPJ }),
-			);
+			expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ tipoDocumento: TipoDocumentoCliente.CNPJ }));
 		});
 	});
 

@@ -20,17 +20,13 @@ describe("ServicosService", () => {
 	describe("create", () => {
 		it("409 quando nome duplicado", async () => {
 			repo.findByNome.mockResolvedValueOnce({ id: "x" } as any);
-			expect(
-				(await service.create({ nome: "Troca de óleo", preco: 50, tempoEstimadoMin: 30 } as any)).status,
-			).toBe(409);
+			expect((await service.create({ nome: "Troca de óleo", preco: 50, tempoEstimadoMin: 30 } as any)).status).toBe(409);
 		});
 
 		it("201 quando criado", async () => {
 			repo.findByNome.mockResolvedValueOnce(null);
 			repo.create.mockResolvedValueOnce({ id: "s1" } as any);
-			expect(
-				(await service.create({ nome: "Troca de óleo", preco: 50, tempoEstimadoMin: 30 } as any)).status,
-			).toBe(201);
+			expect((await service.create({ nome: "Troca de óleo", preco: 50, tempoEstimadoMin: 30 } as any)).status).toBe(201);
 		});
 	});
 

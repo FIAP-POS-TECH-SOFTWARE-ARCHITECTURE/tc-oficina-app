@@ -17,7 +17,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<IServiceResponse<
 				}
 
 				res.status(200);
-				return { status: 200, success: true, data: value } as IServiceResponse<T>;
+				return { status: 200, success: true, data: value };
 			}),
 		);
 	}

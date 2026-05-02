@@ -23,12 +23,14 @@ describe("Auth (e2e) — POST /auth/login", () => {
 		await truncateAll(prisma);
 	});
 
-	async function criarUsuario(opts: {
-		email?: string;
-		senha?: string;
-		role?: Role;
-		ativo?: boolean;
-	} = {}) {
+	async function criarUsuario(
+		opts: {
+			email?: string;
+			senha?: string;
+			role?: Role;
+			ativo?: boolean;
+		} = {},
+	) {
 		const senha = opts.senha ?? "Senha12345!";
 		const senhaHash = await argon2.hash(senha);
 		const u = await prisma.usuario.create({
@@ -45,9 +47,7 @@ describe("Auth (e2e) — POST /auth/login", () => {
 
 	it("happy path retorna 200, accessToken e user", async () => {
 		const { user, senha } = await criarUsuario({ email: "happy@e2e.test" });
-		const res = await request(app.getHttpServer())
-			.post("/auth/login")
-			.send({ email: user.email, senha });
+		const res = await request(app.getHttpServer()).post("/auth/login").send({ email: user.email, senha });
 
 		expect(res.status).toBe(200);
 		expect(res.body.success).toBe(true);
@@ -60,9 +60,7 @@ describe("Auth (e2e) — POST /auth/login", () => {
 	});
 
 	it("email inexistente retorna 401", async () => {
-		const res = await request(app.getHttpServer())
-			.post("/auth/login")
-			.send({ email: "naoexiste@e2e.test", senha: "Senha12345!" });
+		const res = await request(app.getHttpServer()).post("/auth/login").send({ email: "naoexiste@e2e.test", senha: "Senha12345!" });
 
 		expect(res.status).toBe(401);
 		expect(res.body.success).toBe(false);
@@ -70,9 +68,7 @@ describe("Auth (e2e) — POST /auth/login", () => {
 
 	it("senha errada retorna 401", async () => {
 		await criarUsuario({ email: "wrongpass@e2e.test" });
-		const res = await request(app.getHttpServer())
-			.post("/auth/login")
-			.send({ email: "wrongpass@e2e.test", senha: "ErradoErrado1" });
+		const res = await request(app.getHttpServer()).post("/auth/login").send({ email: "wrongpass@e2e.test", senha: "ErradoErrado1" });
 
 		expect(res.status).toBe(401);
 		expect(res.body.success).toBe(false);
@@ -80,17 +76,13 @@ describe("Auth (e2e) — POST /auth/login", () => {
 
 	it("usuário inativo retorna 401", async () => {
 		const { senha } = await criarUsuario({ email: "inativo@e2e.test", ativo: false });
-		const res = await request(app.getHttpServer())
-			.post("/auth/login")
-			.send({ email: "inativo@e2e.test", senha });
+		const res = await request(app.getHttpServer()).post("/auth/login").send({ email: "inativo@e2e.test", senha });
 
 		expect(res.status).toBe(401);
 	});
 
 	it("email malformado retorna 400 (ValidationPipe)", async () => {
-		const res = await request(app.getHttpServer())
-			.post("/auth/login")
-			.send({ email: "naoeumemail", senha: "Senha12345!" });
+		const res = await request(app.getHttpServer()).post("/auth/login").send({ email: "naoeumemail", senha: "Senha12345!" });
 
 		expect(res.status).toBe(400);
 		expect(res.body.success).toBe(false);

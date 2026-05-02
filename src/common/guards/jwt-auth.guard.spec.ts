@@ -34,9 +34,7 @@ describe("JwtAuthGuard", () => {
 
 	it("401 quando header não é Bearer", async () => {
 		reflector.getAllAndOverride.mockReturnValueOnce(false);
-		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Basic abc" } }))).rejects.toBeInstanceOf(
-			UnauthorizedException,
-		);
+		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Basic abc" } }))).rejects.toBeInstanceOf(UnauthorizedException);
 	});
 
 	it("401 quando authorization não é string", async () => {

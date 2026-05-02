@@ -64,9 +64,7 @@ describe("Insumos (e2e)", () => {
 	});
 
 	it("GET /insumos qualquer autenticado → 200", async () => {
-		const res = await request(app.getHttpServer())
-			.get("/insumos")
-			.set("Authorization", bearer(mecanicoToken));
+		const res = await request(app.getHttpServer()).get("/insumos").set("Authorization", bearer(mecanicoToken));
 		expect(res.status).toBe(200);
 	});
 
@@ -74,9 +72,7 @@ describe("Insumos (e2e)", () => {
 		await createInsumo(app, estoquistaToken, { codigo: "OK", quantidadeEstoque: 100, estoqueMinimo: 5 });
 		await createInsumo(app, estoquistaToken, { codigo: "BAIXO", quantidadeEstoque: 2, estoqueMinimo: 10 });
 
-		const res = await request(app.getHttpServer())
-			.get("/insumos/alertas/estoque-baixo")
-			.set("Authorization", bearer(estoquistaToken));
+		const res = await request(app.getHttpServer()).get("/insumos/alertas/estoque-baixo").set("Authorization", bearer(estoquistaToken));
 		expect(res.status).toBe(200);
 		const codigos = res.body.data.map((i: any) => i.codigo);
 		expect(codigos).toContain("BAIXO");
@@ -84,9 +80,7 @@ describe("Insumos (e2e)", () => {
 	});
 
 	it("GET /insumos/alertas/estoque-baixo (mecânico) → 403", async () => {
-		const res = await request(app.getHttpServer())
-			.get("/insumos/alertas/estoque-baixo")
-			.set("Authorization", bearer(mecanicoToken));
+		const res = await request(app.getHttpServer()).get("/insumos/alertas/estoque-baixo").set("Authorization", bearer(mecanicoToken));
 		expect(res.status).toBe(403);
 	});
 
@@ -117,9 +111,7 @@ describe("Insumos (e2e)", () => {
 
 	it("DELETE /insumos/:id (admin) → 200", async () => {
 		const i = await createInsumo(app, estoquistaToken);
-		const res = await request(app.getHttpServer())
-			.delete(`/insumos/${i.id}`)
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).delete(`/insumos/${i.id}`).set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(200);
 	});
 
@@ -189,9 +181,7 @@ describe("Insumos (e2e)", () => {
 			.set("Authorization", bearer(adminToken))
 			.send({ novaQuantidade: 20, motivo: "Ajuste" });
 
-		const res = await request(app.getHttpServer())
-			.get(`/insumos/${i.id}/movimentos`)
-			.set("Authorization", bearer(estoquistaToken));
+		const res = await request(app.getHttpServer()).get(`/insumos/${i.id}/movimentos`).set("Authorization", bearer(estoquistaToken));
 		expect(res.status).toBe(200);
 		expect(res.body.data.length).toBeGreaterThanOrEqual(2);
 	});

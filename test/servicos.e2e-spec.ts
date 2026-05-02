@@ -78,9 +78,7 @@ describe("Servicos (e2e)", () => {
 	});
 
 	it("GET /servicos (qualquer autenticado) → 200", async () => {
-		const res = await request(app.getHttpServer())
-			.get("/servicos")
-			.set("Authorization", bearer(atendenteToken));
+		const res = await request(app.getHttpServer()).get("/servicos").set("Authorization", bearer(atendenteToken));
 		expect(res.status).toBe(200);
 	});
 
@@ -102,9 +100,7 @@ describe("Servicos (e2e)", () => {
 
 	it("DELETE /servicos/:id (admin) → 200 soft-delete", async () => {
 		const s = await createServico(app, adminToken);
-		const res = await request(app.getHttpServer())
-			.delete(`/servicos/${s.id}`)
-			.set("Authorization", bearer(adminToken));
+		const res = await request(app.getHttpServer()).delete(`/servicos/${s.id}`).set("Authorization", bearer(adminToken));
 		expect(res.status).toBe(200);
 		expect(res.body.data.ativo).toBe(false);
 	});

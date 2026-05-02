@@ -53,22 +53,17 @@ describe("Registros de Compra (e2e)", () => {
 
 	it("POST /insumos/compras ordemServicoId inválido → 404", async () => {
 		const insumo = await createInsumo(app, estoquistaToken);
-		const res = await request(app.getHttpServer())
-			.post("/insumos/compras")
-			.set("Authorization", bearer(estoquistaToken))
-			.send({
-				insumoId: insumo.id,
-				quantidadeSolicitada: 1,
-				ordemServicoId: "00000000-0000-4000-8000-000000000000",
-			});
+		const res = await request(app.getHttpServer()).post("/insumos/compras").set("Authorization", bearer(estoquistaToken)).send({
+			insumoId: insumo.id,
+			quantidadeSolicitada: 1,
+			ordemServicoId: "00000000-0000-4000-8000-000000000000",
+		});
 		expect(res.status).toBe(404);
 	});
 
 	it("GET /insumos/compras → 200 lista", async () => {
 		await criarCompra();
-		const res = await request(app.getHttpServer())
-			.get("/insumos/compras")
-			.set("Authorization", bearer(estoquistaToken));
+		const res = await request(app.getHttpServer()).get("/insumos/compras").set("Authorization", bearer(estoquistaToken));
 		expect(res.status).toBe(200);
 		expect(Array.isArray(res.body.data)).toBe(true);
 	});
@@ -144,16 +139,13 @@ describe("Registros de Compra (e2e)", () => {
 		await request(app.getHttpServer())
 			.post(`/insumos/compras/${compra.id}/enviar-fornecedor`)
 			.set("Authorization", bearer(estoquistaToken));
-		await request(app.getHttpServer())
-			.post(`/insumos/compras/${compra.id}/receber`)
-			.set("Authorization", bearer(adminToken))
-			.send({
-				notaFiscalNumero: "NF-1",
-				arquivoNome: "nf.pdf",
-				arquivoTipo: "application/pdf",
-				arquivoTamanho: 1024,
-				arquivoUrl: "https://exemplo/nf.pdf",
-			});
+		await request(app.getHttpServer()).post(`/insumos/compras/${compra.id}/receber`).set("Authorization", bearer(adminToken)).send({
+			notaFiscalNumero: "NF-1",
+			arquivoNome: "nf.pdf",
+			arquivoTipo: "application/pdf",
+			arquivoTamanho: 1024,
+			arquivoUrl: "https://exemplo/nf.pdf",
+		});
 
 		const res = await request(app.getHttpServer())
 			.post(`/insumos/compras/${compra.id}/cancelar`)

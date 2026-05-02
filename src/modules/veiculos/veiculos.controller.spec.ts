@@ -21,7 +21,7 @@ describe("VeiculosController", () => {
 
 	it("create delega clienteId+dto", async () => {
 		service.create.mockResolvedValueOnce({ status: 201 } as any);
-		await controller.create("c1", { placa: "ABC1234", marca: "X", modelo: "Y", ano: 2020 } as any);
+		await controller.create("c1", { placa: "ABC1234", marca: "X", modelo: "Y", ano: 2020 });
 		expect(service.create).toHaveBeenCalledWith("c1", expect.objectContaining({ placa: "ABC1234" }));
 	});
 
@@ -45,7 +45,7 @@ describe("VeiculosController", () => {
 
 	it("update delega", async () => {
 		service.update.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.update("v1", { marca: "Z" } as any);
+		await controller.update("v1", { marca: "Z" });
 		expect(service.update).toHaveBeenCalledWith("v1", { marca: "Z" });
 	});
 

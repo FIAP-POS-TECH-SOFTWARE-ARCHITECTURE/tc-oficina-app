@@ -43,12 +43,12 @@ describe("OrdensServicoController", () => {
 		});
 
 		it("create", async () => {
-			await controller.create({ clienteId: "c1", veiculoId: "v1" } as any);
+			await controller.create({ clienteId: "c1", veiculoId: "v1" });
 			expect(service.create).toHaveBeenCalled();
 		});
 
 		it("list", async () => {
-			await controller.list({} as any);
+			await controller.list({});
 			expect(service.list).toHaveBeenCalled();
 		});
 
@@ -68,17 +68,17 @@ describe("OrdensServicoController", () => {
 		});
 
 		it("iniciarDiagnostico passa user.id", async () => {
-			await controller.iniciarDiagnostico("os1", user as any);
+			await controller.iniciarDiagnostico("os1", user);
 			expect(service.iniciarDiagnostico).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("atualizarDiagnostico", async () => {
-			await controller.atualizarDiagnostico("os1", { diagnostico: "x" } as any);
+			await controller.atualizarDiagnostico("os1", { diagnostico: "x" });
 			expect(service.atualizarDiagnostico).toHaveBeenCalledWith("os1", { diagnostico: "x" });
 		});
 
 		it("addItemServico", async () => {
-			await controller.addItemServico("os1", { servicoId: "s1" } as any);
+			await controller.addItemServico("os1", { servicoId: "s1" });
 			expect(service.addItemServico).toHaveBeenCalled();
 		});
 
@@ -103,7 +103,7 @@ describe("OrdensServicoController", () => {
 		});
 
 		it("addItemInsumo", async () => {
-			await controller.addItemInsumo("os1", { insumoId: "i1", quantidade: 1 } as any);
+			await controller.addItemInsumo("os1", { insumoId: "i1", quantidade: 1 });
 			expect(service.addItemInsumo).toHaveBeenCalled();
 		});
 
@@ -113,37 +113,37 @@ describe("OrdensServicoController", () => {
 		});
 
 		it("gerarOrcamento passa user.id", async () => {
-			await controller.gerarOrcamento("os1", user as any);
+			await controller.gerarOrcamento("os1", user);
 			expect(service.gerarOrcamento).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("aprovar (público) delega", async () => {
-			await controller.aprovar("os1", { documento: "529.982.247-25" } as any);
+			await controller.aprovar("os1", { documento: "529.982.247-25" });
 			expect(service.aprovarOrcamento).toHaveBeenCalled();
 		});
 
 		it("rejeitar (público) delega", async () => {
-			await controller.rejeitar("os1", { documento: "529.982.247-25" } as any);
+			await controller.rejeitar("os1", { documento: "529.982.247-25" });
 			expect(service.rejeitarOrcamento).toHaveBeenCalled();
 		});
 
 		it("finalizar passa user.id", async () => {
-			await controller.finalizar("os1", user as any);
+			await controller.finalizar("os1", user);
 			expect(service.finalizar).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("entregar passa user.id", async () => {
-			await controller.entregar("os1", user as any);
+			await controller.entregar("os1", user);
 			expect(service.entregar).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("desbloquear passa user.id+dto", async () => {
-			await controller.desbloquear("os1", { observacao: "x" } as any, user as any);
+			await controller.desbloquear("os1", { observacao: "x" }, user);
 			expect(service.desbloquear).toHaveBeenCalledWith("os1", "u1", { observacao: "x" });
 		});
 
 		it("cancelar passa user.id+dto", async () => {
-			await controller.cancelar("os1", { motivo: "x" } as any, user as any);
+			await controller.cancelar("os1", { motivo: "x" }, user);
 			expect(service.cancelar).toHaveBeenCalledWith("os1", "u1", { motivo: "x" });
 		});
 	});

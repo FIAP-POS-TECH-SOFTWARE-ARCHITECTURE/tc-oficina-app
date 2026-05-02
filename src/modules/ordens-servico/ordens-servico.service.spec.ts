@@ -162,9 +162,7 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("bloqueia OS quando cliente aprova mas falta estoque", async () => {
-			repo.findByIdFull
-				.mockResolvedValueOnce(osMock() as any)
-				.mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
+			repo.findByIdFull.mockResolvedValueOnce(osMock()).mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
 				tx.insumo.findUnique.mockResolvedValueOnce({
@@ -223,7 +221,7 @@ describe("OrdensServicoService", () => {
 					itensInsumo: [{ id: "ii1", insumoId: "i1", quantidade: 2 }],
 				} as any)
 				.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
-			let movs: any[] = [];
+			const movs: any[] = [];
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
 				tx.insumo.findUnique.mockResolvedValueOnce({

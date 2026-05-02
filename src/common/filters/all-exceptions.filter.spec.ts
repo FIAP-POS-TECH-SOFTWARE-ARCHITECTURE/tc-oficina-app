@@ -25,9 +25,7 @@ describe("AllExceptionsFilter", () => {
 		const ex = new HttpException("Erro X", 400);
 		filter.catch(ex, host);
 		expect(status).toHaveBeenCalledWith(400);
-		expect(json).toHaveBeenCalledWith(
-			expect.objectContaining({ status: 400, success: false, message: "Erro X" }),
-		);
+		expect(json).toHaveBeenCalledWith(expect.objectContaining({ status: 400, success: false, message: "Erro X" }));
 	});
 
 	it("junta mensagens em array com '; '", () => {
@@ -35,9 +33,7 @@ describe("AllExceptionsFilter", () => {
 		const ex = new HttpException({ message: ["a", "b"] }, 422);
 		filter.catch(ex, host);
 		expect(status).toHaveBeenCalledWith(422);
-		expect(json).toHaveBeenCalledWith(
-			expect.objectContaining({ status: 422, message: "a; b" }),
-		);
+		expect(json).toHaveBeenCalledWith(expect.objectContaining({ status: 422, message: "a; b" }));
 	});
 
 	it("exceção desconhecida vira 500 e loga stack", () => {

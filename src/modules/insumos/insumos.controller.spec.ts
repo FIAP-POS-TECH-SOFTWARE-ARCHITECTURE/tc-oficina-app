@@ -25,7 +25,7 @@ describe("InsumosController", () => {
 
 	it("create delega", async () => {
 		service.create.mockResolvedValueOnce({ status: 201 } as any);
-		await controller.create({ codigo: "P-001", nome: "Filtro", precoUnitario: 10 } as any);
+		await controller.create({ codigo: "P-001", nome: "Filtro", precoUnitario: 10 });
 		expect(service.create).toHaveBeenCalled();
 	});
 
@@ -47,7 +47,7 @@ describe("InsumosController", () => {
 
 	it("update delega", async () => {
 		service.update.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.update("i1", { nome: "Z" } as any);
+		await controller.update("i1", { nome: "Z" });
 		expect(service.update).toHaveBeenCalledWith("i1", { nome: "Z" });
 	});
 
@@ -59,13 +59,13 @@ describe("InsumosController", () => {
 
 	it("entrada delega passando user.id", async () => {
 		service.entrada.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.entrada("i1", { quantidade: 5 } as any, user as any);
+		await controller.entrada("i1", { quantidade: 5 }, user);
 		expect(service.entrada).toHaveBeenCalledWith("i1", { quantidade: 5 }, "u1");
 	});
 
 	it("ajuste delega passando user.id", async () => {
 		service.ajuste.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.ajuste("i1", { novaQuantidade: 9, motivo: "x" } as any, user as any);
+		await controller.ajuste("i1", { novaQuantidade: 9, motivo: "x" }, user);
 		expect(service.ajuste).toHaveBeenCalledWith("i1", { novaQuantidade: 9, motivo: "x" }, "u1");
 	});
 
@@ -80,9 +80,6 @@ describe("InsumosController", () => {
 	});
 
 	it("entrada permite ESTOQUISTA e ADMINISTRADOR", () => {
-		expect(Reflect.getMetadata(ROLES_KEY, InsumosController.prototype.entrada)).toEqual([
-			Role.ESTOQUISTA,
-			Role.ADMINISTRADOR,
-		]);
+		expect(Reflect.getMetadata(ROLES_KEY, InsumosController.prototype.entrada)).toEqual([Role.ESTOQUISTA, Role.ADMINISTRADOR]);
 	});
 });

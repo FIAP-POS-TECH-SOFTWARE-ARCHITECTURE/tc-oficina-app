@@ -38,9 +38,7 @@ describe("OrdensServicoRepository", () => {
 	it("findByNumero usa where.numero", async () => {
 		prisma.ordemServico.findUnique.mockResolvedValueOnce(null);
 		await repo.findByNumero("OS-2026-000001");
-		expect(prisma.ordemServico.findUnique).toHaveBeenCalledWith(
-			expect.objectContaining({ where: { numero: "OS-2026-000001" } }),
-		);
+		expect(prisma.ordemServico.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { numero: "OS-2026-000001" } }));
 	});
 
 	it("findById usa apenas where", async () => {
@@ -53,9 +51,7 @@ describe("OrdensServicoRepository", () => {
 		prisma.$transaction.mockResolvedValueOnce([0, []]);
 		await repo.list({ skip: 0, take: 10 });
 		expect(prisma.ordemServico.count).toHaveBeenCalledWith({ where: {} });
-		expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
-			expect.objectContaining({ where: {}, skip: 0, take: 10 }),
-		);
+		expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: {}, skip: 0, take: 10 }));
 		expect(prisma.$transaction).toHaveBeenCalled();
 	});
 

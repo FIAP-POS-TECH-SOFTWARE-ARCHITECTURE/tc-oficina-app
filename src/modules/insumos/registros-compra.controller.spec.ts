@@ -23,7 +23,7 @@ describe("RegistrosCompraController", () => {
 
 	it("create delega passando user.id", async () => {
 		service.create.mockResolvedValueOnce({ status: 201 } as any);
-		await controller.create({ insumoId: "i1", quantidadeSolicitada: 10 } as any, user as any);
+		await controller.create({ insumoId: "i1", quantidadeSolicitada: 10 }, user);
 		expect(service.create).toHaveBeenCalledWith({ insumoId: "i1", quantidadeSolicitada: 10 }, "u1");
 	});
 
@@ -46,33 +46,25 @@ describe("RegistrosCompraController", () => {
 
 	it("respostaFornecedor delega", async () => {
 		service.registrarRespostaFornecedor.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.respostaFornecedor("rc1", { aprovado: true } as any);
+		await controller.respostaFornecedor("rc1", { aprovado: true });
 		expect(service.registrarRespostaFornecedor).toHaveBeenCalledWith("rc1", { aprovado: true });
 	});
 
 	it("cancelar delega", async () => {
 		service.cancelar.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.cancelar("rc1", { motivo: "x" } as any);
+		await controller.cancelar("rc1", { motivo: "x" });
 		expect(service.cancelar).toHaveBeenCalledWith("rc1", { motivo: "x" });
 	});
 
 	it("receber delega passando user.id", async () => {
 		service.receber.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.receber("rc1", { notaFiscalNumero: "NF-1" } as any, user as any);
+		await controller.receber("rc1", { notaFiscalNumero: "NF-1" } as any, user);
 		expect(service.receber).toHaveBeenCalledWith("rc1", { notaFiscalNumero: "NF-1" }, "u1");
 	});
 
 	it("todos endpoints exigem ESTOQUISTA ou ADMINISTRADOR", () => {
 		const expected = [Role.ESTOQUISTA, Role.ADMINISTRADOR];
-		for (const m of [
-			"create",
-			"list",
-			"findOne",
-			"enviarFornecedor",
-			"respostaFornecedor",
-			"cancelar",
-			"receber",
-		] as const) {
+		for (const m of ["create", "list", "findOne", "enviarFornecedor", "respostaFornecedor", "cancelar", "receber"] as const) {
 			expect(Reflect.getMetadata(ROLES_KEY, RegistrosCompraController.prototype[m])).toEqual(expected);
 		}
 	});

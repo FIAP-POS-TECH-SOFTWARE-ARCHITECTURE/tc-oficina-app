@@ -2,9 +2,7 @@ import type { Response } from "supertest";
 
 export function expectStatus(res: Response, status: number): void {
 	if (res.status !== status) {
-		throw new Error(
-			`Esperado status ${status} mas recebeu ${res.status}. Body: ${JSON.stringify(res.body)}`,
-		);
+		throw new Error(`Esperado status ${status} mas recebeu ${res.status}. Body: ${JSON.stringify(res.body)}`);
 	}
 }
 

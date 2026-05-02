@@ -131,7 +131,7 @@ export class RegistrosCompraService {
 		await this.prisma.$transaction(async (tx) => {
 			const insumo = await tx.insumo.findUnique({ where: { id: registro.insumoId } });
 			if (!insumo) throw new Error(`Insumo ${registro.insumoId} não encontrado`);
-			
+
 			const anterior = insumo.quantidadeEstoque;
 			const posterior = anterior + registro.quantidadeSolicitada;
 
@@ -151,7 +151,7 @@ export class RegistrosCompraService {
 					usuarioId,
 				},
 			});
-			
+
 			await tx.registroCompra.update({
 				where: { id: registro.id },
 				data: {

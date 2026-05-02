@@ -20,7 +20,7 @@ describe("ServicosController", () => {
 
 	it("create delega", async () => {
 		service.create.mockResolvedValueOnce({ status: 201 } as any);
-		await controller.create({ nome: "X", preco: 10, tempoEstimadoMin: 30 } as any);
+		await controller.create({ nome: "X", preco: 10, tempoEstimadoMin: 30 });
 		expect(service.create).toHaveBeenCalled();
 	});
 
@@ -37,7 +37,7 @@ describe("ServicosController", () => {
 
 	it("update delega", async () => {
 		service.update.mockResolvedValueOnce({ status: 200 } as any);
-		await controller.update("s1", { preco: 99 } as any);
+		await controller.update("s1", { preco: 99 });
 		expect(service.update).toHaveBeenCalledWith("s1", { preco: 99 });
 	});
 

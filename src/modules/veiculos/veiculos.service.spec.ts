@@ -41,9 +41,7 @@ describe("VeiculosService", () => {
 			repo.create.mockResolvedValueOnce({ id: "v1" } as any);
 			const r = await service.create("c1", { placa: "abc-1234", marca: "X", modelo: "Y", ano: 2020 });
 			expect(r.status).toBe(201);
-			expect(repo.create).toHaveBeenCalledWith(
-				expect.objectContaining({ placa: "ABC1234", clienteId: "c1" }),
-			);
+			expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ placa: "ABC1234", clienteId: "c1" }));
 		});
 	});
 

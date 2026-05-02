@@ -5,14 +5,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { setupApp } from "./helpers/app-factory";
 import { bearer, loginAs } from "./helpers/auth";
 import { truncateAll } from "./helpers/db";
-import {
-	CPF_VALIDOS,
-	createCliente,
-	createInsumo,
-	createOS,
-	createServico,
-	createVeiculo,
-} from "./helpers/factories";
+import { CPF_VALIDOS, createCliente, createInsumo, createOS, createServico, createVeiculo } from "./helpers/factories";
 
 describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 	let app: INestApplication;
@@ -54,9 +47,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 	}
 
 	async function adicionarItensEAprovar(os: any, servicoId: string, insumoId: string, documento: string, qtdInsumo = 5) {
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/diagnostico/iniciar`)
-			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico`)
 			.set("Authorization", bearer(mecanicoToken))
@@ -65,12 +56,8 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.post(`/os/${os.id}/itens-insumo`)
 			.set("Authorization", bearer(mecanicoToken))
 			.send({ insumoId, quantidade: qtdInsumo });
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/gerar`)
-			.set("Authorization", bearer(mecanicoToken));
-		const aprov = await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/aprovar`)
-			.send({ documento });
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento });
 		return aprov;
 	}
 
@@ -78,9 +65,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		const { cliente, veiculo, servico, insumo, os } = await setupBaseOS();
 
 		// diagnóstico
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/diagnostico/iniciar`)
-			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
 		await request(app.getHttpServer())
 			.patch(`/os/${os.id}/diagnostico`)
 			.set("Authorization", bearer(mecanicoToken))
@@ -98,12 +83,8 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.send({ insumoId: insumo.id, quantidade: 3 });
 
 		// orçamento + aprovação
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/gerar`)
-			.set("Authorization", bearer(mecanicoToken));
-		const aprov = await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/aprovar`)
-			.send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
 		expect(aprov.status).toBe(200);
 		expect(aprov.body.data.status).toBe("EM_EXECUCAO");
 
@@ -123,23 +104,17 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.set("Authorization", bearer(mecanicoToken));
 
 		// finalizar
-		const fim = await request(app.getHttpServer())
-			.post(`/os/${os.id}/finalizar`)
-			.set("Authorization", bearer(mecanicoToken));
+		const fim = await request(app.getHttpServer()).post(`/os/${os.id}/finalizar`).set("Authorization", bearer(mecanicoToken));
 		expect(fim.status).toBe(200);
 		expect(fim.body.data.status).toBe("FINALIZADA");
 
 		// entregar
-		const entr = await request(app.getHttpServer())
-			.post(`/os/${os.id}/entregar`)
-			.set("Authorization", bearer(atendenteToken));
+		const entr = await request(app.getHttpServer()).post(`/os/${os.id}/entregar`).set("Authorization", bearer(atendenteToken));
 		expect(entr.status).toBe(200);
 		expect(entr.body.data.status).toBe("ENTREGUE");
 
 		// consulta pública
-		const pub = await request(app.getHttpServer()).get(
-			`/os/publica/${os.numero}?documento=${cliente.documento}`,
-		);
+		const pub = await request(app.getHttpServer()).get(`/os/publica/${os.numero}?documento=${cliente.documento}`);
 		expect(pub.status).toBe(200);
 		expect(pub.body.data.numero).toBe(os.numero);
 		expect(pub.body.data.veiculo.placa).toBe(veiculo.placa);
@@ -148,9 +123,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 	it("BLOQUEADA → tentar desbloquear sem repor estoque → 422", async () => {
 		const { cliente, servico, insumo, os } = await setupBaseOS({ quantidadeEstoque: 5 });
 		// reduz estoque do insumo para 0 antes de aprovar
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/diagnostico/iniciar`)
-			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico`)
 			.set("Authorization", bearer(mecanicoToken))
@@ -165,12 +138,8 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.set("Authorization", bearer(adminToken))
 			.send({ novaQuantidade: 0, motivo: "Quebra" });
 
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/gerar`)
-			.set("Authorization", bearer(mecanicoToken));
-		const aprov = await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/aprovar`)
-			.send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
 		expect(aprov.body.data.status).toBe("BLOQUEADA");
 
 		const desbl = await request(app.getHttpServer())
@@ -183,9 +152,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 	it("BLOQUEADA → repor estoque via entrada → desbloqueia → EM_EXECUCAO", async () => {
 		const { cliente, servico, insumo, os } = await setupBaseOS({ quantidadeEstoque: 5 });
 
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/diagnostico/iniciar`)
-			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico`)
 			.set("Authorization", bearer(mecanicoToken))
@@ -198,12 +165,8 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.post(`/insumos/${insumo.id}/ajuste`)
 			.set("Authorization", bearer(adminToken))
 			.send({ novaQuantidade: 0, motivo: "Quebra" });
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/gerar`)
-			.set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/aprovar`)
-			.send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
 
 		// repõe estoque
 		await request(app.getHttpServer())
@@ -258,21 +221,15 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 	it("Cancelar OS em ENTREGUE → 422", async () => {
 		const { cliente, servico, insumo, os } = await setupBaseOS();
 		await adicionarItensEAprovar(os, servico.id, insumo.id, cliente.documento, 1);
-		const itemId = (
-			await prisma.osItemServico.findFirst({ where: { ordemServicoId: os.id } })
-		)!.id;
+		const itemId = (await prisma.osItemServico.findFirst({ where: { ordemServicoId: os.id } }))!.id;
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 			.set("Authorization", bearer(mecanicoToken));
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/concluir`)
 			.set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/finalizar`)
-			.set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/entregar`)
-			.set("Authorization", bearer(atendenteToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/finalizar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/entregar`).set("Authorization", bearer(atendenteToken));
 
 		const cancel = await request(app.getHttpServer())
 			.post(`/os/${os.id}/cancelar`)
@@ -283,9 +240,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 
 	it("Cancelar OS em BLOQUEADA → não estorna (sem baixa real de estoque)", async () => {
 		const { cliente, servico, insumo, os } = await setupBaseOS({ quantidadeEstoque: 5 });
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/diagnostico/iniciar`)
-			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico`)
 			.set("Authorization", bearer(mecanicoToken))
@@ -298,12 +253,8 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.post(`/insumos/${insumo.id}/ajuste`)
 			.set("Authorization", bearer(adminToken))
 			.send({ novaQuantidade: 0, motivo: "Quebra" });
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/gerar`)
-			.set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/aprovar`)
-			.send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
 
 		const before = (await prisma.insumo.findUnique({ where: { id: insumo.id } }))!.quantidadeEstoque;
 		const cancel = await request(app.getHttpServer())
@@ -322,9 +273,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		const { cliente, servico, insumo, os } = await setupBaseOS();
 		await adicionarItensEAprovar(os, servico.id, insumo.id, cliente.documento, 1);
 
-		const fim = await request(app.getHttpServer())
-			.post(`/os/${os.id}/finalizar`)
-			.set("Authorization", bearer(mecanicoToken));
+		const fim = await request(app.getHttpServer()).post(`/os/${os.id}/finalizar`).set("Authorization", bearer(mecanicoToken));
 		expect(fim.status).toBe(422);
 	});
 
@@ -339,9 +288,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.post(`/os/${os.id}/itens-servico/${item.id}/concluir`)
 			.set("Authorization", bearer(mecanicoToken));
 
-		const fim = await request(app.getHttpServer())
-			.post(`/os/${os.id}/finalizar`)
-			.set("Authorization", bearer(mecanicoToken));
+		const fim = await request(app.getHttpServer()).post(`/os/${os.id}/finalizar`).set("Authorization", bearer(mecanicoToken));
 		expect(fim.status).toBe(200);
 	});
 
@@ -354,29 +301,21 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 
 	it("Rejeição pública com documento correto → CANCELADA", async () => {
 		const { cliente, servico, os } = await setupBaseOS();
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/diagnostico/iniciar`)
-			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico`)
 			.set("Authorization", bearer(mecanicoToken))
 			.send({ servicoId: servico.id, quantidade: 1 });
-		await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/gerar`)
-			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
 
-		const rej = await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/rejeitar`)
-			.send({ documento: cliente.documento });
+		const rej = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/rejeitar`).send({ documento: cliente.documento });
 		expect(rej.status).toBe(200);
 		expect(rej.body.data.status).toBe("CANCELADA");
 	});
 
 	it("Aprovação fora de AGUARDANDO_APROVACAO → 422", async () => {
 		const { cliente, os } = await setupBaseOS();
-		const aprov = await request(app.getHttpServer())
-			.post(`/os/${os.id}/orcamento/aprovar`)
-			.send({ documento: cliente.documento });
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
 		expect(aprov.status).toBe(422);
 	});
 });
