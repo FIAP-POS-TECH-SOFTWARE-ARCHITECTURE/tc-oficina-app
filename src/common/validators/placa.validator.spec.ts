@@ -1,4 +1,4 @@
-import { isValidPlaca, normalizarPlaca } from "./placa.validator";
+import { IsPlacaVeiculoConstraint, isValidPlaca, normalizarPlaca } from "./placa.validator";
 
 describe("Placa validator", () => {
 	describe("isValidPlaca", () => {
@@ -26,38 +26,33 @@ describe("Placa validator", () => {
 		});
 
 		it("retorna string vazia quando recebe null/undefined", () => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			expect(normalizarPlaca(null as any)).toBe("");
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 			expect(normalizarPlaca(undefined as any)).toBe("");
 		});
 	});
 
 	describe("isValidPlaca com tipos não-string", () => {
 		it("retorna false para null e undefined", () => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			expect(isValidPlaca(null as any)).toBe(false);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 			expect(isValidPlaca(undefined as any)).toBe(false);
 		});
 	});
 
 	describe("IsPlacaVeiculoConstraint", () => {
 		it("validate retorna true para placa válida", () => {
-			const { IsPlacaVeiculoConstraint } = require("./placa.validator");
 			const constraint = new IsPlacaVeiculoConstraint();
 			expect(constraint.validate("ABC1234")).toBe(true);
 		});
 
 		it("validate retorna false para valor não-string", () => {
-			const { IsPlacaVeiculoConstraint } = require("./placa.validator");
 			const constraint = new IsPlacaVeiculoConstraint();
 			expect(constraint.validate(1234567)).toBe(false);
 			expect(constraint.validate(null)).toBe(false);
 		});
 
 		it("defaultMessage retorna mensagem de erro", () => {
-			const { IsPlacaVeiculoConstraint } = require("./placa.validator");
 			const constraint = new IsPlacaVeiculoConstraint();
 			expect(constraint.defaultMessage()).toContain("Placa inválida");
 		});

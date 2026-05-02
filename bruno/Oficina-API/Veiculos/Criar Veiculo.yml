@@ -31,4 +31,3 @@ runtime:
           bru.setEnvVar("veiculoId", res.body.data.id);
           bru.setEnvVar("placa", res.body.data.placa);
         }
-

@@ -91,8 +91,6 @@ describe("JwtAuthGuard", () => {
 
 	it("401 quando header Bearer sem token após espaço", async () => {
 		reflector.getAllAndOverride.mockReturnValueOnce(false);
-		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Bearer " } }))).rejects.toBeInstanceOf(
-			UnauthorizedException,
-		);
+		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Bearer " } }))).rejects.toBeInstanceOf(UnauthorizedException);
 	});
 });

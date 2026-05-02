@@ -1,3 +1,1 @@
-import { TipoDocumentoCliente } from "@prisma/client";
-
-export { TipoDocumentoCliente };
+export { TipoDocumentoCliente } from "@prisma/client";

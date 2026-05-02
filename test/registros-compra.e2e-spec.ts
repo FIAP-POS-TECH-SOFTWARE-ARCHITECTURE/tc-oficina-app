@@ -12,6 +12,8 @@ describe("Registros de Compra (e2e)", () => {
 	let prisma: PrismaService;
 	let estoquistaToken: string;
 	let adminToken: string;
+	let mecanicoToken: string;
+	let atendenteToken: string;
 
 	beforeAll(async () => {
 		app = await setupApp();
@@ -26,6 +28,8 @@ describe("Registros de Compra (e2e)", () => {
 		await truncateAll(prisma);
 		estoquistaToken = (await loginAs(app, prisma, Role.ESTOQUISTA)).token;
 		adminToken = (await loginAs(app, prisma, Role.ADMINISTRADOR)).token;
+		mecanicoToken = (await loginAs(app, prisma, Role.MECANICO)).token;
+		atendenteToken = (await loginAs(app, prisma, Role.ATENDENTE)).token;
 	});
 
 	async function criarCompra(quantidade = 10): Promise<any> {
@@ -194,5 +198,46 @@ describe("Registros de Compra (e2e)", () => {
 				arquivoUrl: "https://exemplo/nf.pdf",
 			});
 		expect(res.status).toBe(422);
+	});
+
+	it("POST /insumos/compras/:id/resposta-fornecedor aprovado=false com motivoRecusa → 200, RECUSADO_FORNECEDOR", async () => {
+		const { compra } = await criarCompra(10);
+		const res = await request(app.getHttpServer())
+			.post(`/insumos/compras/${compra.id}/resposta-fornecedor`)
+			.set("Authorization", bearer(estoquistaToken))
+			.send({ aprovado: false, motivoRecusa: "Produto indisponível no fornecedor" });
+		expect(res.status).toBe(200);
+		expect(res.body.data.status).toBe("RECUSADO_FORNECEDOR");
+	});
+
+	it("POST /insumos/compras/:id/resposta-fornecedor em status diferente de CRIADO → 422", async () => {
+		const { compra } = await criarCompra(10);
+		await request(app.getHttpServer())
+			.post(`/insumos/compras/${compra.id}/enviar-fornecedor`)
+			.set("Authorization", bearer(estoquistaToken));
+
+		const res = await request(app.getHttpServer())
+			.post(`/insumos/compras/${compra.id}/resposta-fornecedor`)
+			.set("Authorization", bearer(estoquistaToken))
+			.send({ aprovado: true });
+		expect(res.status).toBe(422);
+	});
+
+	it("POST /insumos/compras (mecânico) → 403", async () => {
+		const insumo = await createInsumo(app, estoquistaToken);
+		const res = await request(app.getHttpServer())
+			.post("/insumos/compras")
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ insumoId: insumo.id, quantidadeSolicitada: 5 });
+		expect(res.status).toBe(403);
+	});
+
+	it("POST /insumos/compras (atendente) → 403", async () => {
+		const insumo = await createInsumo(app, estoquistaToken);
+		const res = await request(app.getHttpServer())
+			.post("/insumos/compras")
+			.set("Authorization", bearer(atendenteToken))
+			.send({ insumoId: insumo.id, quantidadeSolicitada: 5 });
+		expect(res.status).toBe(403);
 	});
 });

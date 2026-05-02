@@ -4,7 +4,7 @@ const PLACA_ANTIGA_REGEX = /^[A-Z]{3}[0-9]{4}$/;
 const PLACA_MERCOSUL_REGEX = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
 
 export function normalizarPlaca(placa: string): string {
-	return (placa ?? "").replace(/[\s-]/g, "").toUpperCase();
+	return (placa ?? "").replaceAll(/[\s-]/g, "").toUpperCase();
 }
 
 export function isValidPlaca(placa: string): boolean {

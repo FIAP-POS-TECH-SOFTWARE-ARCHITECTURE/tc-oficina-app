@@ -1,4 +1,11 @@
-import { isValidCpf, isValidCnpj, isValidCpfOrCnpj, normalizeCpfOrCnpj, onlyDigits } from "./cpf-cnpj.validator";
+import {
+	isValidCpf,
+	isValidCnpj,
+	isValidCpfOrCnpj,
+	normalizeCpfOrCnpj,
+	onlyDigits,
+	IsCpfOrCnpjConstraint,
+} from "./cpf-cnpj.validator";
 
 describe("CPF/CNPJ validator", () => {
 	describe("CPF", () => {
@@ -59,9 +66,8 @@ describe("CPF/CNPJ validator", () => {
 		});
 
 		it("retorna string vazia para null/undefined", () => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			expect(onlyDigits(null as any)).toBe("");
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 			expect(onlyDigits(undefined as any)).toBe("");
 		});
 	});
@@ -72,22 +78,19 @@ describe("CPF/CNPJ validator", () => {
 		});
 
 		it("retorna string vazia para null/undefined", () => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			expect(normalizeCpfOrCnpj(null as any)).toBe("");
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 			expect(normalizeCpfOrCnpj(undefined as any)).toBe("");
 		});
 	});
 
 	describe("IsCpfOrCnpjConstraint", () => {
 		it("validate retorna true para CPF válido", () => {
-			const { IsCpfOrCnpjConstraint } = require("./cpf-cnpj.validator");
 			const constraint = new IsCpfOrCnpjConstraint();
 			expect(constraint.validate("529.982.247-25")).toBe(true);
 		});
 
 		it("validate retorna false para valor não-string", () => {
-			const { IsCpfOrCnpjConstraint } = require("./cpf-cnpj.validator");
 			const constraint = new IsCpfOrCnpjConstraint();
 			expect(constraint.validate(12345678901)).toBe(false);
 			expect(constraint.validate(null)).toBe(false);
@@ -95,7 +98,6 @@ describe("CPF/CNPJ validator", () => {
 		});
 
 		it("defaultMessage retorna mensagem de erro", () => {
-			const { IsCpfOrCnpjConstraint } = require("./cpf-cnpj.validator");
 			const constraint = new IsCpfOrCnpjConstraint();
 			expect(constraint.defaultMessage()).toContain("CPF ou CNPJ");
 		});

@@ -15,7 +15,7 @@ export class RolesGuard implements CanActivate {
 		const req = ctx.switchToHttp().getRequest<Request & { user?: { role?: Role } }>();
 		const user = req.user;
 
-		if (!user || !user.role) throw new ForbiddenException("Usuário não autenticado.");
+		if (!user?.role) throw new ForbiddenException("Usuário não autenticado.");
 
 		if (!required.includes(user.role)) throw new ForbiddenException("Acesso negado para sua função atual.");
 

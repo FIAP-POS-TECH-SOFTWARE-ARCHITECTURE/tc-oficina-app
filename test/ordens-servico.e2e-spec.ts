@@ -335,6 +335,87 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 		expect(item.status).toBe("CONCLUIDO");
 	});
 
+	it("GET /os/:id/historico (atendente) → 200, registra mudanças de status", async () => {
+		const { cliente, veiculo } = await setupClienteVeiculo();
+		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
+
+		const res = await request(app.getHttpServer()).get(`/os/${os.id}/historico`).set("Authorization", bearer(atendenteToken));
+		expect(res.status).toBe(200);
+		expect(Array.isArray(res.body.data)).toBe(true);
+		expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+		expect(res.body.data[0]).toHaveProperty("statusNovo");
+	});
+
+	it("GET /os/:id/historico OS inexistente → 404", async () => {
+		const res = await request(app.getHttpServer())
+			.get("/os/00000000-0000-4000-8000-000000000000/historico")
+			.set("Authorization", bearer(atendenteToken));
+		expect(res.status).toBe(404);
+	});
+
+	it("GET /os paginação → página 2 com pageSize=1 retorna segundo registro", async () => {
+		const { cliente, veiculo } = await setupClienteVeiculo();
+		const veiculo2 = await request(app.getHttpServer())
+			.post(`/clientes/${cliente.id}/veiculos`)
+			.set("Authorization", bearer(atendenteToken))
+			.send({ placa: nextPlaca(), marca: "Ford", modelo: "Ka", ano: 2021 });
+		const veiculo2Id = veiculo2.body.data.id;
+		await createOS(app, atendenteToken, cliente.id, veiculo.id);
+		await createOS(app, atendenteToken, cliente.id, veiculo2Id);
+
+		const res = await request(app.getHttpServer()).get("/os?page=2&pageSize=1").set("Authorization", bearer(atendenteToken));
+		expect(res.status).toBe(200);
+		expect(res.body.data.items).toHaveLength(1);
+		expect(res.body.data.page).toBe(2);
+		expect(res.body.data.pageSize).toBe(1);
+	});
+
+	it("POST /os/:id/itens-servico/:itemId/cancelar (OS em EM_EXECUCAO, item PENDENTE) → 200, CANCELADO", async () => {
+		const { cliente, veiculo } = await setupClienteVeiculo();
+		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
+		const s = await createServico(app, adminToken);
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
+		const add = await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ servicoId: s.id, quantidade: 1 });
+		const itemId = add.body.data.itensServico[0].id;
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+
+		const res = await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico/${itemId}/cancelar`)
+			.set("Authorization", bearer(mecanicoToken));
+		expect(res.status).toBe(200);
+		const item = res.body.data.itensServico.find((i: any) => i.id === itemId);
+		expect(item.status).toBe("CANCELADO");
+	});
+
+	it("POST /os/:id/itens-servico/:itemId/cancelar (OS em EM_EXECUCAO, item EM_EXECUCAO) → 200, CANCELADO", async () => {
+		const { cliente, veiculo } = await setupClienteVeiculo();
+		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
+		const s = await createServico(app, adminToken);
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
+		const add = await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ servicoId: s.id, quantidade: 1 });
+		const itemId = add.body.data.itensServico[0].id;
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
+			.set("Authorization", bearer(mecanicoToken));
+
+		const res = await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico/${itemId}/cancelar`)
+			.set("Authorization", bearer(mecanicoToken));
+		expect(res.status).toBe(200);
+		const item = res.body.data.itensServico.find((i: any) => i.id === itemId);
+		expect(item.status).toBe("CANCELADO");
+	});
+
 	it("POST /os/:id/itens-servico/:itemId/cancelar em CONCLUIDO → 422", async () => {
 		const { cliente, veiculo } = await setupClienteVeiculo();
 		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);

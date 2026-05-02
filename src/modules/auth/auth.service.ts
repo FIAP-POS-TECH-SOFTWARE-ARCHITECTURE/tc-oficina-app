@@ -17,7 +17,7 @@ export class AuthService {
 
 	async login(dto: LoginDto): Promise<IServiceResponse<LoginResponseDto>> {
 		const usuario = await this.usuarios.findByEmail(dto.email);
-		if (!usuario || !usuario.ativo) return SR.unauthorized<LoginResponseDto>(undefined, "Credenciais inválidas");
+		if (!usuario?.ativo) return SR.unauthorized<LoginResponseDto>(undefined, "Credenciais inválidas");
 
 		const ok = await argon2.verify(usuario.senhaHash, dto.senha);
 		if (!ok) return SR.unauthorized<LoginResponseDto>(undefined, "Credenciais inválidas");

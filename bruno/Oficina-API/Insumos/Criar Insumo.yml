@@ -32,4 +32,3 @@ runtime:
         if (res.body && res.body.data && res.body.data.id) {
           bru.setEnvVar("insumoId", res.body.data.id);
         }
-

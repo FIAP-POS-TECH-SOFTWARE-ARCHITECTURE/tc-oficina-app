@@ -1,11 +1,11 @@
 import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface } from "class-validator";
 
 export function onlyDigits(value: string): string {
-	return (value ?? "").replace(/\D/g, "");
+	return (value ?? "").replaceAll(/\D/g, "");
 }
 
 export function normalizeCpfOrCnpj(value: string): string {
-	return (value ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+	return (value ?? "").replaceAll(/[^A-Za-z0-9]/g, "").toUpperCase();
 }
 
 export function isValidCpf(cpf: string): boolean {
@@ -16,7 +16,7 @@ export function isValidCpf(cpf: string): boolean {
 	const calc = (factor: number) => {
 		let total = 0;
 		for (let i = 0; i < factor - 1; i++) {
-			total += parseInt(digits[i], 10) * (factor - i);
+			total += Number.parseInt(digits[i], 10) * (factor - i);
 		}
 		const rest = (total * 10) % 11;
 		return rest === 10 ? 0 : rest;
@@ -24,7 +24,7 @@ export function isValidCpf(cpf: string): boolean {
 
 	const d1 = calc(10);
 	const d2 = calc(11);
-	return d1 === parseInt(digits[9], 10) && d2 === parseInt(digits[10], 10);
+	return d1 === Number.parseInt(digits[9], 10) && d2 === Number.parseInt(digits[10], 10);
 }
 
 export function isValidCnpj(cnpj: string): boolean {
@@ -50,7 +50,7 @@ export function isValidCnpj(cnpj: string): boolean {
 
 	const d1 = calc(weights1);
 	const d2 = calc(weights2);
-	return d1 === parseInt(normalized[12], 10) && d2 === parseInt(normalized[13], 10);
+	return d1 === Number.parseInt(normalized[12], 10) && d2 === Number.parseInt(normalized[13], 10);
 }
 
 export function isValidCpfOrCnpj(value: string): boolean {

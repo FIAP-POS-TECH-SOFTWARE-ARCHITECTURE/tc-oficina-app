@@ -79,7 +79,7 @@ describe("AllExceptionsFilter", () => {
 
 	it("HttpException com response primitivo (não-objeto) usa fallback da exception", () => {
 		const { host, status } = buildHost();
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 		const ex = new HttpException(42 as any, 400);
 		filter.catch(ex, host);
 		expect(status).toHaveBeenCalledWith(400);

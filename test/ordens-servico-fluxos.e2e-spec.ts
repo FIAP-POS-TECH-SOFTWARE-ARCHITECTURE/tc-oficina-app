@@ -318,4 +318,87 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
 		expect(aprov.status).toBe(422);
 	});
+
+	it("Finalizar OS com itens misturados (CONCLUIDO + CANCELADO) → 200", async () => {
+		const { cliente, servico, os } = await setupBaseOS();
+		const s2 = await createServico(app, adminToken, { preco: 50 });
+
+		await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
+		const add1 = await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ servicoId: servico.id, quantidade: 1 });
+		const item1Id = add1.body.data.itensServico[0].id;
+		const add2 = await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ servicoId: s2.id, quantidade: 1 });
+		const item2Id = add2.body.data.itensServico.find((i: any) => i.id !== item1Id).id;
+
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+
+		await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico/${item1Id}/iniciar`)
+			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico/${item1Id}/concluir`)
+			.set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer())
+			.post(`/os/${os.id}/itens-servico/${item2Id}/cancelar`)
+			.set("Authorization", bearer(mecanicoToken));
+
+		const fim = await request(app.getHttpServer()).post(`/os/${os.id}/finalizar`).set("Authorization", bearer(mecanicoToken));
+		expect(fim.status).toBe(200);
+		expect(fim.body.data.status).toBe("FINALIZADA");
+	});
+
+	it("Duas OSes competindo pelo mesmo insumo: segunda OS fica BLOQUEADA se estoque esgotado pela primeira", async () => {
+		const cliente1 = await createCliente(app, atendenteToken, { documento: CPF_VALIDOS[0] });
+		const cliente2 = await createCliente(app, atendenteToken, { documento: CPF_VALIDOS[1] });
+		const veiculo1 = await createVeiculo(app, atendenteToken, cliente1.id);
+		const veiculo2 = await createVeiculo(app, atendenteToken, cliente2.id);
+		const servico = await createServico(app, adminToken, { preco: 100 });
+		const insumo = await createInsumo(app, estoquistaToken, { quantidadeEstoque: 5, precoUnitario: 20 });
+
+		const os1 = await createOS(app, atendenteToken, cliente1.id, veiculo1.id);
+		const os2 = await createOS(app, atendenteToken, cliente2.id, veiculo2.id);
+
+		// Ambas as OSes adicionam itens enquanto o estoque ainda é 5
+		await request(app.getHttpServer()).post(`/os/${os1.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer())
+			.post(`/os/${os1.id}/itens-servico`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ servicoId: servico.id, quantidade: 1 });
+		await request(app.getHttpServer())
+			.post(`/os/${os1.id}/itens-insumo`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ insumoId: insumo.id, quantidade: 5 });
+		await request(app.getHttpServer()).post(`/os/${os1.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+
+		await request(app.getHttpServer()).post(`/os/${os2.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
+		await request(app.getHttpServer())
+			.post(`/os/${os2.id}/itens-servico`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ servicoId: servico.id, quantidade: 1 });
+		await request(app.getHttpServer())
+			.post(`/os/${os2.id}/itens-insumo`)
+			.set("Authorization", bearer(mecanicoToken))
+			.send({ insumoId: insumo.id, quantidade: 3 });
+		await request(app.getHttpServer()).post(`/os/${os2.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+
+		// OS1 aprova primeiro: consome as 5 unidades → EM_EXECUCAO
+		const aprov1 = await request(app.getHttpServer()).post(`/os/${os1.id}/orcamento/aprovar`).send({ documento: cliente1.documento });
+		expect(aprov1.body.data.status).toBe("EM_EXECUCAO");
+
+		// OS2 aprova depois: estoque 0 < 3 necessários → BLOQUEADA
+		const aprov2 = await request(app.getHttpServer()).post(`/os/${os2.id}/orcamento/aprovar`).send({ documento: cliente2.documento });
+		expect(aprov2.body.data.status).toBe("BLOQUEADA");
+	});
+
+	it("GET /os/metricas/tempo-medio (admin) → 200, resposta é array", async () => {
+		const res = await request(app.getHttpServer()).get("/os/metricas/tempo-medio").set("Authorization", bearer(adminToken));
+		expect(res.status).toBe(200);
+		expect(Array.isArray(res.body.data)).toBe(true);
+	});
 });

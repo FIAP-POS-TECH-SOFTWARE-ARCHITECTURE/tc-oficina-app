@@ -1,4 +1,4 @@
-const { spawnSync } = require('node:child_process');
+const { spawnSync } = require("node:child_process");
 
 const token = process.env.SONAR_TOKEN?.trim();
 
@@ -7,8 +7,8 @@ if (!token) {
 	process.exit(1);
 }
 
-const result = spawnSync('sonar-scanner', [`-Dsonar.token=${token}`], {
-	stdio: 'inherit',
+const result = spawnSync("sonar-scanner", [`-Dsonar.token=${token}`], {
+	stdio: "inherit",
 	shell: true,
 });
 

@@ -6,10 +6,12 @@ const ROUTE_ARGS_METADATA = "__routeArguments__";
 
 function extractFactory(): (data: unknown, ctx: ExecutionContext) => AuthenticatedUser | undefined {
 	class FakeCtrl {
-		handle(@CurrentUser() _: unknown) {}
+		handle(@CurrentUser() _: unknown) {
+			return _;
+		}
 	}
 	const meta = Reflect.getMetadata(ROUTE_ARGS_METADATA, FakeCtrl, "handle") as Record<string, any>;
-	const entry = Object.values(meta).find((e: any) => e.factory) as any;
+	const entry = Object.values(meta).find((e: any) => e.factory);
 	return entry.factory;
 }
 

@@ -30,4 +30,3 @@ runtime:
         if (res.body && res.body.data && res.body.data.id) {
           bru.setEnvVar("servicoId", res.body.data.id);
         }
-

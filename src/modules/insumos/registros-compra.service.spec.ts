@@ -165,10 +165,7 @@ describe("RegistrosCompraService", () => {
 		repo.findByIdFull.mockResolvedValueOnce({ id: "rc1" } as any);
 		const r = await service.registrarRespostaFornecedor("rc1", { aprovado: false, mensagem: "mensagem como motivo" });
 		expect(r.status).toBe(200);
-		expect(repo.update).toHaveBeenCalledWith(
-			"rc1",
-			expect.objectContaining({ motivoRecusa: "mensagem como motivo" }),
-		);
+		expect(repo.update).toHaveBeenCalledWith("rc1", expect.objectContaining({ motivoRecusa: "mensagem como motivo" }));
 	});
 
 	it("cancelar 404 quando não existe", async () => {

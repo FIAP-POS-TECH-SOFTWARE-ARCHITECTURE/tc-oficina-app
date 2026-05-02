@@ -1,3 +1,1 @@
-import { OsStatus } from "@prisma/client";
-
-export { OsStatus };
+export { OsStatus } from "@prisma/client";

@@ -142,7 +142,7 @@ export class OrdensServicoService {
 			return SR.unprocessableEntity(undefined, "Itens só podem ser removidos antes da geração do orçamento");
 
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
-		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
+		if (item?.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
 
 		await this.prisma.osItemServico.delete({ where: { id: itemId } });
 
@@ -157,7 +157,7 @@ export class OrdensServicoService {
 			return SR.unprocessableEntity(undefined, "Serviço só pode ser iniciado com a OS em execução");
 
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
-		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
+		if (item?.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
 		if (item.status !== OsItemServicoStatus.PENDENTE)
 			return SR.unprocessableEntity(undefined, "Somente serviço pendente pode ser iniciado");
 
@@ -186,7 +186,7 @@ export class OrdensServicoService {
 			return SR.unprocessableEntity(undefined, "Serviço só pode ser concluído com a OS em execução");
 
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
-		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
+		if (item?.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
 		if (item.status !== OsItemServicoStatus.EM_EXECUCAO)
 			return SR.unprocessableEntity(undefined, "Somente serviço em execução pode ser concluído");
 
@@ -212,7 +212,7 @@ export class OrdensServicoService {
 			return SR.unprocessableEntity(undefined, "Serviço só pode ser cancelado com a OS em execução");
 
 		const item = await this.prisma.osItemServico.findUnique({ where: { id: itemId } });
-		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
+		if (item?.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
 		if (item.status === OsItemServicoStatus.CONCLUIDO || item.status === OsItemServicoStatus.CANCELADO)
 			return SR.unprocessableEntity(undefined, "Serviço já concluído ou cancelado");
 
@@ -259,7 +259,7 @@ export class OrdensServicoService {
 			return SR.unprocessableEntity(undefined, "Itens só podem ser removidos antes da geração do orçamento");
 
 		const item = await this.prisma.osItemInsumo.findUnique({ where: { id: itemId } });
-		if (!item || item.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
+		if (item?.ordemServicoId !== id) return SR.notFound(undefined, "Item não encontrado");
 
 		await this.prisma.osItemInsumo.delete({ where: { id: itemId } });
 

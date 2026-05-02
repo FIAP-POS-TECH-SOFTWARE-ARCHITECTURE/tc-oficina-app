@@ -29,4 +29,3 @@ runtime:
           bru.setEnvVar("osId", res.body.data.id);
           bru.setEnvVar("osNumero", res.body.data.numero);
         }
-

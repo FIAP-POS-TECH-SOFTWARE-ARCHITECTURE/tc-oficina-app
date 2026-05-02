@@ -1,3 +1,1 @@
-import { TipoMovimentoEstoque } from "@prisma/client";
-
-export { TipoMovimentoEstoque };
+export { TipoMovimentoEstoque } from "@prisma/client";
