@@ -62,7 +62,7 @@ export class UsuariosService implements OnModuleInit {
 
 	async findAll(): Promise<IServiceResponse<UsuarioResponseDto[]>> {
 		const usuarios = await this.repo.findAll();
-		return SR.ok(usuarios.map(UsuarioResponseDto.fromEntity));
+		return SR.ok(usuarios.map((usuario) => UsuarioResponseDto.fromEntity(usuario)));
 	}
 
 	async findById(id: string): Promise<IServiceResponse<UsuarioResponseDto>> {
