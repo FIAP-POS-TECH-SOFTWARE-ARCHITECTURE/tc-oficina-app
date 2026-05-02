@@ -261,6 +261,31 @@ para evitar conflitos no banco compartilhado.
 
 ---
 
+## SonarQube local
+
+Foi adicionada configuração de análise estática com SonarQube:
+
+- Serviço `sonarqube` no `dev/docker-compose.yml` (porta `9000`)
+- Configuração padrão em [`sonar-project.properties`](sonar-project.properties)
+- Scripts npm: `sonar:up`, `sonar:down`, `sonar:scan`
+
+### Executar
+
+```bash
+# 1. sobe o SonarQube
+npm run sonar:up
+
+# 2. gera cobertura para o Sonar ler o lcov
+npm run test:cov
+
+# 3. envia análise (substitua pelo token criado no SonarQube)
+npm run sonar:scan -- -Dsonar.token=SEU_TOKEN
+```
+
+Painel: `http://localhost:9000` (primeiro login padrão: `admin` / `admin`).
+
+---
+
 ## Coleção Bruno
 
 A coleção fica em [bruno/Oficina-API/](bruno/Oficina-API/), espelhando os módulos:

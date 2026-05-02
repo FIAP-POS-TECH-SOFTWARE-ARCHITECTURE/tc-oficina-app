@@ -12,5 +12,20 @@ services:
     volumes:
       - postgres_data_v18:/var/lib/postgresql
 
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: oficina-sonarqube-dev
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
 volumes:
   postgres_data_v18:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
