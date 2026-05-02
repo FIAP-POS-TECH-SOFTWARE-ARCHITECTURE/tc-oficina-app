@@ -1,34 +1,34 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TipoMovimentoEstoque } from '@prisma/client';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { TipoMovimentoEstoque } from "@prisma/client";
 
 export class MovimentoEstoqueResponseDto {
-  @ApiProperty()
-  id: string;
+	@ApiProperty()
+	id: string;
 
-  @ApiProperty()
-  insumoId: string;
+	@ApiProperty()
+	insumoId: string;
 
-  @ApiProperty({ enum: TipoMovimentoEstoque })
-  tipo: TipoMovimentoEstoque;
+	@ApiProperty({ enum: TipoMovimentoEstoque })
+	tipo: TipoMovimentoEstoque;
 
-  @ApiProperty()
-  quantidade: number;
+	@ApiProperty()
+	quantidade: number;
 
-  @ApiProperty()
-  quantidadeAnterior: number;
+	@ApiProperty()
+	quantidadeAnterior: number;
 
-  @ApiProperty()
-  quantidadePosterior: number;
+	@ApiProperty()
+	quantidadePosterior: number;
 
-  @ApiPropertyOptional()
-  ordemServicoId?: string;
+	@ApiPropertyOptional()
+	ordemServicoId?: string;
 
-  @ApiPropertyOptional()
-  motivo?: string;
+	@ApiPropertyOptional()
+	motivo?: string;
 
-  @ApiPropertyOptional()
-  usuarioId?: string;
+	@ApiPropertyOptional()
+	usuarioId?: string;
 
-  @ApiProperty()
-  createdAt: Date;
+	@ApiProperty()
+	createdAt: Date;
 }
