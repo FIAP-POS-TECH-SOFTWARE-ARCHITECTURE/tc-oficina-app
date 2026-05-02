@@ -12,7 +12,7 @@ import { ListarOsDto } from "./dto/listar-os.dto";
 import { AprovacaoPublicaDto, CancelarOsDto, DesbloquearOsDto } from "./dto/transicao.dto";
 import { UpdateDiagnosticoDto } from "./dto/update-diagnostico.dto";
 import { OrdensServicoService } from "./ordens-servico.service";
-import { OsResponseDto } from "./dto/os-response.dto";
+import { OsConsultaPublicaResponseDto, OsResponseDto } from "./dto/os-response.dto";
 
 @ApiTags("Ordens de Serviço")
 @ApiBearerAuth()
@@ -47,7 +47,7 @@ export class OrdensServicoController {
 	@Public()
 	@Get("publica/:numero")
 	@ApiOperation({ summary: "Consulta pública da OS pelo número e documento do cliente" })
-	@ApiEnvelopedResponse(OsResponseDto)
+	@ApiEnvelopedResponse(OsConsultaPublicaResponseDto)
 	consultaPublica(@Param("numero") numero: string, @Query("documento") documento: string) {
 		return this.service.consultaPublica(numero, documento);
 	}
