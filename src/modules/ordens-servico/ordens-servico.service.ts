@@ -694,9 +694,11 @@ export class OrdensServicoService {
 
 	private mascararNome(nome: string): string {
 		const partes = nome.trim().split(/\s+/);
+		if (partes.length <= 2) return nome.trim();
+
 		return partes
 			.map((p, i) => {
-				if (i === 0) return p;
+				if (i === 0 || i === partes.length - 1) return p;
 				return p[0] + "*".repeat(Math.max(p.length - 1, 1));
 			})
 			.join(" ");
