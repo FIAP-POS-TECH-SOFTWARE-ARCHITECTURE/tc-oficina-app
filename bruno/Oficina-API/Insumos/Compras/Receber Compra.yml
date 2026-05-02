@@ -17,9 +17,7 @@ http:
           "arquivoTamanho": 204800,
           "arquivoUrl": "s3://oficina-docs/notas-fiscais/nota-fiscal-001.pdf"
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

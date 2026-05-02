@@ -17,9 +17,7 @@ http:
           "estoqueMinimo": 5,
           "quantidadeEstoque": 10
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

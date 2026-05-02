@@ -14,9 +14,7 @@ http:
           "codigo": "APR-001",
           "mensagem": "Compra aprovada pelo fornecedor"
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

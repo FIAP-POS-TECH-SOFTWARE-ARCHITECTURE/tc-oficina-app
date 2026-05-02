@@ -12,9 +12,7 @@ http:
       {
           "observacao": "Estoque reposto, OS liberada para execução"
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

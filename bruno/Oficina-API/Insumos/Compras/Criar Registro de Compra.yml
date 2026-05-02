@@ -14,9 +14,7 @@ http:
           "quantidadeSolicitada": 10,
           "ordemServicoId": "{{osId}}"
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

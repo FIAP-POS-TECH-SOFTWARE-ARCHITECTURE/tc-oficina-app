@@ -13,9 +13,7 @@ http:
           "insumoId": "{{insumoId}}",
           "quantidade": 1
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

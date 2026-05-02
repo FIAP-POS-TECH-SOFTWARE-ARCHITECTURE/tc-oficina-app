@@ -15,9 +15,7 @@ http:
           "senha": "12345678",
           "role": "ATENDENTE"
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

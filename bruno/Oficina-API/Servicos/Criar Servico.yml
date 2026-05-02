@@ -15,9 +15,7 @@ http:
           "preco": 80.00,
           "tempoEstimadoMin": 30
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

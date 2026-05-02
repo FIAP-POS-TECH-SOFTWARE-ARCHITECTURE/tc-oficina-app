@@ -13,9 +13,7 @@ http:
           "quantidade": 5,
           "motivo": "Compra fornecedor"
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

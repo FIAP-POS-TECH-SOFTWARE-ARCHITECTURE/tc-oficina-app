@@ -6,9 +6,7 @@ info:
 http:
   method: POST
   url: "{{url}}/insumos/compras/{{registroCompraId}}/enviar-fornecedor"
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

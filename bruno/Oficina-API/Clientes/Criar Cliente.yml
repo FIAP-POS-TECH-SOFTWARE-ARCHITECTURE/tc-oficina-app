@@ -16,9 +16,7 @@ http:
           "telefone": "(11) 99999-9999",
           "endereco": "Rua das Flores, 100"
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true

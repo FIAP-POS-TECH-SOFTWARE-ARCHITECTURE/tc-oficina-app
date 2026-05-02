@@ -15,9 +15,7 @@ http:
           "modelo": "Gol",
           "ano": 2020
         }
-  auth:
-    type: bearer
-    token: "{{token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true
