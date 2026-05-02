@@ -65,6 +65,11 @@ describe("ServicosService", () => {
 			expect((await service.update("s1", { preco: 99 } as any)).status).toBe(200);
 		});
 
+		it("422 quando serviço inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "s1", nome: "antigo", ativo: false } as any);
+			expect((await service.update("s1", { preco: 99 } as any)).status).toBe(422);
+		});
+
 		it("200 quando rename para mesmo nome (sem conflict)", async () => {
 			repo.findById.mockResolvedValueOnce({ id: "s1", nome: "antigo" } as any);
 			repo.update.mockResolvedValueOnce({ id: "s1" } as any);
@@ -82,6 +87,11 @@ describe("ServicosService", () => {
 			repo.findById.mockResolvedValueOnce({ id: "s1" } as any);
 			repo.softDelete.mockResolvedValueOnce({ id: "s1", ativo: false } as any);
 			expect((await service.remove("s1")).status).toBe(200);
+		});
+
+		it("422 quando serviço já inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "s1", ativo: false } as any);
+			expect((await service.remove("s1")).status).toBe(422);
 		});
 	});
 });

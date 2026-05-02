@@ -64,6 +64,19 @@ describe("OrdensServicoService", () => {
 			expect(r.status).toBe(400);
 		});
 
+		it("422 quando cliente inativo", async () => {
+			clientes.findById.mockResolvedValueOnce({ id: "c1", ativo: false } as any);
+			const r = await service.create({ clienteId: "c1", veiculoId: "v1" });
+			expect(r.status).toBe(422);
+		});
+
+		it("422 quando veículo inativo", async () => {
+			clientes.findById.mockResolvedValueOnce({ id: "c1", ativo: true } as any);
+			veiculos.findById.mockResolvedValueOnce({ id: "v1", clienteId: "c1", ativo: false } as any);
+			const r = await service.create({ clienteId: "c1", veiculoId: "v1" });
+			expect(r.status).toBe(422);
+		});
+
 		it("201 cria OS com número OS-YYYY-000001", async () => {
 			clientes.findById.mockResolvedValueOnce({ id: "c1" } as any);
 			veiculos.findById.mockResolvedValueOnce({ id: "v1", clienteId: "c1" } as any);
@@ -400,6 +413,13 @@ describe("OrdensServicoService", () => {
 			expect(r.status).toBe(404);
 		});
 
+		it("addItemServico 422 serviço inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ status: OsStatus.EM_DIAGNOSTICO } as any);
+			servicos.findById.mockResolvedValueOnce({ id: "s1", ativo: false } as any);
+			const r = await service.addItemServico("os1", { servicoId: "s1" });
+			expect(r.status).toBe(422);
+		});
+
 		it("addItemServico 201", async () => {
 			repo.findById.mockResolvedValueOnce({ status: OsStatus.EM_DIAGNOSTICO } as any);
 			servicos.findById.mockResolvedValueOnce({ id: "s1", preco: D(50) } as any);
@@ -575,6 +595,12 @@ describe("OrdensServicoService", () => {
 			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_DIAGNOSTICO } as any);
 			insumos.findById.mockResolvedValueOnce(null);
 			expect((await service.addItemInsumo("os1", { insumoId: "i1", quantidade: 1 })).status).toBe(404);
+		});
+
+		it("addItemInsumo 422 insumo inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_DIAGNOSTICO } as any);
+			insumos.findById.mockResolvedValueOnce({ id: "i1", ativo: false } as any);
+			expect((await service.addItemInsumo("os1", { insumoId: "i1", quantidade: 1 })).status).toBe(422);
 		});
 	});
 

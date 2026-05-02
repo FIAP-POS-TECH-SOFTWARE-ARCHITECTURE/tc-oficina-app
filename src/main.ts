@@ -10,6 +10,7 @@ import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { PrismaService } from "./prisma/prisma.service";
 
 async function bootstrap() {
 	if (!process.env.PORT) throw new Error("PORT não definido no .env");
@@ -40,8 +41,9 @@ async function bootstrap() {
 
 	const reflector = app.get(Reflector);
 	const jwtService = app.get(JwtService);
+	const prismaService = app.get(PrismaService);
 
-	app.useGlobalGuards(new JwtAuthGuard(jwtService, reflector), new RolesGuard(reflector));
+	app.useGlobalGuards(new JwtAuthGuard(jwtService, reflector, prismaService), new RolesGuard(reflector));
 	app.useGlobalInterceptors(new ResponseInterceptor());
 	app.useGlobalFilters(new AllExceptionsFilter());
 

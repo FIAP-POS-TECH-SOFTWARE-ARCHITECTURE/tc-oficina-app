@@ -18,6 +18,7 @@ export class VeiculosService {
 	async create(clienteId: string, dto: CreateVeiculoDto): Promise<IServiceResponse<Veiculo>> {
 		const cliente = await this.clientes.findById(clienteId);
 		if (!cliente) return SR.notFound<Veiculo>(undefined, "Cliente não encontrado");
+		if (cliente.ativo === false) return SR.unprocessableEntity<Veiculo>(undefined, "Cliente inativado");
 
 		const placa = normalizarPlaca(dto.placa);
 		const exists = await this.repo.findByPlaca(placa);
@@ -58,6 +59,7 @@ export class VeiculosService {
 	async update(id: string, dto: UpdateVeiculoDto): Promise<IServiceResponse<Veiculo>> {
 		const veiculo = await this.repo.findById(id);
 		if (!veiculo) return SR.notFound<Veiculo>(undefined, "Veículo não encontrado");
+		if (veiculo.ativo === false) return SR.unprocessableEntity<Veiculo>(undefined, "Veículo inativado");
 
 		const updated = await this.repo.update(id, dto);
 		return SR.ok(updated, "Veículo atualizado");
@@ -66,6 +68,7 @@ export class VeiculosService {
 	async remove(id: string): Promise<IServiceResponse<Veiculo>> {
 		const veiculo = await this.repo.findById(id);
 		if (!veiculo) return SR.notFound<Veiculo>(undefined, "Veículo não encontrado");
+		if (veiculo.ativo === false) return SR.unprocessableEntity<Veiculo>(undefined, "Veículo já está inativado");
 
 		const aberto = await this.repo.hasOrdensAbertas(id);
 		if (aberto > 0) return SR.conflict<Veiculo>(undefined, "Veículo possui ordens de serviço abertas e não pode ser inativado");

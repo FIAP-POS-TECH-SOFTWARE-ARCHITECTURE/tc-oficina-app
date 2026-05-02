@@ -112,6 +112,12 @@ describe("UsuariosService", () => {
 			const r = await service.update("1", { nome: "X" });
 			expect(r.status).toBe(200);
 		});
+
+		it("422 quando usuário está inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "1", email: "a@a", ativo: false } as any);
+			const r = await service.update("1", { nome: "X" });
+			expect(r.status).toBe(422);
+		});
 	});
 
 	describe("updateSenha", () => {
@@ -124,6 +130,12 @@ describe("UsuariosService", () => {
 			repo.findById.mockResolvedValueOnce(null);
 			const r = await service.updateSenha("1", { senha: "12345678" }, { id: "1", role: Role.ATENDENTE });
 			expect(r.status).toBe(404);
+		});
+
+		it("422 quando usuário está inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "1", email: "a@a", ativo: false } as any);
+			const r = await service.updateSenha("1", { senha: "12345678" }, { id: "1", role: Role.ATENDENTE });
+			expect(r.status).toBe(422);
 		});
 
 		it("200 atualiza senha do próprio usuário", async () => {
@@ -186,6 +198,12 @@ describe("UsuariosService", () => {
 			} as any);
 			const r = await service.remove("1");
 			expect(r.status).toBe(200);
+		});
+
+		it("422 quando já inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "1", ativo: false } as any);
+			const r = await service.remove("1");
+			expect(r.status).toBe(422);
 		});
 	});
 

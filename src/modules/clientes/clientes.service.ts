@@ -51,6 +51,7 @@ export class ClientesService {
 	async update(id: string, dto: UpdateClienteDto): Promise<IServiceResponse<Cliente>> {
 		const cliente = await this.repo.findById(id);
 		if (!cliente) return SR.notFound<Cliente>(undefined, "Cliente não encontrado");
+		if (cliente.ativo === false) return SR.unprocessableEntity<Cliente>(undefined, "Cliente inativado");
 
 		const updated = await this.repo.update(id, dto);
 		return SR.ok(updated, "Cliente atualizado");
@@ -59,6 +60,7 @@ export class ClientesService {
 	async remove(id: string): Promise<IServiceResponse<Cliente>> {
 		const cliente = await this.repo.findById(id);
 		if (!cliente) return SR.notFound<Cliente>(undefined, "Cliente não encontrado");
+		if (cliente.ativo === false) return SR.unprocessableEntity<Cliente>(undefined, "Cliente já está inativado");
 
 		const aberto = await this.repo.hasOrdensAbertas(id);
 		if (aberto > 0) return SR.conflict<Cliente>(undefined, "Cliente possui ordens de serviço abertas e não pode ser inativado");

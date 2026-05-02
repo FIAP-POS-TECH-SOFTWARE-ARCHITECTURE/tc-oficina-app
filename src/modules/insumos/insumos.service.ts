@@ -45,6 +45,7 @@ export class InsumosService {
 	async update(id: string, dto: UpdateInsumoDto): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+		if (insumo.ativo === false) return SR.unprocessableEntity<Insumo>(undefined, "Insumo inativado");
 
 		const updated = await this.repo.update(id, dto);
 		return SR.ok(updated, "Insumo atualizado");
@@ -53,6 +54,7 @@ export class InsumosService {
 	async remove(id: string): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+		if (insumo.ativo === false) return SR.unprocessableEntity<Insumo>(undefined, "Insumo já está inativado");
 
 		const updated = await this.repo.softDelete(id);
 		return SR.ok(updated, "Insumo inativado");
@@ -61,6 +63,7 @@ export class InsumosService {
 	async entrada(id: string, dto: EntradaInsumoDto, usuarioId: string): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+		if (insumo.ativo === false) return SR.unprocessableEntity<Insumo>(undefined, "Insumo inativado");
 
 		const anterior = insumo.quantidadeEstoque;
 		const posterior = anterior + dto.quantidade;
@@ -90,6 +93,7 @@ export class InsumosService {
 	async ajuste(id: string, dto: AjusteInsumoDto, usuarioId: string): Promise<IServiceResponse<Insumo>> {
 		const insumo = await this.repo.findById(id);
 		if (!insumo) return SR.notFound<Insumo>(undefined, "Insumo não encontrado");
+		if (insumo.ativo === false) return SR.unprocessableEntity<Insumo>(undefined, "Insumo inativado");
 
 		if (dto.novaQuantidade < 0) return SR.badRequest<Insumo>(undefined, "Quantidade não pode ser negativa");
 

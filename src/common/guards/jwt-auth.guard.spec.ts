@@ -1,6 +1,7 @@
 import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
+import { PrismaService } from "../../prisma/prisma.service";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 
 const ctxFor = (req: any): ExecutionContext =>
@@ -13,12 +14,16 @@ const ctxFor = (req: any): ExecutionContext =>
 describe("JwtAuthGuard", () => {
 	let jwt: jest.Mocked<JwtService>;
 	let reflector: jest.Mocked<Reflector>;
+	let prisma: jest.Mocked<PrismaService>;
 	let guard: JwtAuthGuard;
 
 	beforeEach(() => {
 		jwt = { verifyAsync: jest.fn() } as unknown as jest.Mocked<JwtService>;
 		reflector = { getAllAndOverride: jest.fn() } as unknown as jest.Mocked<Reflector>;
-		guard = new JwtAuthGuard(jwt, reflector);
+		prisma = {
+			usuario: { findUnique: jest.fn() },
+		} as unknown as jest.Mocked<PrismaService>;
+		guard = new JwtAuthGuard(jwt, reflector, prisma);
 	});
 
 	it("permite rota pública", async () => {
@@ -59,9 +64,19 @@ describe("JwtAuthGuard", () => {
 	it("200 anexa req.user e retorna true em sucesso", async () => {
 		reflector.getAllAndOverride.mockReturnValueOnce(false);
 		jwt.verifyAsync.mockResolvedValueOnce({ sub: "u1", email: "a@a", role: "ADMINISTRADOR" });
+		prisma.usuario.findUnique.mockResolvedValueOnce({ ativo: true } as any);
 		const req: any = { headers: { authorization: "Bearer xxx" } };
 		const ok = await guard.canActivate(ctxFor(req));
 		expect(ok).toBe(true);
 		expect(req.user).toEqual({ id: "u1", email: "a@a", role: "ADMINISTRADOR" });
+	});
+
+	it("401 quando usuário está inativo", async () => {
+		reflector.getAllAndOverride.mockReturnValueOnce(false);
+		jwt.verifyAsync.mockResolvedValueOnce({ sub: "u1", email: "a@a", role: "ADMINISTRADOR" });
+		prisma.usuario.findUnique.mockResolvedValueOnce({ ativo: false } as any);
+		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Bearer xxx" } }))).rejects.toBeInstanceOf(
+			UnauthorizedException,
+		);
 	});
 });

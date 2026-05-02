@@ -32,9 +32,11 @@ export class OrdensServicoService {
 	async create(dto: CreateOsDto): Promise<IServiceResponse<unknown>> {
 		const cliente = await this.clientes.findById(dto.clienteId);
 		if (!cliente) return SR.notFound(undefined, "Cliente não encontrado");
+		if (cliente.ativo === false) return SR.unprocessableEntity(undefined, "Cliente inativado");
 
 		const veiculo = await this.veiculos.findById(dto.veiculoId);
 		if (!veiculo) return SR.notFound(undefined, "Veículo não encontrado");
+		if (veiculo.ativo === false) return SR.unprocessableEntity(undefined, "Veículo inativado");
 		if (veiculo.clienteId !== dto.clienteId) return SR.badRequest(undefined, "Veículo não pertence ao cliente informado");
 
 		const numero = await this.proximoNumero();
@@ -113,6 +115,7 @@ export class OrdensServicoService {
 
 		const servico = await this.servicos.findById(dto.servicoId);
 		if (!servico) return SR.notFound(undefined, "Serviço não encontrado");
+		if (servico.ativo === false) return SR.unprocessableEntity(undefined, "Serviço inativado");
 
 		const quantidade = dto.quantidade ?? 1;
 		const subtotal = new Prisma.Decimal(servico.preco).mul(quantidade);
@@ -230,6 +233,7 @@ export class OrdensServicoService {
 
 		const insumo = await this.insumos.findById(dto.insumoId);
 		if (!insumo) return SR.notFound(undefined, "Insumo não encontrado");
+		if (insumo.ativo === false) return SR.unprocessableEntity(undefined, "Insumo inativado");
 		if (insumo.quantidadeEstoque < dto.quantidade)
 			return SR.unprocessableEntity(undefined, `Estoque insuficiente. Disponível: ${insumo.quantidadeEstoque}`);
 

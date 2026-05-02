@@ -23,6 +23,7 @@ export class RegistrosCompraService {
 	async create(dto: CreateRegistroCompraDto, usuarioId: string): Promise<IServiceResponse<unknown>> {
 		const insumo = await this.insumos.findById(dto.insumoId);
 		if (!insumo) return SR.notFound(undefined, "Insumo não encontrado");
+		if (insumo.ativo === false) return SR.unprocessableEntity(undefined, "Insumo inativado");
 
 		if (dto.ordemServicoId) {
 			const os = await this.prisma.ordemServico.findUnique({ where: { id: dto.ordemServicoId } });

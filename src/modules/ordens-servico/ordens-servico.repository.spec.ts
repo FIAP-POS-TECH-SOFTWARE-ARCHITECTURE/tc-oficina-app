@@ -85,7 +85,13 @@ describe("OrdensServicoRepository", () => {
 	it("findHistorico busca histórico ordenado por data", async () => {
 		const historicoMock = [
 			{ id: "h1", ordemServicoId: "os1", statusAnterior: null, statusNovo: OsStatus.RECEBIDA, createdAt: new Date() },
-			{ id: "h2", ordemServicoId: "os1", statusAnterior: OsStatus.RECEBIDA, statusNovo: OsStatus.EM_DIAGNOSTICO, createdAt: new Date() },
+			{
+				id: "h2",
+				ordemServicoId: "os1",
+				statusAnterior: OsStatus.RECEBIDA,
+				statusNovo: OsStatus.EM_DIAGNOSTICO,
+				createdAt: new Date(),
+			},
 		];
 		prisma.osHistoricoStatus.findMany.mockResolvedValueOnce(historicoMock);
 		const result = await repo.findHistorico("os1");

@@ -75,6 +75,7 @@ export class UsuariosService implements OnModuleInit {
 	async update(id: string, dto: UpdateUsuarioDto): Promise<IServiceResponse<UsuarioResponseDto>> {
 		const usuario = await this.repo.findById(id);
 		if (!usuario) return SR.notFound<UsuarioResponseDto>(undefined, "Usuário não encontrado");
+		if (usuario.ativo === false) return SR.unprocessableEntity<UsuarioResponseDto>(undefined, "Usuário inativado");
 
 		if (dto.email && dto.email !== usuario.email) {
 			const conflict = await this.repo.findByEmail(dto.email);
@@ -95,6 +96,7 @@ export class UsuariosService implements OnModuleInit {
 
 		const usuario = await this.repo.findById(id);
 		if (!usuario) return SR.notFound<UsuarioResponseDto>(undefined, "Usuário não encontrado");
+		if (usuario.ativo === false) return SR.unprocessableEntity<UsuarioResponseDto>(undefined, "Usuário inativado");
 
 		const senhaHash = await argon2.hash(dto.senha);
 		const updated = await this.repo.update(id, { senhaHash });
@@ -105,6 +107,7 @@ export class UsuariosService implements OnModuleInit {
 	async remove(id: string): Promise<IServiceResponse<UsuarioResponseDto>> {
 		const usuario = await this.repo.findById(id);
 		if (!usuario) return SR.notFound<UsuarioResponseDto>(undefined, "Usuário não encontrado");
+		if (usuario.ativo === false) return SR.unprocessableEntity<UsuarioResponseDto>(undefined, "Usuário já está inativado");
 
 		const updated = await this.repo.softDelete(id);
 		return SR.ok(UsuarioResponseDto.fromEntity(updated), "Usuário inativado");

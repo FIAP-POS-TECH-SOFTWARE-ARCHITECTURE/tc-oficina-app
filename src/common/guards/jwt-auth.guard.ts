@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
 import type { AuthenticatedUser } from "../decorators/current-user.decorator";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { PrismaService } from "../../prisma/prisma.service";
 
 interface JwtPayload {
 	sub: string;
@@ -18,6 +19,7 @@ export class JwtAuthGuard implements CanActivate {
 	constructor(
 		private readonly jwt: JwtService,
 		private readonly reflector: Reflector,
+		private readonly prisma: PrismaService,
 	) {}
 
 	async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -38,9 +40,15 @@ export class JwtAuthGuard implements CanActivate {
 				email: payload.email,
 				role: payload.role as AuthenticatedUser["role"],
 			};
+			const usuario = await this.prisma.usuario.findUnique({
+				where: { id: payload.sub },
+				select: { ativo: true },
+			});
+			if (!usuario?.ativo) throw new UnauthorizedException("Usuário inativo");
 
 			return true;
-		} catch {
+		} catch (error) {
+			if (error instanceof UnauthorizedException) throw error;
 			throw new UnauthorizedException("Token inválido ou expirado");
 		}
 	}

@@ -35,6 +35,12 @@ describe("VeiculosService", () => {
 			expect(r.status).toBe(409);
 		});
 
+		it("422 quando cliente está inativado", async () => {
+			clientes.findById.mockResolvedValueOnce({ id: "c1", ativo: false } as any);
+			const r = await service.create("c1", { placa: "ABC1234", marca: "X", modelo: "Y", ano: 2020 });
+			expect(r.status).toBe(422);
+		});
+
 		it("201 normaliza placa e cria", async () => {
 			clientes.findById.mockResolvedValueOnce({ id: "c1" } as any);
 			repo.findByPlaca.mockResolvedValueOnce(null);
@@ -93,6 +99,11 @@ describe("VeiculosService", () => {
 			repo.update.mockResolvedValueOnce({ id: "v1" } as any);
 			expect((await service.update("v1", { marca: "X" } as any)).status).toBe(200);
 		});
+
+		it("422 quando veículo inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "v1", ativo: false } as any);
+			expect((await service.update("v1", { marca: "X" } as any)).status).toBe(422);
+		});
 	});
 
 	describe("remove", () => {
@@ -112,6 +123,11 @@ describe("VeiculosService", () => {
 			repo.hasOrdensAbertas.mockResolvedValueOnce(0);
 			repo.softDelete.mockResolvedValueOnce({ id: "v1", ativo: false } as any);
 			expect((await service.remove("v1")).status).toBe(200);
+		});
+
+		it("422 quando já inativo", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "v1", ativo: false } as any);
+			expect((await service.remove("v1")).status).toBe(422);
 		});
 	});
 });

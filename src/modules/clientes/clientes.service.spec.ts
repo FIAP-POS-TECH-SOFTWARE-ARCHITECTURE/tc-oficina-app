@@ -95,6 +95,11 @@ describe("ClientesService", () => {
 			repo.update.mockResolvedValueOnce({ id: "1" } as any);
 			expect((await service.update("1", { nome: "y" })).status).toBe(200);
 		});
+
+		it("422 quando cliente está inativado", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "1", ativo: false } as any);
+			expect((await service.update("1", { nome: "y" })).status).toBe(422);
+		});
 	});
 
 	describe("remove", () => {
@@ -114,6 +119,11 @@ describe("ClientesService", () => {
 			repo.hasOrdensAbertas.mockResolvedValueOnce(0);
 			repo.softDelete.mockResolvedValueOnce({ id: "1", ativo: false } as any);
 			expect((await service.remove("1")).status).toBe(200);
+		});
+
+		it("422 quando cliente já está inativado", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "1", ativo: false } as any);
+			expect((await service.remove("1")).status).toBe(422);
 		});
 	});
 });

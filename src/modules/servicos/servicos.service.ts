@@ -38,6 +38,7 @@ export class ServicosService {
 	async update(id: string, dto: UpdateServicoDto): Promise<IServiceResponse<Servico>> {
 		const s = await this.repo.findById(id);
 		if (!s) return SR.notFound<Servico>(undefined, "Serviço não encontrado");
+		if (s.ativo === false) return SR.unprocessableEntity<Servico>(undefined, "Serviço inativado");
 
 		if (dto.nome && dto.nome !== s.nome) {
 			const conflict = await this.repo.findByNome(dto.nome);
@@ -51,6 +52,7 @@ export class ServicosService {
 	async remove(id: string): Promise<IServiceResponse<Servico>> {
 		const s = await this.repo.findById(id);
 		if (!s) return SR.notFound<Servico>(undefined, "Serviço não encontrado");
+		if (s.ativo === false) return SR.unprocessableEntity<Servico>(undefined, "Serviço já está inativado");
 
 		const updated = await this.repo.softDelete(id);
 		return SR.ok(updated, "Serviço inativado");

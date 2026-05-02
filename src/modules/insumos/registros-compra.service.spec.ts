@@ -51,6 +51,12 @@ describe("RegistrosCompraService", () => {
 		expect(r.status).toBe(404);
 	});
 
+	it("create 422 quando insumo está inativado", async () => {
+		insumos.findById.mockResolvedValueOnce({ id: "i1", ativo: false } as any);
+		const r = await service.create({ insumoId: "i1", quantidadeSolicitada: 2 }, "u1");
+		expect(r.status).toBe(422);
+	});
+
 	it("create 201 com ordemServicoId quando OS existe", async () => {
 		insumos.findById.mockResolvedValueOnce({ id: "i1" } as any);
 		prisma.ordemServico.findUnique.mockResolvedValueOnce({ id: "os1" });

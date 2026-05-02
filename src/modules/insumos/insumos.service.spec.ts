@@ -115,6 +115,12 @@ describe("InsumosService", () => {
 		expect(r.status).toBe(200);
 	});
 
+	it("update 422 quando inativo", async () => {
+		repo.findById.mockResolvedValueOnce({ id: "i1", ativo: false } as any);
+		const r = await service.update("i1", { nome: "novo" });
+		expect(r.status).toBe(422);
+	});
+
 	it("remove 404", async () => {
 		repo.findById.mockResolvedValueOnce(null);
 		const r = await service.remove("x");
@@ -128,16 +134,34 @@ describe("InsumosService", () => {
 		expect(r.status).toBe(200);
 	});
 
+	it("remove 422 quando já inativo", async () => {
+		repo.findById.mockResolvedValueOnce({ id: "i1", ativo: false } as any);
+		const r = await service.remove("i1");
+		expect(r.status).toBe(422);
+	});
+
 	it("entrada 404 quando insumo não existe", async () => {
 		repo.findById.mockResolvedValueOnce(null);
 		const r = await service.entrada("x", { quantidade: 1 }, "u1");
 		expect(r.status).toBe(404);
 	});
 
+	it("entrada 422 quando insumo inativo", async () => {
+		repo.findById.mockResolvedValueOnce({ id: "i1", ativo: false, quantidadeEstoque: 1 } as any);
+		const r = await service.entrada("i1", { quantidade: 1 }, "u1");
+		expect(r.status).toBe(422);
+	});
+
 	it("ajuste 404 quando insumo não existe", async () => {
 		repo.findById.mockResolvedValueOnce(null);
 		const r = await service.ajuste("x", { novaQuantidade: 1, motivo: "x" }, "u1");
 		expect(r.status).toBe(404);
+	});
+
+	it("ajuste 422 quando insumo inativo", async () => {
+		repo.findById.mockResolvedValueOnce({ id: "i1", ativo: false, quantidadeEstoque: 1 } as any);
+		const r = await service.ajuste("i1", { novaQuantidade: 1, motivo: "x" }, "u1");
+		expect(r.status).toBe(422);
 	});
 
 	it("ajuste 200 com delta positivo", async () => {
