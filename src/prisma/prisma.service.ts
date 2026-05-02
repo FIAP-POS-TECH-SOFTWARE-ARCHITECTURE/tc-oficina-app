@@ -7,8 +7,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		try {
 			await this.$connect();
 			console.log("✅ Conectado ao banco de dados com sucesso!");
-		} catch (error: any) {
-			console.error("❌ Falha ao conectar ao banco de dados:", error.message);
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : String(error);
+			console.error("❌ Falha ao conectar ao banco de dados:", message);
 			process.exit(1);
 		}
 	}

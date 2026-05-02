@@ -2,7 +2,19 @@ import { applyDecorators, Type } from "@nestjs/common";
 import { ApiExtraModels, ApiResponse, getSchemaPath } from "@nestjs/swagger";
 import { SwaggerResponseDto } from "../dto/swagger-response.dto";
 
-export const ApiEnvelopedResponse = <TModel extends Type<any>>(
+type PrimitiveConstructor = StringConstructor | NumberConstructor | BooleanConstructor;
+type ResponseModel = Type<unknown> | PrimitiveConstructor;
+
+const primitiveTypeMap = new Map<PrimitiveConstructor, "string" | "number" | "boolean">([
+	[String, "string"],
+	[Number, "number"],
+	[Boolean, "boolean"],
+]);
+
+const isPrimitiveModel = (value: ResponseModel): value is PrimitiveConstructor =>
+	value === String || value === Number || value === Boolean;
+
+export const ApiEnvelopedResponse = <TModel extends ResponseModel>(
 	model?: TModel,
 	options: { status?: number; description?: string; isArray?: boolean } = {},
 ) => {
@@ -10,12 +22,11 @@ export const ApiEnvelopedResponse = <TModel extends Type<any>>(
 	const description = options.description || "Success";
 	const isArray = options.isArray || false;
 
-	let dataSchema: any;
+	let dataSchema: Record<string, unknown>;
 	if (model) {
-		const modelAsAny = model as any;
-		if (modelAsAny === String || modelAsAny === Number || modelAsAny === Boolean) {
-			const typeMap = { [String.name]: "string", [Number.name]: "number", [Boolean.name]: "boolean" };
-			dataSchema = isArray ? { type: "array", items: { type: typeMap[modelAsAny.name] } } : { type: typeMap[modelAsAny.name] };
+		if (isPrimitiveModel(model)) {
+			const primitiveType = primitiveTypeMap.get(model);
+			dataSchema = isArray ? { type: "array", items: { type: primitiveType } } : { type: primitiveType };
 		} else {
 			dataSchema = isArray ? { type: "array", items: { $ref: getSchemaPath(model) } } : { $ref: getSchemaPath(model) };
 		}
@@ -23,12 +34,8 @@ export const ApiEnvelopedResponse = <TModel extends Type<any>>(
 		dataSchema = { type: "object" };
 	}
 
-	const modelAsAny = model as any;
 	return applyDecorators(
-		ApiExtraModels(
-			SwaggerResponseDto,
-			...(model && modelAsAny !== String && modelAsAny !== Number && modelAsAny !== Boolean ? [model] : []),
-		),
+		ApiExtraModels(SwaggerResponseDto, ...(model && !isPrimitiveModel(model) ? [model] : [])),
 		ApiResponse({
 			status,
 			description,

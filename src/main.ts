@@ -63,4 +63,4 @@ async function bootstrap() {
 	console.log(`📚 Documentação disponível em: http://localhost:${process.env.PORT}/docs`);
 }
 
-bootstrap();
+void bootstrap();

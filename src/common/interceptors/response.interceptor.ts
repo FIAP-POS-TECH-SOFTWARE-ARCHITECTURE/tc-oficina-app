@@ -6,12 +6,12 @@ import { IServiceResponse } from "semantic-response";
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<IServiceResponse<T>, IServiceResponse<T>> {
-	intercept(ctx: ExecutionContext, next: CallHandler): Observable<IServiceResponse<T>> {
+	intercept(ctx: ExecutionContext, next: CallHandler<T | IServiceResponse<T>>): Observable<IServiceResponse<T>> {
 		const res = ctx.switchToHttp().getResponse<Response>();
 		return next.handle().pipe(
 			map((value) => {
 				if (value && typeof value === "object" && "status" in value && "success" in value) {
-					const semantic = value as IServiceResponse<T>;
+					const semantic = value;
 					res.status(semantic.status);
 					return semantic;
 				}

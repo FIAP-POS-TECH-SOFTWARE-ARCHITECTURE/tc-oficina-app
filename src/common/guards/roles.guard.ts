@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { Request } from "express";
 import { ROLES_KEY } from "../decorators/roles.decorator";
 import { Role } from "../enums/role.enum";
 
@@ -11,8 +12,8 @@ export class RolesGuard implements CanActivate {
 		const required = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [ctx.getHandler(), ctx.getClass()]);
 		if (!required || required.length === 0) return true;
 
-		const req = ctx.switchToHttp().getRequest();
-		const user = req.user as { role?: Role } | undefined;
+		const req = ctx.switchToHttp().getRequest<Request & { user?: { role?: Role } }>();
+		const user = req.user;
 
 		if (!user || !user.role) throw new ForbiddenException("Usuário não autenticado.");
 

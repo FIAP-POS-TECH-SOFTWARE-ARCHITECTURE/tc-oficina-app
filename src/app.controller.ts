@@ -1,5 +1,5 @@
 import { Controller, Get } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AppService } from "./app.service";
 import { Public } from "./common/decorators/public.decorator";
 import { ApiEnvelopedResponse } from "./common/decorators/api-enveloped-response.decorator";

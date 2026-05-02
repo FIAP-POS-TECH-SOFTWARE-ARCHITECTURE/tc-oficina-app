@@ -15,14 +15,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
 		if (exception instanceof HttpException) {
 			const status = exception.getStatus();
 			const responseBody = exception.getResponse();
-			const message = typeof responseBody === "string" ? responseBody : ((responseBody as any)?.message ?? exception.message);
+			const message = this.getMessage(responseBody, exception.message);
+			const errorData = typeof responseBody === "object" && responseBody !== null ? responseBody : undefined;
 			body = {
 				status,
 				success: false,
-				message: Array.isArray(message) ? message.join("; ") : message,
+				message,
 				error: {
-					message: Array.isArray(message) ? message.join("; ") : message,
-					data: typeof responseBody === "object" ? responseBody : undefined,
+					message,
+					data: errorData,
 				},
 			};
 		} else {
@@ -36,5 +37,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
 		}
 
 		res.status(body.status ?? HttpStatus.INTERNAL_SERVER_ERROR).json(body);
+	}
+
+	private getMessage(responseBody: unknown, fallback: string): string {
+		if (typeof responseBody === "string") return responseBody;
+		if (typeof responseBody !== "object" || responseBody === null) return fallback;
+		if (!("message" in responseBody)) return fallback;
+
+		const message = (responseBody as { message?: unknown }).message;
+		if (Array.isArray(message)) return message.map(String).join("; ");
+		return typeof message === "string" ? message : fallback;
 	}
 }

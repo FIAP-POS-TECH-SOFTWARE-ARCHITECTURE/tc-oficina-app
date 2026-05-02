@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
+import type { AuthenticatedUser } from "../decorators/current-user.decorator";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 
 interface JwtPayload {
@@ -9,6 +10,8 @@ interface JwtPayload {
 	email: string;
 	role: string;
 }
+
+type RequestWithUser = Request & { user?: AuthenticatedUser };
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -21,7 +24,7 @@ export class JwtAuthGuard implements CanActivate {
 		const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [ctx.getHandler(), ctx.getClass()]);
 		if (isPublic) return true;
 
-		const req = ctx.switchToHttp().getRequest<Request>();
+		const req = ctx.switchToHttp().getRequest<RequestWithUser>();
 		const token = this.extractToken(req);
 		if (!token) throw new UnauthorizedException("Token não encontrado");
 
@@ -30,10 +33,10 @@ export class JwtAuthGuard implements CanActivate {
 				secret: process.env.JWT_SECRET,
 			});
 
-			(req as any).user = {
+			req.user = {
 				id: payload.sub,
 				email: payload.email,
-				role: payload.role,
+				role: payload.role as AuthenticatedUser["role"],
 			};
 
 			return true;
