@@ -63,7 +63,7 @@ npm run test:e2e
 
 ## Bruno (cliente de API)
 
-Baixe o Bruno em: **https://www.usebruno.com/downloads**
+Baixe o Bruno em: **<https://www.usebruno.com/downloads>**
 
 ### Como abrir a coleção deste projeto
 
@@ -171,10 +171,25 @@ Também usados:
 
 ## SonarQube local (opcional)
 
+Token do SonarQube:
+
+1. Acesse `http://localhost:9000` e faça login.
+2. Vá em **My Account** > **Security**.
+3. Em **Generate Tokens**, crie um token (**User Token**) e copie o valor.
+
+Java (pré-requisito do scanner): JDK 17+ instalado e `java` disponível no PATH.
+
 ```bash
 npm run sonar:up
 npm run test:cov
-npm run sonar:scan -- -Dsonar.token=SEU_TOKEN
+
+# Linux/macOS
+export SONAR_TOKEN=SEU_TOKEN
+
+# Windows PowerShell
+$env:SONAR_TOKEN="SEU_TOKEN"
+
+npm run sonar:scan
 ```
 
 Painel: `http://localhost:9000`

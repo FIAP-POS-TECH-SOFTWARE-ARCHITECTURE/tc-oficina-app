@@ -16,7 +16,7 @@
 		"db:seed": "ts-node -P tsconfig.seed.json prisma/seed.ts",
 		"sonar:up": "docker compose -f dev/docker-compose.yml up -d sonarqube",
 		"sonar:down": "docker compose -f dev/docker-compose.yml stop sonarqube",
-		"sonar:scan": "sonar-scanner",
+		"sonar:scan": "node scripts/sonar-scan.cjs",
 		"test": "jest",
 		"test:watch": "jest --watch",
 		"test:cov": "jest --coverage",
