@@ -145,7 +145,7 @@ npm install
 cp .env.example .env
 
 # 3. banco de desenvolvimento
-docker compose -f dev/docker-compose.yml up -d
+docker compose -f dev/docker-compose.yml up -d postgres
 
 # 4. migrations
 npx prisma migrate dev
@@ -159,6 +159,13 @@ npm run start:dev
 
 A API sobe em `http://localhost:3000`. No primeiro boot, se não houver `ADMINISTRADOR` ativo,
 um admin padrão é criado a partir de `ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`.
+
+### Como rodar com Docker
+
+```bash
+# sobe Postgres + API (faz build da Dockerfile se necessário)
+docker compose -f dev/docker-compose.yml up -d --build
+```
 
 ### Seed de dados base
 
