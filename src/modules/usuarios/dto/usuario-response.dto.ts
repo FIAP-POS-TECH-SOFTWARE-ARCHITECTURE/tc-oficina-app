@@ -1,12 +1,26 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { Role } from "../../../common/enums/role.enum";
 
 export class UsuarioResponseDto {
+	@ApiProperty()
 	id!: string;
+
+	@ApiProperty()
 	nome!: string;
+
+	@ApiProperty()
 	email!: string;
+
+	@ApiProperty({ enum: Role })
 	role!: Role;
+
+	@ApiProperty()
 	ativo!: boolean;
+
+	@ApiProperty()
 	createdAt!: Date;
+
+	@ApiProperty()
 	updatedAt!: Date;
 
 	static fromEntity(u: {

@@ -47,7 +47,12 @@ async function bootstrap() {
 
 	app.use(morgan("dev"));
 
-	const config = new DocumentBuilder().setTitle("Oficina API").setDescription("Documentação da API").setVersion('').build();
+	const config = new DocumentBuilder()
+		.setTitle("Oficina API")
+		.setDescription("API para Gerenciamento de Oficina Mecânica")
+		.setVersion("")
+		.addBearerAuth()
+		.build();
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup("/docs", app, document);
 
