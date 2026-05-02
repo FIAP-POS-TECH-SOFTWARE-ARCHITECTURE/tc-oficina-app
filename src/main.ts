@@ -9,6 +9,7 @@ import { ResponseInterceptor } from "./common/interceptors/response.interceptor"
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 async function bootstrap() {
 	if (!process.env.PORT) throw new Error("PORT não definido no .env");
@@ -46,9 +47,15 @@ async function bootstrap() {
 
 	app.use(morgan("dev"));
 
+	const config = new DocumentBuilder().setTitle("Oficina API").setDescription("Documentação da API").setVersion('').build();
+	const document = SwaggerModule.createDocument(app, config);
+	SwaggerModule.setup("/docs", app, document);
+
 	await app.listen(process.env.PORT);
 
-	console.log(`🚀 aplicação rodando em: http://localhost:${process.env.PORT}`);
+	console.log(`🚀 Aplicação rodando em: http://localhost:${process.env.PORT}`);
+
+	console.log(`📚 Documentação disponível em: http://localhost:${process.env.PORT}/docs`);
 }
 
 bootstrap();
