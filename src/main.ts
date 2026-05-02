@@ -3,6 +3,8 @@ import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import morgan from "morgan";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
@@ -16,6 +18,15 @@ async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
 	app.enableCors();
+	app.use(helmet());
+	app.use(
+		rateLimit({
+			windowMs: 15 * 60 * 1000,
+			max: 100,
+			standardHeaders: true,
+			legacyHeaders: false,
+		}),
+	);
 
 	app.useGlobalPipes(
 		new ValidationPipe({
