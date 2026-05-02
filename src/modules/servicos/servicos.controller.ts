@@ -47,7 +47,7 @@ export class ServicosController {
 	@Delete(":id")
 	@Roles(Role.ADMINISTRADOR)
 	@ApiOperation({ summary: "Remover serviço do catálogo" })
-	@ApiEnvelopedResponse(String)
+	@ApiEnvelopedResponse(ServicoResponseDto)
 	remove(@Param("id", ParseUUIDPipe) id: string) {
 		return this.service.remove(id);
 	}
