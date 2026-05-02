@@ -78,6 +78,14 @@ export class OrdensServicoRepository {
 			},
 		});
 	}
+
+	findHistorico(ordemServicoId: string) {
+		return this.prisma.osHistoricoStatus.findMany({
+			where: { ordemServicoId },
+			include: { usuario: true },
+			orderBy: { createdAt: "asc" },
+		});
+	}
 }
 
 export { OS_INCLUDE };

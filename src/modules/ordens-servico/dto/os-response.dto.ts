@@ -1,8 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { OsStatus, OsItemServicoStatus } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import { ClienteResponseDto } from "src/modules/clientes/dto/cliente-response.dto";
-import { VeiculoResponseDto } from "src/modules/veiculos/dto/veiculo-response.dto";
+import { ClienteResponseDto } from "../../clientes/dto/cliente-response.dto";
+import { InsumoResponseDto } from "../../insumos/dto/insumo-response.dto";
+import { ServicoResponseDto } from "../../servicos/dto/servico-response.dto";
+import { UsuarioResponseDto } from "../../usuarios/dto/usuario-response.dto";
+import { VeiculoResponseDto } from "../../veiculos/dto/veiculo-response.dto";
 
 export class OsItemServicoResponseDto {
 	@ApiProperty()
@@ -31,6 +34,15 @@ export class OsItemServicoResponseDto {
 
 	@ApiPropertyOptional()
 	finalizadoExecucaoEm?: Date;
+
+	@ApiProperty()
+	createdAt: Date;
+
+	@ApiProperty()
+	updatedAt: Date;
+
+	@ApiPropertyOptional({ type: ServicoResponseDto })
+	servico?: ServicoResponseDto;
 }
 
 export class OsItemInsumoResponseDto {
@@ -51,6 +63,41 @@ export class OsItemInsumoResponseDto {
 
 	@ApiProperty({ type: Number })
 	subtotal: Decimal;
+
+	@ApiProperty()
+	createdAt: Date;
+
+	@ApiProperty()
+	updatedAt: Date;
+
+	@ApiPropertyOptional({ type: InsumoResponseDto })
+	insumo?: InsumoResponseDto;
+}
+
+export class OsHistoricoResponseDto {
+	@ApiProperty()
+	id: string;
+
+	@ApiProperty()
+	ordemServicoId: string;
+
+	@ApiPropertyOptional({ enum: OsStatus, nullable: true })
+	statusAnterior?: OsStatus | null;
+
+	@ApiProperty({ enum: OsStatus })
+	statusNovo: OsStatus;
+
+	@ApiPropertyOptional({ nullable: true, type: String })
+	observacao?: string | null;
+
+	@ApiPropertyOptional({ nullable: true, type: String })
+	usuarioId?: string | null;
+
+	@ApiProperty()
+	createdAt: Date;
+
+	@ApiPropertyOptional({ type: UsuarioResponseDto })
+	usuario?: UsuarioResponseDto;
 }
 
 export class OsResponseDto {
@@ -107,6 +154,9 @@ export class OsResponseDto {
 
 	@ApiPropertyOptional({ type: [OsItemInsumoResponseDto] })
 	itensInsumo?: OsItemInsumoResponseDto[];
+
+	@ApiPropertyOptional({ type: [OsHistoricoResponseDto] })
+	historico?: OsHistoricoResponseDto[];
 }
 
 export class OsConsultaPublicaVeiculoDto {

@@ -13,6 +13,9 @@ describe("OrdensServicoRepository", () => {
 				findMany: jest.fn(),
 				count: jest.fn(),
 			},
+			osHistoricoStatus: {
+				findMany: jest.fn(),
+			},
 			$transaction: jest.fn(),
 			$queryRaw: jest.fn(),
 		};
@@ -77,5 +80,20 @@ describe("OrdensServicoRepository", () => {
 		const result = await repo.tempoMedioPorMes();
 		expect(prisma.$queryRaw).toHaveBeenCalled();
 		expect(result).toEqual([{ ano_mes: "2026-04", tempo_medio_min: 60, total: 1 }]);
+	});
+
+	it("findHistorico busca histórico ordenado por data", async () => {
+		const historicoMock = [
+			{ id: "h1", ordemServicoId: "os1", statusAnterior: null, statusNovo: OsStatus.RECEBIDA, createdAt: new Date() },
+			{ id: "h2", ordemServicoId: "os1", statusAnterior: OsStatus.RECEBIDA, statusNovo: OsStatus.EM_DIAGNOSTICO, createdAt: new Date() },
+		];
+		prisma.osHistoricoStatus.findMany.mockResolvedValueOnce(historicoMock);
+		const result = await repo.findHistorico("os1");
+		expect(prisma.osHistoricoStatus.findMany).toHaveBeenCalledWith({
+			where: { ordemServicoId: "os1" },
+			include: { usuario: true },
+			orderBy: { createdAt: "asc" },
+		});
+		expect(result).toEqual(historicoMock);
 	});
 });

@@ -78,6 +78,14 @@ export class OrdensServicoService {
 		return SR.ok({ total, page, pageSize, items });
 	}
 
+	async obterHistorico(id: string): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findById(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+
+		const historico = await this.repo.findHistorico(id);
+		return SR.ok(historico);
+	}
+
 	async iniciarDiagnostico(id: string, usuarioId: string): Promise<IServiceResponse<unknown>> {
 		return this.transicao(id, "iniciar_diagnostico", usuarioId);
 	}

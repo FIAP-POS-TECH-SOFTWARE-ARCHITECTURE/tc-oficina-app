@@ -35,6 +35,7 @@ describe("OrdensServicoService", () => {
 			list: jest.fn(),
 			tempoMedioPorMes: jest.fn(),
 			contadorAno: jest.fn().mockResolvedValue(0),
+			findHistorico: jest.fn(),
 		} as unknown as jest.Mocked<OrdensServicoRepository>;
 		prisma = {
 			$transaction: jest.fn(async (fn: any) => fn(baseTx())),
@@ -829,6 +830,28 @@ describe("OrdensServicoService", () => {
 			const data = r.data as any;
 			expect(data.cliente).not.toBe("Cliente Teste");
 			expect(data.cliente.startsWith("Cliente")).toBe(true);
+		});
+	});
+
+	describe("obterHistorico", () => {
+		it("404 quando OS não existe", async () => {
+			repo.findById.mockResolvedValueOnce(null);
+			const r = await service.obterHistorico("os1");
+			expect(r.status).toBe(404);
+			expect(r.message).toContain("OS não encontrada");
+		});
+
+		it("200 retorna histórico ordenado", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1" } as any);
+			const historicoMock = [
+				{ id: "h1", statusAnterior: null, statusNovo: OsStatus.RECEBIDA, createdAt: new Date() },
+				{ id: "h2", statusAnterior: OsStatus.RECEBIDA, statusNovo: OsStatus.EM_DIAGNOSTICO, createdAt: new Date() },
+			];
+			repo.findHistorico.mockResolvedValueOnce(historicoMock as any);
+			const r = await service.obterHistorico("os1");
+			expect(r.status).toBe(200);
+			expect(r.data).toEqual(historicoMock);
+			expect(repo.findHistorico).toHaveBeenCalledWith("os1");
 		});
 	});
 });

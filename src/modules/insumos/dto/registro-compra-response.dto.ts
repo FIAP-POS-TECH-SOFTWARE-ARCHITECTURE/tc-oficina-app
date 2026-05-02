@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { RegistroCompraStatus } from "@prisma/client";
+import { OsResponseDto } from "../../ordens-servico/dto/os-response.dto";
+import { UsuarioResponseDto } from "../../usuarios/dto/usuario-response.dto";
+import { InsumoResponseDto } from "./insumo-response.dto";
 
 export class RegistroCompraResponseDto {
 	@ApiProperty()
@@ -35,9 +38,33 @@ export class RegistroCompraResponseDto {
 	@ApiPropertyOptional()
 	recebidoPorId?: string;
 
+	@ApiPropertyOptional()
+	aprovadoEm?: Date;
+
+	@ApiPropertyOptional()
+	recusadoEm?: Date;
+
+	@ApiPropertyOptional()
+	canceladoEm?: Date;
+
+	@ApiPropertyOptional()
+	recebidoEm?: Date;
+
 	@ApiProperty()
 	createdAt: Date;
 
 	@ApiProperty()
 	updatedAt: Date;
+
+	@ApiPropertyOptional({ type: InsumoResponseDto })
+	insumo?: InsumoResponseDto;
+
+	@ApiPropertyOptional({ type: OsResponseDto })
+	ordemServico?: OsResponseDto;
+
+	@ApiPropertyOptional({ type: UsuarioResponseDto })
+	solicitadoPor?: UsuarioResponseDto;
+
+	@ApiPropertyOptional({ type: UsuarioResponseDto })
+	recebidoPor?: UsuarioResponseDto;
 }

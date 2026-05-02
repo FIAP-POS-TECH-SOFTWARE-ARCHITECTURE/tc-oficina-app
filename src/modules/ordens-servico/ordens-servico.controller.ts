@@ -36,6 +36,14 @@ export class OrdensServicoController {
 		return this.service.list(query);
 	}
 
+	@Get(":id/historico")
+	@Roles(Role.ATENDENTE, Role.ADMINISTRADOR, Role.MECANICO)
+	@ApiOperation({ summary: "Obter histórico de status da OS" })
+	@ApiEnvelopedResponse(undefined, { isArray: true })
+	obterHistorico(@Param("id", ParseUUIDPipe) id: string) {
+		return this.service.obterHistorico(id);
+	}
+
 	@Get("metricas/tempo-medio")
 	@Roles(Role.ADMINISTRADOR)
 	@ApiOperation({ summary: "Obter métricas de tempo médio de execução (Somente Admin)" })
