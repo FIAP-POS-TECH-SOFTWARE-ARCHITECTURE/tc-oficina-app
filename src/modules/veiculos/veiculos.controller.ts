@@ -57,7 +57,7 @@ export class VeiculosController {
 	@Delete("veiculos/:id")
 	@Roles(Role.ADMINISTRADOR)
 	@ApiOperation({ summary: "Remover veículo (Admin)" })
-	@ApiEnvelopedResponse(String)
+	@ApiEnvelopedResponse(VeiculoResponseDto)
 	remove(@Param("id", ParseUUIDPipe) id: string) {
 		return this.service.remove(id);
 	}

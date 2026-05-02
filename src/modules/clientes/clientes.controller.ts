@@ -57,7 +57,7 @@ export class ClientesController {
 	@Delete(":id")
 	@Roles(Role.ADMINISTRADOR)
 	@ApiOperation({ summary: "Remover cliente" })
-	@ApiEnvelopedResponse(String)
+	@ApiEnvelopedResponse(ClienteResponseDto)
 	remove(@Param("id", ParseUUIDPipe) id: string) {
 		return this.service.remove(id);
 	}
