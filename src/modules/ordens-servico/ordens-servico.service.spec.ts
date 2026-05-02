@@ -812,5 +812,24 @@ describe("OrdensServicoService", () => {
 			const r = await service.consultaPublica("OS-2026-000002", "12.ABC.345/01DE-35");
 			expect(r.status).toBe(200);
 		});
+
+		it("200 mascara sobrenome quando nome possui duas partes", async () => {
+			repo.findByNumero.mockResolvedValueOnce({
+				numero: "OS-2026-000003",
+				cliente: { documento: "52998224725", nome: "Cliente Teste" },
+				veiculo: { placa: "ABC1234", marca: "X", modelo: "Y" },
+				status: OsStatus.EM_EXECUCAO,
+				diagnostico: null,
+				valorTotal: D(0),
+				itensServico: [],
+				itensInsumo: [],
+				historico: [],
+			} as any);
+			const r = await service.consultaPublica("OS-2026-000003", "529.982.247-25");
+			expect(r.status).toBe(200);
+			const data = r.data as any;
+			expect(data.cliente).not.toBe("Cliente Teste");
+			expect(data.cliente.startsWith("Cliente")).toBe(true);
+		});
 	});
 });
