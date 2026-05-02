@@ -1,5 +1,4 @@
 import { OsItemServicoStatus, OsStatus, Prisma, TipoMovimentoEstoque } from "@prisma/client";
-import { PrismaService } from "../../prisma/prisma.service";
 import { ClientesRepository } from "../clientes/clientes.repository";
 import { InsumosRepository } from "../insumos/insumos.repository";
 import { ServicosRepository } from "../servicos/servicos.repository";
