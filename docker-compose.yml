@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: password
       PGDATA: /var/lib/postgresql/18/docker
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d oficina"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d oficina" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -37,7 +37,7 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-admin@oficina.local}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-ChangeMe!123}
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/oficina
+      DATABASE_URL: ${DATABASE_URL:?Arquivo .env ausente ou DATABASE_URL nao definido}
 
 volumes:
   postgres_data_v18:
