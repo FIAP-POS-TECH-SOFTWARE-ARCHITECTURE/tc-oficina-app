@@ -75,6 +75,13 @@ describe("ServicosService", () => {
 			repo.update.mockResolvedValueOnce({ id: "s1" } as any);
 			expect((await service.update("s1", { nome: "antigo" } as any)).status).toBe(200);
 		});
+
+		it("200 quando rename para nome novo sem conflito", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "s1", nome: "antigo" } as any);
+			repo.findByNome.mockResolvedValueOnce(null);
+			repo.update.mockResolvedValueOnce({ id: "s1" } as any);
+			expect((await service.update("s1", { nome: "novo" } as any)).status).toBe(200);
+		});
 	});
 
 	describe("remove", () => {

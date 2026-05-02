@@ -1,5 +1,5 @@
 import { OsStatus } from "../../common/enums/os-status.enum";
-import { canTransition, nextStatus, OsTransition } from "./fluxo-estados-os";
+import { canTransition, nextStatus, OsTransition, transitionsFrom } from "./fluxo-estados-os";
 
 describe("Fluxo de estados da OS", () => {
 	const todasTransicoes: OsTransition[] = [
@@ -52,5 +52,26 @@ describe("Fluxo de estados da OS", () => {
 
 	it("não permite entregar antes de finalizar", () => {
 		expect(canTransition(OsStatus.EM_EXECUCAO, "entregar")).toBe(false);
+	});
+
+	describe("transitionsFrom", () => {
+		it("retorna lista de transições disponíveis a partir de RECEBIDA", () => {
+			const transitions = transitionsFrom(OsStatus.RECEBIDA);
+			expect(transitions).toContain("iniciar_diagnostico");
+			expect(transitions).toContain("cancelar");
+			expect(transitions).not.toContain("finalizar");
+		});
+
+		it("retorna lista de transições disponíveis a partir de EM_EXECUCAO", () => {
+			const transitions = transitionsFrom(OsStatus.EM_EXECUCAO);
+			expect(transitions).toContain("finalizar");
+			expect(transitions).toContain("cancelar");
+			expect(transitions).not.toContain("iniciar_diagnostico");
+		});
+
+		it("retorna lista vazia para status sem transições disponíveis (ENTREGUE)", () => {
+			const transitions = transitionsFrom(OsStatus.ENTREGUE);
+			expect(transitions).toHaveLength(0);
+		});
 	});
 });

@@ -79,4 +79,20 @@ describe("JwtAuthGuard", () => {
 			UnauthorizedException,
 		);
 	});
+
+	it("401 quando usuário não existe no banco (findUnique retorna null)", async () => {
+		reflector.getAllAndOverride.mockReturnValueOnce(false);
+		jwt.verifyAsync.mockResolvedValueOnce({ sub: "u1", email: "a@a", role: "ADMINISTRADOR" });
+		prisma.usuario.findUnique.mockResolvedValueOnce(null);
+		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Bearer xxx" } }))).rejects.toBeInstanceOf(
+			UnauthorizedException,
+		);
+	});
+
+	it("401 quando header Bearer sem token após espaço", async () => {
+		reflector.getAllAndOverride.mockReturnValueOnce(false);
+		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Bearer " } }))).rejects.toBeInstanceOf(
+			UnauthorizedException,
+		);
+	});
 });

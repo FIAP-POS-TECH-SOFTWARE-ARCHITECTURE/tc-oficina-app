@@ -98,6 +98,22 @@ describe("UsuariosService", () => {
 			expect(r.status).toBe(409);
 		});
 
+		it("200 quando troca email para endereço sem conflito", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "1", email: "a@a" } as any);
+			repo.findByEmail.mockResolvedValueOnce(null);
+			repo.update.mockResolvedValueOnce({
+				id: "1",
+				nome: "X",
+				email: "novo@a.com",
+				role: Role.ATENDENTE,
+				ativo: true,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			} as any);
+			const r = await service.update("1", { email: "novo@a.com" });
+			expect(r.status).toBe(200);
+		});
+
 		it("200 quando atualiza", async () => {
 			repo.findById.mockResolvedValueOnce({ id: "1", email: "a@a" } as any);
 			repo.update.mockResolvedValueOnce({
@@ -212,6 +228,32 @@ describe("UsuariosService", () => {
 			repo.countAdmins.mockResolvedValueOnce(1);
 			await service.onModuleInit();
 			expect(repo.create).not.toHaveBeenCalled();
+		});
+
+		it("não cria admin quando email bootstrap já existe no banco", async () => {
+			repo.countAdmins.mockResolvedValueOnce(0);
+			process.env.ADMIN_BOOTSTRAP_EMAIL = "admin@oficina.local";
+			process.env.ADMIN_BOOTSTRAP_PASSWORD = "ChangeMe!123";
+			repo.findByEmail.mockResolvedValueOnce({ id: "existing" } as any);
+			await service.onModuleInit();
+			expect(repo.create).not.toHaveBeenCalled();
+		});
+
+		it("não cria admin e loga warn quando env vars ausentes", async () => {
+			repo.countAdmins.mockResolvedValueOnce(0);
+			const savedEmail = process.env.ADMIN_BOOTSTRAP_EMAIL;
+			const savedPwd = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+			delete process.env.ADMIN_BOOTSTRAP_EMAIL;
+			delete process.env.ADMIN_BOOTSTRAP_PASSWORD;
+			try {
+				const warnSpy = jest.spyOn((service as any).logger, "warn").mockImplementation(() => undefined);
+				await service.onModuleInit();
+				expect(repo.create).not.toHaveBeenCalled();
+				expect(warnSpy).toHaveBeenCalled();
+			} finally {
+				if (savedEmail !== undefined) process.env.ADMIN_BOOTSTRAP_EMAIL = savedEmail;
+				if (savedPwd !== undefined) process.env.ADMIN_BOOTSTRAP_PASSWORD = savedPwd;
+			}
 		});
 
 		it("cria admin com bcrypt-like hash", async () => {

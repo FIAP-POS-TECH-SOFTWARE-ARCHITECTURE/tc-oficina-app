@@ -53,11 +53,35 @@ describe("AllExceptionsFilter", () => {
 		expect(loggerSpy).toHaveBeenCalledWith("string-erro");
 	});
 
+	it("HttpException com objeto contendo message string retorna a message do objeto", () => {
+		const { host, status, json } = buildHost();
+		const ex = new HttpException({ message: "Erro detalhado" }, 400);
+		filter.catch(ex, host);
+		expect(status).toHaveBeenCalledWith(400);
+		expect(json).toHaveBeenCalledWith(expect.objectContaining({ message: "Erro detalhado" }));
+	});
+
 	it("HttpException com payload objeto sem message usa message da própria exception", () => {
 		const { host, status, json } = buildHost();
 		const ex = new HttpException({ foo: "bar" }, 418);
 		filter.catch(ex, host);
 		expect(status).toHaveBeenCalledWith(418);
 		expect(json).toHaveBeenCalled();
+	});
+
+	it("HttpException com message de tipo não-string e não-array usa fallback", () => {
+		const { host, status, json } = buildHost();
+		const ex = new HttpException({ message: 42 }, 422);
+		filter.catch(ex, host);
+		expect(status).toHaveBeenCalledWith(422);
+		expect(json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+	});
+
+	it("HttpException com response primitivo (não-objeto) usa fallback da exception", () => {
+		const { host, status } = buildHost();
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const ex = new HttpException(42 as any, 400);
+		filter.catch(ex, host);
+		expect(status).toHaveBeenCalledWith(400);
 	});
 });

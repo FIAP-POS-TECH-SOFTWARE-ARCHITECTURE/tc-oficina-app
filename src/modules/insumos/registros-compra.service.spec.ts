@@ -160,6 +160,17 @@ describe("RegistrosCompraService", () => {
 		);
 	});
 
+	it("registrarRespostaFornecedor 200 recusando com mensagem como fallback de motivoRecusa", async () => {
+		repo.findById.mockResolvedValueOnce({ id: "rc1", status: RegistroCompraStatus.CRIADO } as any);
+		repo.findByIdFull.mockResolvedValueOnce({ id: "rc1" } as any);
+		const r = await service.registrarRespostaFornecedor("rc1", { aprovado: false, mensagem: "mensagem como motivo" });
+		expect(r.status).toBe(200);
+		expect(repo.update).toHaveBeenCalledWith(
+			"rc1",
+			expect.objectContaining({ motivoRecusa: "mensagem como motivo" }),
+		);
+	});
+
 	it("cancelar 404 quando não existe", async () => {
 		repo.findById.mockResolvedValueOnce(null);
 		expect((await service.cancelar("x", { motivo: "y" })).status).toBe(404);

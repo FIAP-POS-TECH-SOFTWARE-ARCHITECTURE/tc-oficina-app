@@ -859,6 +859,85 @@ describe("OrdensServicoService", () => {
 		});
 	});
 
+	describe("removerItemServico - branches extras", () => {
+		it("422 quando OS não está em status que permite remoção", async () => {
+			repo.findById.mockResolvedValueOnce({ id: "os1", status: OsStatus.AGUARDANDO_APROVACAO } as any);
+			const r = await service.removerItemServico("os1", "i");
+			expect(r.status).toBe(422);
+		});
+	});
+
+	describe("finalizar - branches extras", () => {
+		it("422 quando transição inválida (status RECEBIDA)", async () => {
+			repo.findByIdFull.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.RECEBIDA,
+				itensServico: [{ status: OsItemServicoStatus.CONCLUIDO }],
+			} as any);
+			const r = await service.finalizar("os1", "u1");
+			expect(r.status).toBe(422);
+			expect(r.message).toContain("Transição inválida");
+		});
+	});
+
+	describe("consultaPublica - itens e mascara nome único", () => {
+		it("200 com itensServico e itensInsumo preenchidos — cobre callbacks do map", async () => {
+			repo.findByNumero.mockResolvedValueOnce({
+				numero: "OS-2026-000004",
+				cliente: { documento: "52998224725", nome: "Cliente Teste" },
+				veiculo: { placa: "ABC1234", marca: "Fiat", modelo: "Uno" },
+				status: OsStatus.EM_EXECUCAO,
+				diagnostico: "ok",
+				valorTotal: D(150),
+				itensServico: [
+					{
+						servico: { nome: "Troca de óleo" },
+						status: OsItemServicoStatus.CONCLUIDO,
+						iniciadoExecucaoEm: new Date(),
+						finalizadoExecucaoEm: new Date(),
+						quantidade: 1,
+						precoUnitario: D(100),
+						subtotal: D(100),
+					},
+				],
+				itensInsumo: [
+					{
+						insumo: { nome: "Filtro de óleo" },
+						quantidade: 1,
+						precoUnitario: D(50),
+						subtotal: D(50),
+					},
+				],
+				historico: [{ statusAnterior: null, statusNovo: OsStatus.RECEBIDA, observacao: null, createdAt: new Date() }],
+			} as any);
+			const r = await service.consultaPublica("OS-2026-000004", "529.982.247-25");
+			expect(r.status).toBe(200);
+			const data = r.data as any;
+			expect(data.itensServico).toHaveLength(1);
+			expect(data.itensServico[0].nome).toBe("Troca de óleo");
+			expect(data.itensInsumo).toHaveLength(1);
+			expect(data.itensInsumo[0].nome).toBe("Filtro de óleo");
+		});
+
+		it("200 mascara nome com uma única palavra", async () => {
+			repo.findByNumero.mockResolvedValueOnce({
+				numero: "OS-2026-000005",
+				cliente: { documento: "52998224725", nome: "Fulano" },
+				veiculo: { placa: "ABC1234", marca: "X", modelo: "Y" },
+				status: OsStatus.EM_EXECUCAO,
+				diagnostico: null,
+				valorTotal: D(0),
+				itensServico: [],
+				itensInsumo: [],
+				historico: [],
+			} as any);
+			const r = await service.consultaPublica("OS-2026-000005", "529.982.247-25");
+			expect(r.status).toBe(200);
+			const data = r.data as any;
+			expect(data.cliente).toMatch(/^F\*+$/);
+		});
+	});
+
 	describe("obterHistorico", () => {
 		it("404 quando OS não existe", async () => {
 			repo.findById.mockResolvedValueOnce(null);
