@@ -9,6 +9,8 @@ import { Role } from "../../common/enums/role.enum";
 import { AddItemInsumoDto, AddItemServicoDto } from "./dto/add-item.dto";
 import { CreateOsDto } from "./dto/create-os.dto";
 import { ListarOsDto } from "./dto/listar-os.dto";
+import { MetricasTempoMedioDto } from "./dto/metricas-tempo-medio.dto";
+import { TempoMedioServicoResponseDto } from "./dto/tempo-medio-servico-response.dto";
 import { AprovacaoPublicaDto, CancelarOsDto, DesbloquearOsDto } from "./dto/transicao.dto";
 import { UpdateDiagnosticoDto } from "./dto/update-diagnostico.dto";
 import { OrdensServicoService } from "./ordens-servico.service";
@@ -46,10 +48,10 @@ export class OrdensServicoController {
 
 	@Get("metricas/tempo-medio")
 	@Roles(Role.ADMINISTRADOR)
-	@ApiOperation({ summary: "Obter métricas de tempo médio de execução (Somente Admin)" })
-	@ApiEnvelopedResponse(undefined, { isArray: true })
-	metricas() {
-		return this.service.tempoMedioExecucao();
+	@ApiOperation({ summary: "Tempo médio de execução por serviço (Somente Admin)" })
+	@ApiEnvelopedResponse(TempoMedioServicoResponseDto, { isArray: true })
+	metricas(@Query() query: MetricasTempoMedioDto) {
+		return this.service.tempoMedioExecucao(query.filtro);
 	}
 
 	@Public()

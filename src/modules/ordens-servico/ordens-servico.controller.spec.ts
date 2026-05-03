@@ -53,7 +53,7 @@ describe("OrdensServicoController", () => {
 		});
 
 		it("metricas", async () => {
-			await controller.metricas();
+			await controller.metricas({});
 			expect(service.tempoMedioExecucao).toHaveBeenCalled();
 		});
 

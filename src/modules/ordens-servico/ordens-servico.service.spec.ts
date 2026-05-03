@@ -33,7 +33,7 @@ describe("OrdensServicoService", () => {
 			findByIdFull: jest.fn(),
 			findByNumero: jest.fn(),
 			list: jest.fn(),
-			tempoMedioPorMes: jest.fn(),
+			tempoMedioPorServico: jest.fn(),
 			contadorAno: jest.fn().mockResolvedValue(0),
 			findHistorico: jest.fn(),
 		} as unknown as jest.Mocked<OrdensServicoRepository>;
@@ -320,10 +320,32 @@ describe("OrdensServicoService", () => {
 			expect((r.data as any).pageSize).toBe(20);
 		});
 
-		it("metricas retorna agregado", async () => {
-			repo.tempoMedioPorMes.mockResolvedValueOnce([{ ano_mes: "2026-04", tempo_medio_min: 60, total: 2 }]);
+		it("metricas retorna agregado por serviço com ativo", async () => {
+			repo.tempoMedioPorServico.mockResolvedValueOnce([
+				{ servico_id: "s1", nome: "Troca de Óleo", ativo: true, tempo_medio_min: 60, total_execucoes: 2 },
+			]);
+			const r = await service.tempoMedioExecucao("ativos");
+			expect(r.status).toBe(200);
+			expect((r.data as any)[0].servicoId).toBe("s1");
+			expect((r.data as any)[0].ativo).toBe(true);
+			expect((r.data as any)[0].tempoMedioMin).toBe(60);
+			expect((r.data as any)[0].totalExecucoes).toBe(2);
+		});
+
+		it("metricas sem execuções retorna tempoMedioMin null e totalExecucoes 0", async () => {
+			repo.tempoMedioPorServico.mockResolvedValueOnce([
+				{ servico_id: "s2", nome: "Alinhamento", ativo: true, tempo_medio_min: null, total_execucoes: 0 },
+			]);
 			const r = await service.tempoMedioExecucao();
 			expect(r.status).toBe(200);
+			expect((r.data as any)[0].tempoMedioMin).toBeNull();
+			expect((r.data as any)[0].totalExecucoes).toBe(0);
+		});
+
+		it("metricas default usa filtro ativos", async () => {
+			repo.tempoMedioPorServico.mockResolvedValueOnce([]);
+			await service.tempoMedioExecucao();
+			expect(repo.tempoMedioPorServico).toHaveBeenCalledWith("ativos");
 		});
 	});
 

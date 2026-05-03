@@ -52,19 +52,32 @@ export class OrdensServicoRepository {
 		]);
 	}
 
-	tempoMedioPorMes() {
-		return this.prisma.$queryRaw<{ ano_mes: string; tempo_medio_min: number; total: number }[]>`
+	tempoMedioPorServico(filtro: "ativos" | "inativos" | "ambos" = "ativos") {
+		const condicao =
+			filtro === "ativos"
+				? Prisma.sql`WHERE s.ativo = true`
+				: filtro === "inativos"
+					? Prisma.sql`WHERE s.ativo = false`
+					: Prisma.sql``;
+
+		return this.prisma.$queryRaw<
+			{ servico_id: string; nome: string; ativo: boolean; tempo_medio_min: number | null; total_execucoes: number }[]
+		>`
 			SELECT
-				to_char(ois.finalizado_execucao_em, 'YYYY-MM') AS ano_mes,
+				s.id AS servico_id,
+				s.nome,
+				s.ativo,
 				AVG(EXTRACT(EPOCH FROM (ois.finalizado_execucao_em - ois.iniciado_execucao_em)) / 60)::float AS tempo_medio_min,
-				COUNT(ois.id)::int AS total
-			FROM os_itens_servico ois
-			INNER JOIN ordens_servico os ON os.id = ois.ordem_servico_id
-			WHERE ois.status = 'CONCLUIDO'
+				COUNT(ois.id)::int AS total_execucoes
+			FROM servicos s
+			LEFT JOIN os_itens_servico ois
+				ON ois.servico_id = s.id
+				AND ois.status = 'CONCLUIDO'
 				AND ois.finalizado_execucao_em IS NOT NULL
 				AND ois.iniciado_execucao_em IS NOT NULL
-			GROUP BY ano_mes
-			ORDER BY ano_mes DESC
+			${condicao}
+			GROUP BY s.id, s.nome, s.ativo
+			ORDER BY s.nome ASC
 		`;
 	}
 

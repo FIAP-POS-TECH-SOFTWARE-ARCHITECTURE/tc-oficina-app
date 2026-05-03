@@ -75,11 +75,32 @@ describe("OrdensServicoRepository", () => {
 		expect(arg.where.createdAt.lt.toISOString()).toBe("2027-01-01T00:00:00.000Z");
 	});
 
-	it("tempoMedioPorMes delega ao $queryRaw e devolve resultado", async () => {
-		prisma.$queryRaw.mockResolvedValueOnce([{ ano_mes: "2026-04", tempo_medio_min: 60, total: 1 }]);
-		const result = await repo.tempoMedioPorMes();
+	it("tempoMedioPorServico filtrando ativos delega ao $queryRaw e devolve resultado", async () => {
+		const row = { servico_id: "s1", nome: "Troca de Óleo", ativo: true, tempo_medio_min: 60, total_execucoes: 1 };
+		prisma.$queryRaw.mockResolvedValueOnce([row]);
+		const result = await repo.tempoMedioPorServico("ativos");
 		expect(prisma.$queryRaw).toHaveBeenCalled();
-		expect(result).toEqual([{ ano_mes: "2026-04", tempo_medio_min: 60, total: 1 }]);
+		expect(result).toEqual([row]);
+	});
+
+	it("tempoMedioPorServico sem execuções retorna tempo_medio_min null e total_execucoes 0", async () => {
+		const row = { servico_id: "s2", nome: "Alinhamento", ativo: true, tempo_medio_min: null, total_execucoes: 0 };
+		prisma.$queryRaw.mockResolvedValueOnce([row]);
+		const result = await repo.tempoMedioPorServico("ativos");
+		expect(result[0].tempo_medio_min).toBeNull();
+		expect(result[0].total_execucoes).toBe(0);
+	});
+
+	it("tempoMedioPorServico filtrando inativos delega ao $queryRaw", async () => {
+		prisma.$queryRaw.mockResolvedValueOnce([]);
+		await repo.tempoMedioPorServico("inativos");
+		expect(prisma.$queryRaw).toHaveBeenCalled();
+	});
+
+	it("tempoMedioPorServico filtrando ambos delega ao $queryRaw", async () => {
+		prisma.$queryRaw.mockResolvedValueOnce([]);
+		await repo.tempoMedioPorServico("ambos");
+		expect(prisma.$queryRaw).toHaveBeenCalled();
 	});
 
 	it("findHistorico busca histórico ordenado por data", async () => {

@@ -564,9 +564,17 @@ export class OrdensServicoService {
 		});
 	}
 
-	async tempoMedioExecucao(): Promise<IServiceResponse<unknown>> {
-		const dados = await this.repo.tempoMedioPorMes();
-		return SR.ok(dados);
+	async tempoMedioExecucao(filtro: "ativos" | "inativos" | "ambos" = "ativos"): Promise<IServiceResponse<unknown>> {
+		const dados = await this.repo.tempoMedioPorServico(filtro);
+		return SR.ok(
+			dados.map((d) => ({
+				servicoId: d.servico_id,
+				nome: d.nome,
+				ativo: d.ativo,
+				tempoMedioMin: d.tempo_medio_min,
+				totalExecucoes: d.total_execucoes,
+			})),
+		);
 	}
 
 	private async transicao(
