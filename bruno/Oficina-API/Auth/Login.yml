@@ -10,8 +10,8 @@ http:
     type: json
     data: |-
       {
-        "email": "adm@adm.com",
-        "senha": "123"
+        "email": "admin@oficina.local",
+        "senha": "ChangeMe!123"
       }
 
 runtime:
