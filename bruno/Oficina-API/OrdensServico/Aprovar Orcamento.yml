@@ -5,15 +5,19 @@ info:
 
 http:
   method: POST
-  url: "{{url}}/os/{{osId}}/orcamento/aprovar"
+  url: "{{url}}/os/{{osNumero}}/orcamento/aprovar"
   body:
     type: json
     data: |-
       {
           "documento": "{{documentoCliente}}",
-          "observacao": "Aprovado pelo cliente via telefone"
+          "observacao": "Pode iniciar o serviço"
         }
-  auth: none
+
+runtime:
+  variables:
+    - name: documentoCliente
+      value: "52998224725"
 
 settings:
   encodeUrl: true

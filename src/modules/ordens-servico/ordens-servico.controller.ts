@@ -151,19 +151,19 @@ export class OrdensServicoController {
 	}
 
 	@Public()
-	@Post(":id/orcamento/aprovar")
+	@Post(":numero/orcamento/aprovar")
 	@ApiOperation({ summary: "Aprovação de orçamento pelo cliente (público)" })
 	@ApiEnvelopedResponse(OsResponseDto)
-	aprovar(@Param("id", ParseUUIDPipe) id: string, @Body() dto: AprovacaoPublicaDto) {
-		return this.service.aprovarOrcamento(id, dto);
+	aprovar(@Param("numero") numero: string, @Body() dto: AprovacaoPublicaDto) {
+		return this.service.aprovarOrcamento(numero, dto);
 	}
 
 	@Public()
-	@Post(":id/orcamento/rejeitar")
+	@Post(":numero/orcamento/rejeitar")
 	@ApiOperation({ summary: "Rejeição de orçamento pelo cliente (público)" })
 	@ApiEnvelopedResponse(OsResponseDto)
-	rejeitar(@Param("id", ParseUUIDPipe) id: string, @Body() dto: AprovacaoPublicaDto) {
-		return this.service.rejeitarOrcamento(id, dto);
+	rejeitar(@Param("numero") numero: string, @Body() dto: AprovacaoPublicaDto) {
+		return this.service.rejeitarOrcamento(numero, dto);
 	}
 
 	@Post(":id/finalizar")

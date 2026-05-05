@@ -298,8 +298,8 @@ export class OrdensServicoService {
 		return SR.ok(detalhe, "Orçamento gerado");
 	}
 
-	async aprovarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
-		const os = await this.repo.findByIdFull(id);
+	async aprovarOrcamento(numero: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByNumero(numero);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
 
 		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento)
@@ -315,7 +315,7 @@ export class OrdensServicoService {
 			if (planoBaixa.faltantes.length > 0) {
 				bloqueadaPorFaltaEstoque = true;
 				await tx.ordemServico.update({
-					where: { id },
+					where: { id: os.id },
 					data: {
 						status: OsStatus.BLOQUEADA,
 						aprovadoEm: agora,
@@ -323,7 +323,7 @@ export class OrdensServicoService {
 				});
 				await tx.osHistoricoStatus.create({
 					data: {
-						ordemServicoId: id,
+						ordemServicoId: os.id,
 						statusAnterior: os.status,
 						statusNovo: OsStatus.BLOQUEADA,
 						observacao: dto.observacao ?? `Orçamento aprovado, OS bloqueada por falta de estoque: ${planoBaixa.faltantes.join("; ")}`,
@@ -331,9 +331,9 @@ export class OrdensServicoService {
 				});
 				return;
 			}
-			await this.aplicarBaixaEstoque(tx, id, planoBaixa.reservas, "Saída por aprovação de OS (cliente)", null);
+			await this.aplicarBaixaEstoque(tx, os.id, planoBaixa.reservas, "Saída por aprovação de OS (cliente)", null);
 			await tx.ordemServico.update({
-				where: { id },
+				where: { id: os.id },
 				data: {
 					status: OsStatus.EM_EXECUCAO,
 					aprovadoEm: agora,
@@ -342,7 +342,7 @@ export class OrdensServicoService {
 			});
 			await tx.osHistoricoStatus.create({
 				data: {
-					ordemServicoId: id,
+					ordemServicoId: os.id,
 					statusAnterior: os.status,
 					statusNovo: OsStatus.EM_EXECUCAO,
 					observacao: dto.observacao ?? "Orçamento aprovado pelo cliente",
@@ -350,14 +350,14 @@ export class OrdensServicoService {
 			});
 		});
 
-		const detalhe = await this.repo.findByIdFull(id);
+		const detalhe = await this.repo.findByIdFull(os.id);
 		if (bloqueadaPorFaltaEstoque) return SR.ok(detalhe, "Orçamento aprovado e OS bloqueada por falta de estoque");
 
 		return SR.ok(detalhe, "Orçamento aprovado");
 	}
 
-	async rejeitarOrcamento(id: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
-		const os = await this.repo.findByIdFull(id);
+	async rejeitarOrcamento(numero: string, dto: AprovacaoPublicaDto): Promise<IServiceResponse<unknown>> {
+		const os = await this.repo.findByNumero(numero);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
 
 		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento)
@@ -368,12 +368,12 @@ export class OrdensServicoService {
 
 		await this.prisma.$transaction(async (tx) => {
 			await tx.ordemServico.update({
-				where: { id },
+				where: { id: os.id },
 				data: { status: OsStatus.CANCELADA, canceladoEm: new Date() },
 			});
 			await tx.osHistoricoStatus.create({
 				data: {
-					ordemServicoId: id,
+					ordemServicoId: os.id,
 					statusAnterior: os.status,
 					statusNovo: OsStatus.CANCELADA,
 					observacao: dto.observacao ?? "Orçamento rejeitado pelo cliente",
@@ -381,7 +381,7 @@ export class OrdensServicoService {
 			});
 		});
 
-		const detalhe = await this.repo.findByIdFull(id);
+		const detalhe = await this.repo.findByIdFull(os.id);
 		return SR.ok(detalhe, "Orçamento rejeitado");
 	}
 
