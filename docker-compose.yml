@@ -11,9 +11,10 @@ services:
       PGDATA: /var/lib/postgresql/18/docker
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d oficina"]
+      start_period: 10s
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
     volumes:
       - postgres_data_v18:/var/lib/postgresql
 
