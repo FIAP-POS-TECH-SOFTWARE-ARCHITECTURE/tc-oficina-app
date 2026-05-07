@@ -9,10 +9,29 @@ http:
   body:
     type: json
     data: |-
+      // ADMINISTRADOR
       {
         "email": "admin@oficina.local",
         "senha": "ChangeMe!123"
       }
+
+      // ATENDENTE
+      // {
+      //   "email": "atendente@oficina.local",
+      //   "senha": "Atendente@2024"
+      // }
+
+      // MECANICO
+      // {
+      //   "email": "mecanico@oficina.local",
+      //   "senha": "Mecanico@2024"
+      // }
+
+      // ESTOQUISTA
+      // {
+      //   "email": "estoquista@oficina.local",
+      //   "senha": "Estoquista@2024"
+      // }
 
 runtime:
   scripts:
