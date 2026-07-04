@@ -53,7 +53,7 @@ npm test
 # unitários com cobertura
 npm run test:cov
 
-# e2e
+# e2e (sobe um Postgres efêmero via Testcontainers, não precisa de banco local rodando)
 # Linux/macOS: cp .env.test.example .env.test
 # Windows PowerShell: Copy-Item .env.test.example .env.test
 npm run test:e2e
@@ -101,6 +101,13 @@ API REST para gestão de oficina mecânica, cobrindo:
 | Autenticação   | JWT + Argon2         |
 | Testes         | Jest + Supertest     |
 | Cliente de API | Bruno                |
+
+### Por que PostgreSQL
+
+- **ACID**: transações atômicas são essenciais para movimentações de estoque e aprovação de orçamento — nenhuma operação pode ficar "pela metade".
+- **Tipos nativos para valores monetários**, evitando problemas de arredondamento comuns em bancos não relacionais.
+- **Maturidade e integração** de primeira classe com o Prisma ORM.
+- **Modelo relacional robusto**, adequado à quantidade de relacionamentos complexos do domínio (cliente, veículo, ordem de serviço, insumos).
 
 ---
 
