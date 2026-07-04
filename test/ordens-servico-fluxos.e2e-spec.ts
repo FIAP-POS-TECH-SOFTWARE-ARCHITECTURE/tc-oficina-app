@@ -57,7 +57,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.set("Authorization", bearer(mecanicoToken))
 			.send({ insumoId, quantidade: qtdInsumo });
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento });
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento });
 		return aprov;
 	}
 
@@ -84,7 +84,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 
 		// orçamento + aprovação
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 		expect(aprov.status).toBe(200);
 		expect(aprov.body.data.status).toBe("EM_EXECUCAO");
 
@@ -139,7 +139,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.send({ novaQuantidade: 0, motivo: "Quebra" });
 
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 		expect(aprov.body.data.status).toBe("BLOQUEADA");
 
 		const desbl = await request(app.getHttpServer())
@@ -166,7 +166,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.set("Authorization", bearer(adminToken))
 			.send({ novaQuantidade: 0, motivo: "Quebra" });
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 
 		// repõe estoque
 		await request(app.getHttpServer())
@@ -254,7 +254,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.set("Authorization", bearer(adminToken))
 			.send({ novaQuantidade: 0, motivo: "Quebra" });
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 
 		const before = (await prisma.insumo.findUnique({ where: { id: insumo.id } }))!.quantidadeEstoque;
 		const cancel = await request(app.getHttpServer())
@@ -308,14 +308,14 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 			.send({ servicoId: servico.id, quantidade: 1 });
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
 
-		const rej = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/rejeitar`).send({ documento: cliente.documento });
+		const rej = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/rejeitar`).send({ documento: cliente.documento });
 		expect(rej.status).toBe(200);
 		expect(rej.body.data.status).toBe("CANCELADA");
 	});
 
 	it("Aprovação fora de AGUARDANDO_APROVACAO → 422", async () => {
 		const { cliente, os } = await setupBaseOS();
-		const aprov = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		const aprov = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 		expect(aprov.status).toBe(422);
 	});
 
@@ -336,7 +336,7 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		const item2Id = add2.body.data.itensServico.find((i: any) => i.id !== item1Id).id;
 
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${item1Id}/iniciar`)
@@ -388,11 +388,11 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		await request(app.getHttpServer()).post(`/os/${os2.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
 
 		// OS1 aprova primeiro: consome as 5 unidades → EM_EXECUCAO
-		const aprov1 = await request(app.getHttpServer()).post(`/os/${os1.id}/orcamento/aprovar`).send({ documento: cliente1.documento });
+		const aprov1 = await request(app.getHttpServer()).post(`/os/${os1.numero}/orcamento/aprovar`).send({ documento: cliente1.documento });
 		expect(aprov1.body.data.status).toBe("EM_EXECUCAO");
 
 		// OS2 aprova depois: estoque 0 < 3 necessários → BLOQUEADA
-		const aprov2 = await request(app.getHttpServer()).post(`/os/${os2.id}/orcamento/aprovar`).send({ documento: cliente2.documento });
+		const aprov2 = await request(app.getHttpServer()).post(`/os/${os2.numero}/orcamento/aprovar`).send({ documento: cliente2.documento });
 		expect(aprov2.body.data.status).toBe("BLOQUEADA");
 	});
 

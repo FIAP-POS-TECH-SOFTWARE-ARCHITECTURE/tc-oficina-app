@@ -279,14 +279,14 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 	it("POST /os/:id/orcamento/aprovar documento errado → 403", async () => {
 		const { cliente, veiculo } = await setupClienteVeiculo(CPF_VALIDOS[0]);
 		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
-		const res = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: CPF_VALIDOS[1] });
+		const res = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: CPF_VALIDOS[1] });
 		expect(res.status).toBe(403);
 	});
 
 	it("POST /os/:id/orcamento/rejeitar documento errado → 403", async () => {
 		const { cliente, veiculo } = await setupClienteVeiculo(CPF_VALIDOS[0]);
 		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
-		const res = await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/rejeitar`).send({ documento: CPF_VALIDOS[1] });
+		const res = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/rejeitar`).send({ documento: CPF_VALIDOS[1] });
 		expect(res.status).toBe(403);
 	});
 
@@ -301,7 +301,7 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 
 		const res = await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
@@ -322,7 +322,7 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 			.set("Authorization", bearer(mecanicoToken));
@@ -382,7 +382,7 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 
 		const res = await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/cancelar`)
@@ -403,7 +403,7 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 			.set("Authorization", bearer(mecanicoToken));
@@ -427,7 +427,7 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 			.set("Authorization", bearer(mecanicoToken));
