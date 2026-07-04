@@ -21,6 +21,8 @@ FROM node:25-alpine3.22 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+RUN addgroup -g 1001 oficina && adduser -D -u 1001 -G oficina oficina
+
 COPY package*.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
@@ -29,6 +31,9 @@ COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY tsconfig*.json ./
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN sed -i 's/\r$//' ./docker-entrypoint.sh && chmod +x ./docker-entrypoint.sh
+RUN chown -R oficina:oficina /app
+
+USER oficina
 
 EXPOSE 3000
 CMD ["sh", "./docker-entrypoint.sh"]
