@@ -135,19 +135,20 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("403 quando documento não confere", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(osMock());
+			repo.findByNumero.mockResolvedValueOnce(osMock());
 			const r = await service.aprovarOrcamento("os1", { documento: "11111111111" });
 			expect(r.status).toBe(403);
 		});
 
 		it("422 quando status não é AGUARDANDO_APROVACAO", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(osMock({ status: OsStatus.EM_EXECUCAO }));
+			repo.findByNumero.mockResolvedValueOnce(osMock({ status: OsStatus.EM_EXECUCAO }));
 			const r = await service.aprovarOrcamento("os1", { documento: "52998224725" });
 			expect(r.status).toBe(422);
 		});
 
 		it("aprova e baixa estoque criando movimento SAIDA", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(osMock()).mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			repo.findByNumero.mockResolvedValueOnce(osMock());
+			repo.findByIdFull.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
 			const movs: any[] = [];
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
@@ -175,7 +176,8 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("bloqueia OS quando cliente aprova mas falta estoque", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(osMock()).mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
+			repo.findByNumero.mockResolvedValueOnce(osMock());
+			repo.findByIdFull.mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
 				tx.insumo.findUnique.mockResolvedValueOnce({
@@ -628,15 +630,14 @@ describe("OrdensServicoService", () => {
 
 	describe("baixa de estoque - branches extras", () => {
 		it("aprovação dispara warn quando posterior ficaria abaixo do estoque mínimo", async () => {
-			repo.findByIdFull
-				.mockResolvedValueOnce({
-					id: "os1",
-					status: OsStatus.AGUARDANDO_APROVACAO,
-					cliente: { id: "c1", documento: "52998224725", nome: "Fulano" },
-					itensServico: [],
-					itensInsumo: [{ id: "ii1", insumoId: "i1", quantidade: 5 }],
-				} as any)
-				.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
+			repo.findByNumero.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.AGUARDANDO_APROVACAO,
+				cliente: { id: "c1", documento: "52998224725", nome: "Fulano" },
+				itensServico: [],
+				itensInsumo: [{ id: "ii1", insumoId: "i1", quantidade: 5 }],
+			} as any);
+			repo.findByIdFull.mockResolvedValueOnce({ id: "os1", status: OsStatus.EM_EXECUCAO } as any);
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
 				tx.insumo.findUnique.mockResolvedValueOnce({
@@ -655,15 +656,14 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("aprovação reporta insumo inexistente como faltante", async () => {
-			repo.findByIdFull
-				.mockResolvedValueOnce({
-					id: "os1",
-					status: OsStatus.AGUARDANDO_APROVACAO,
-					cliente: { id: "c1", documento: "52998224725", nome: "Fulano" },
-					itensServico: [],
-					itensInsumo: [{ id: "ii1", insumoId: "iX", quantidade: 1 }],
-				} as any)
-				.mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
+			repo.findByNumero.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.AGUARDANDO_APROVACAO,
+				cliente: { id: "c1", documento: "52998224725", nome: "Fulano" },
+				itensServico: [],
+				itensInsumo: [{ id: "ii1", insumoId: "iX", quantidade: 1 }],
+			} as any);
+			repo.findByIdFull.mockResolvedValueOnce({ id: "os1", status: OsStatus.BLOQUEADA } as any);
 			prisma.$transaction.mockImplementationOnce(async (fn: any) => {
 				const tx = baseTx();
 				tx.insumo.findUnique.mockResolvedValueOnce(null);
@@ -718,17 +718,17 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("aprovarOrcamento 404 quando OS não existe", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(null);
+			repo.findByNumero.mockResolvedValueOnce(null);
 			expect((await service.aprovarOrcamento("x", { documento: "52998224725" })).status).toBe(404);
 		});
 
 		it("rejeitarOrcamento 404 quando OS não existe", async () => {
-			repo.findByIdFull.mockResolvedValueOnce(null);
+			repo.findByNumero.mockResolvedValueOnce(null);
 			expect((await service.rejeitarOrcamento("x", { documento: "52998224725" })).status).toBe(404);
 		});
 
 		it("rejeitarOrcamento 422 quando status inválido", async () => {
-			repo.findByIdFull.mockResolvedValueOnce({
+			repo.findByNumero.mockResolvedValueOnce({
 				id: "os1",
 				status: OsStatus.EM_EXECUCAO,
 				cliente: { documento: "52998224725" },
@@ -784,7 +784,7 @@ describe("OrdensServicoService", () => {
 
 	describe("rejeitarOrcamento", () => {
 		it("403 documento errado", async () => {
-			repo.findByIdFull.mockResolvedValueOnce({
+			repo.findByNumero.mockResolvedValueOnce({
 				id: "os1",
 				status: OsStatus.AGUARDANDO_APROVACAO,
 				cliente: { documento: "11122233344" },
@@ -794,13 +794,12 @@ describe("OrdensServicoService", () => {
 		});
 
 		it("200 cancela", async () => {
-			repo.findByIdFull
-				.mockResolvedValueOnce({
-					id: "os1",
-					status: OsStatus.AGUARDANDO_APROVACAO,
-					cliente: { documento: "52998224725" },
-				} as any)
-				.mockResolvedValueOnce({} as any);
+			repo.findByNumero.mockResolvedValueOnce({
+				id: "os1",
+				status: OsStatus.AGUARDANDO_APROVACAO,
+				cliente: { documento: "52998224725" },
+			} as any);
+			repo.findByIdFull.mockResolvedValueOnce({} as any);
 			const r = await service.rejeitarOrcamento("os1", { documento: "529.982.247-25" });
 			expect(r.status).toBe(200);
 		});
