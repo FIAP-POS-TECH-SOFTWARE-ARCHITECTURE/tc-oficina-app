@@ -1,0 +1,43 @@
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import type { IServiceResponse } from "semantic-response";
+import { SR } from "../../../../common/utils/service-response.util";
+import { canTransition, nextStatus } from "../../domain/fluxo-estados-os";
+import { OsStatus } from "../../domain/os-status";
+import { NOTIFICADOR, type NotificadorPort } from "../ports/notificador.gateway";
+import { ORDENS_SERVICO_GATEWAY, type OrdensServicoGatewayPort } from "../ports/ordens-servico.gateway";
+
+@Injectable()
+export class CancelarOsUseCase {
+	private readonly logger = new Logger(CancelarOsUseCase.name);
+
+	constructor(
+		@Inject(ORDENS_SERVICO_GATEWAY) private readonly gateway: OrdensServicoGatewayPort,
+		@Inject(NOTIFICADOR) private readonly notificador: NotificadorPort,
+	) {}
+
+	async execute(id: string, usuarioId: string, dto: { motivo?: string | null }): Promise<IServiceResponse<unknown>> {
+		const os = await this.gateway.buscarDetalhePorId(id);
+		if (!os) return SR.notFound(undefined, "OS não encontrada");
+
+		if (!canTransition(os.status, "cancelar"))
+			return SR.unprocessableEntity(undefined, `Não é possível cancelar a OS no status ${os.status}`);
+
+		const estornarEstoque = !!os.aprovadoEm && os.status !== OsStatus.BLOQUEADA;
+		await this.gateway.executarCancelamento(os, usuarioId, dto.motivo, estornarEstoque);
+
+		const detalhe = await this.gateway.buscarDetalhePorId(id);
+		try {
+			await this.notificador.notificarMudancaStatus({
+				numeroOs: os.numero,
+				statusAnterior: os.status,
+				statusNovo: nextStatus("cancelar"),
+				nomeCliente: os.cliente.nome,
+				emailCliente: os.cliente.email,
+				observacao: dto.motivo,
+			});
+		} catch (error) {
+			this.logger.error("Falha ao notificar mudança de status", error instanceof Error ? error.stack : String(error));
+		}
+		return SR.ok(detalhe, "OS cancelada");
+	}
+}

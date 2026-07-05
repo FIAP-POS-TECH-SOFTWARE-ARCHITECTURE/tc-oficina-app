@@ -13,6 +13,7 @@
 		"start:prod": "node dist/src/main.js",
 		"format": "prettier --write .",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+		"lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
 		"db:seed": "ts-node -P tsconfig.seed.json prisma/seed.ts",
 		"sonar:up": "docker compose -f dev/docker-compose.yml up -d sonarqube",
 		"sonar:down": "docker compose -f dev/docker-compose.yml stop sonarqube",
@@ -104,7 +105,7 @@
 				"functions": 80,
 				"lines": 80
 			},
-			"src/modules/ordens-servico/ordens-servico.service.ts": {
+			"src/modules/ordens-servico/application/**/*.ts": {
 				"statements": 80,
 				"branches": 70,
 				"functions": 80,

@@ -388,11 +388,15 @@ describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
 		await request(app.getHttpServer()).post(`/os/${os2.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
 
 		// OS1 aprova primeiro: consome as 5 unidades → EM_EXECUCAO
-		const aprov1 = await request(app.getHttpServer()).post(`/os/${os1.numero}/orcamento/aprovar`).send({ documento: cliente1.documento });
+		const aprov1 = await request(app.getHttpServer())
+			.post(`/os/${os1.numero}/orcamento/aprovar`)
+			.send({ documento: cliente1.documento });
 		expect(aprov1.body.data.status).toBe("EM_EXECUCAO");
 
 		// OS2 aprova depois: estoque 0 < 3 necessários → BLOQUEADA
-		const aprov2 = await request(app.getHttpServer()).post(`/os/${os2.numero}/orcamento/aprovar`).send({ documento: cliente2.documento });
+		const aprov2 = await request(app.getHttpServer())
+			.post(`/os/${os2.numero}/orcamento/aprovar`)
+			.send({ documento: cliente2.documento });
 		expect(aprov2.body.data.status).toBe("BLOQUEADA");
 	});
 

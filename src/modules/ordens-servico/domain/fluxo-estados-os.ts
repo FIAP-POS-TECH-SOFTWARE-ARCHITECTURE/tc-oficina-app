@@ -1,4 +1,4 @@
-import { OsStatus } from "../../common/enums/os-status.enum";
+import { OsStatus } from "./os-status";
 
 export type OsTransition =
 	| "iniciar_diagnostico"

@@ -1,150 +1,154 @@
-import { IS_PUBLIC_KEY } from "../../common/decorators/public.decorator";
-import { ROLES_KEY } from "../../common/decorators/roles.decorator";
-import { Role } from "../../common/enums/role.enum";
+import { IS_PUBLIC_KEY } from "../../../common/decorators/public.decorator";
+import { ROLES_KEY } from "../../../common/decorators/roles.decorator";
+import { Role } from "../../../common/enums/role.enum";
 import { OrdensServicoController } from "./ordens-servico.controller";
-import { OrdensServicoService } from "./ordens-servico.service";
+
+const useCaseNames = [
+	"criarOs",
+	"listarOs",
+	"buscarOs",
+	"historicoOs",
+	"tempoMedioServicos",
+	"consultaPublicaOs",
+	"iniciarDiagnosticoUc",
+	"atualizarDiagnosticoUc",
+	"addItemServicoUc",
+	"removerItemServicoUc",
+	"iniciarItemServicoUc",
+	"concluirItemServicoUc",
+	"cancelarItemServicoUc",
+	"addItemInsumoUc",
+	"removerItemInsumoUc",
+	"gerarOrcamentoUc",
+	"aprovarOrcamentoUc",
+	"rejeitarOrcamentoUc",
+	"finalizarOs",
+	"entregarOs",
+	"desbloquearOs",
+	"cancelarOs",
+] as const;
 
 describe("OrdensServicoController", () => {
-	let service: jest.Mocked<OrdensServicoService>;
+	let ucs: Record<(typeof useCaseNames)[number], { execute: jest.Mock }>;
 	let controller: OrdensServicoController;
 	const user = { id: "u1", email: "x@x", role: Role.MECANICO };
 
 	beforeEach(() => {
-		service = {
-			create: jest.fn(),
-			list: jest.fn(),
-			findById: jest.fn(),
-			tempoMedioExecucao: jest.fn(),
-			consultaPublica: jest.fn(),
-			iniciarDiagnostico: jest.fn(),
-			atualizarDiagnostico: jest.fn(),
-			addItemServico: jest.fn(),
-			removerItemServico: jest.fn(),
-			iniciarItemServico: jest.fn(),
-			concluirItemServico: jest.fn(),
-			cancelarItemServico: jest.fn(),
-			addItemInsumo: jest.fn(),
-			removerItemInsumo: jest.fn(),
-			gerarOrcamento: jest.fn(),
-			aprovarOrcamento: jest.fn(),
-			rejeitarOrcamento: jest.fn(),
-			finalizar: jest.fn(),
-			entregar: jest.fn(),
-			desbloquear: jest.fn(),
-			cancelar: jest.fn(),
-		} as unknown as jest.Mocked<OrdensServicoService>;
-		controller = new OrdensServicoController(service);
+		ucs = Object.fromEntries(useCaseNames.map((n) => [n, { execute: jest.fn().mockResolvedValue({ status: 200 }) }])) as typeof ucs;
+		controller = new OrdensServicoController(
+			...(useCaseNames.map((n) => ucs[n]) as unknown as ConstructorParameters<typeof OrdensServicoController>),
+		);
 	});
 
-	describe("delegação simples", () => {
-		const ok = { status: 200 } as any;
-		beforeEach(() => {
-			Object.values(service).forEach((fn: any) => fn.mockResolvedValue?.(ok));
-		});
-
+	describe("delegação para use cases", () => {
 		it("create", async () => {
 			await controller.create({ clienteId: "c1", veiculoId: "v1" });
-			expect(service.create).toHaveBeenCalled();
+			expect(ucs.criarOs.execute).toHaveBeenCalledWith({ clienteId: "c1", veiculoId: "v1" });
 		});
 
 		it("list", async () => {
 			await controller.list({});
-			expect(service.list).toHaveBeenCalled();
+			expect(ucs.listarOs.execute).toHaveBeenCalledWith({});
+		});
+
+		it("obterHistorico", async () => {
+			await controller.obterHistorico("os1");
+			expect(ucs.historicoOs.execute).toHaveBeenCalledWith("os1");
 		});
 
 		it("metricas", async () => {
-			await controller.metricas({});
-			expect(service.tempoMedioExecucao).toHaveBeenCalled();
+			await controller.metricas({ filtro: "ativos" });
+			expect(ucs.tempoMedioServicos.execute).toHaveBeenCalledWith("ativos");
 		});
 
 		it("consultaPublica", async () => {
 			await controller.consultaPublica("OS-2026-000001", "529.982.247-25");
-			expect(service.consultaPublica).toHaveBeenCalledWith("OS-2026-000001", "529.982.247-25");
+			expect(ucs.consultaPublicaOs.execute).toHaveBeenCalledWith("OS-2026-000001", "529.982.247-25");
 		});
 
 		it("findOne", async () => {
 			await controller.findOne("os1");
-			expect(service.findById).toHaveBeenCalledWith("os1");
+			expect(ucs.buscarOs.execute).toHaveBeenCalledWith("os1");
 		});
 
 		it("iniciarDiagnostico passa user.id", async () => {
 			await controller.iniciarDiagnostico("os1", user);
-			expect(service.iniciarDiagnostico).toHaveBeenCalledWith("os1", "u1");
+			expect(ucs.iniciarDiagnosticoUc.execute).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("atualizarDiagnostico", async () => {
 			await controller.atualizarDiagnostico("os1", { diagnostico: "x" });
-			expect(service.atualizarDiagnostico).toHaveBeenCalledWith("os1", { diagnostico: "x" });
+			expect(ucs.atualizarDiagnosticoUc.execute).toHaveBeenCalledWith("os1", { diagnostico: "x" });
 		});
 
 		it("addItemServico", async () => {
 			await controller.addItemServico("os1", { servicoId: "s1" });
-			expect(service.addItemServico).toHaveBeenCalled();
+			expect(ucs.addItemServicoUc.execute).toHaveBeenCalledWith("os1", { servicoId: "s1" });
 		});
 
 		it("removerItemServico", async () => {
 			await controller.removerItemServico("os1", "i1");
-			expect(service.removerItemServico).toHaveBeenCalledWith("os1", "i1");
+			expect(ucs.removerItemServicoUc.execute).toHaveBeenCalledWith("os1", "i1");
 		});
 
 		it("iniciarItemServico", async () => {
 			await controller.iniciarItemServico("os1", "i1");
-			expect(service.iniciarItemServico).toHaveBeenCalledWith("os1", "i1");
+			expect(ucs.iniciarItemServicoUc.execute).toHaveBeenCalledWith("os1", "i1");
 		});
 
 		it("concluirItemServico", async () => {
 			await controller.concluirItemServico("os1", "i1");
-			expect(service.concluirItemServico).toHaveBeenCalledWith("os1", "i1");
+			expect(ucs.concluirItemServicoUc.execute).toHaveBeenCalledWith("os1", "i1");
 		});
 
 		it("cancelarItemServico", async () => {
 			await controller.cancelarItemServico("os1", "i1");
-			expect(service.cancelarItemServico).toHaveBeenCalledWith("os1", "i1");
+			expect(ucs.cancelarItemServicoUc.execute).toHaveBeenCalledWith("os1", "i1");
 		});
 
 		it("addItemInsumo", async () => {
 			await controller.addItemInsumo("os1", { insumoId: "i1", quantidade: 1 });
-			expect(service.addItemInsumo).toHaveBeenCalled();
+			expect(ucs.addItemInsumoUc.execute).toHaveBeenCalledWith("os1", { insumoId: "i1", quantidade: 1 });
 		});
 
 		it("removerItemInsumo", async () => {
 			await controller.removerItemInsumo("os1", "ii1");
-			expect(service.removerItemInsumo).toHaveBeenCalledWith("os1", "ii1");
+			expect(ucs.removerItemInsumoUc.execute).toHaveBeenCalledWith("os1", "ii1");
 		});
 
 		it("gerarOrcamento passa user.id", async () => {
 			await controller.gerarOrcamento("os1", user);
-			expect(service.gerarOrcamento).toHaveBeenCalledWith("os1", "u1");
+			expect(ucs.gerarOrcamentoUc.execute).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("aprovar (público) delega", async () => {
-			await controller.aprovar("os1", { documento: "529.982.247-25" });
-			expect(service.aprovarOrcamento).toHaveBeenCalled();
+			await controller.aprovar("OS-2026-000001", { documento: "529.982.247-25" });
+			expect(ucs.aprovarOrcamentoUc.execute).toHaveBeenCalledWith("OS-2026-000001", { documento: "529.982.247-25" });
 		});
 
 		it("rejeitar (público) delega", async () => {
-			await controller.rejeitar("os1", { documento: "529.982.247-25" });
-			expect(service.rejeitarOrcamento).toHaveBeenCalled();
+			await controller.rejeitar("OS-2026-000001", { documento: "529.982.247-25" });
+			expect(ucs.rejeitarOrcamentoUc.execute).toHaveBeenCalledWith("OS-2026-000001", { documento: "529.982.247-25" });
 		});
 
 		it("finalizar passa user.id", async () => {
 			await controller.finalizar("os1", user);
-			expect(service.finalizar).toHaveBeenCalledWith("os1", "u1");
+			expect(ucs.finalizarOs.execute).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("entregar passa user.id", async () => {
 			await controller.entregar("os1", user);
-			expect(service.entregar).toHaveBeenCalledWith("os1", "u1");
+			expect(ucs.entregarOs.execute).toHaveBeenCalledWith("os1", "u1");
 		});
 
 		it("desbloquear passa user.id+dto", async () => {
 			await controller.desbloquear("os1", { observacao: "x" }, user);
-			expect(service.desbloquear).toHaveBeenCalledWith("os1", "u1", { observacao: "x" });
+			expect(ucs.desbloquearOs.execute).toHaveBeenCalledWith("os1", "u1", { observacao: "x" });
 		});
 
 		it("cancelar passa user.id+dto", async () => {
 			await controller.cancelar("os1", { motivo: "x" }, user);
-			expect(service.cancelar).toHaveBeenCalledWith("os1", "u1", { motivo: "x" });
+			expect(ucs.cancelarOs.execute).toHaveBeenCalledWith("os1", "u1", { motivo: "x" });
 		});
 	});
 
