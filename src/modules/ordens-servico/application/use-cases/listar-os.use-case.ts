@@ -18,8 +18,6 @@ export class ListarOsUseCase {
 		const page = query.page ?? 1;
 		const pageSize = query.pageSize ?? 20;
 
-		// §5.4: ordenação por prioridade de status é regra de negócio — aplicada
-		// aqui, antes da paginação; por isso o gateway devolve o conjunto inteiro.
 		const todas = await this.gateway.listarParaOrdenacao({
 			status: query.status,
 			excluirStatus: query.status ? undefined : STATUS_OCULTOS_LISTAGEM,

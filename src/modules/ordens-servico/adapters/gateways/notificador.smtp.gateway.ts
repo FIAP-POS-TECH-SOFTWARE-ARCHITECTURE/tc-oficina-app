@@ -18,7 +18,6 @@ export class SmtpNotificadorGateway implements NotificadorPort {
 		});
 	}
 
-	// §5.5: falha de envio nunca falha a operação de negócio — loga e segue.
 	async notificarMudancaStatus(n: NotificacaoMudancaStatus): Promise<void> {
 		if (!n.emailCliente) {
 			this.logger.warn(`OS ${n.numeroOs}: cliente ${n.nomeCliente} sem e-mail cadastrado; notificação pulada`);

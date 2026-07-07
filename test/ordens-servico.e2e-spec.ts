@@ -441,7 +441,7 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 		expect(res.status).toBe(422);
 	});
 
-	describe("GET /os — ordenação §5.4", () => {
+	describe("GET /os — ordenação", () => {
 		async function criarOsComVeiculo(clienteId: string) {
 			const v = await request(app.getHttpServer())
 				.post(`/clientes/${clienteId}/veiculos`)
