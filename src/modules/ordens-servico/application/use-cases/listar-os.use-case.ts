@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { IServiceResponse } from "semantic-response";
 import { SR } from "../../../../common/utils/service-response.util";
+import { compararParaListagem, STATUS_OCULTOS_LISTAGEM } from "../../domain/ordenacao-listagem";
 import { OsStatus } from "../../domain/os-status";
 import { ORDENS_SERVICO_GATEWAY, type OrdensServicoGatewayPort } from "../ports/ordens-servico.gateway";
 
@@ -17,13 +18,16 @@ export class ListarOsUseCase {
 		const page = query.page ?? 1;
 		const pageSize = query.pageSize ?? 20;
 
-		const [total, items] = await this.gateway.listar({
+		// §5.4: ordenação por prioridade de status é regra de negócio — aplicada
+		// aqui, antes da paginação; por isso o gateway devolve o conjunto inteiro.
+		const todas = await this.gateway.listarParaOrdenacao({
 			status: query.status,
+			excluirStatus: query.status ? undefined : STATUS_OCULTOS_LISTAGEM,
 			clienteId: query.clienteId,
-			skip: (page - 1) * pageSize,
-			take: pageSize,
 		});
 
-		return SR.ok({ total, page, pageSize, items });
+		const ordenadas = [...todas].sort(compararParaListagem);
+		const items = ordenadas.slice((page - 1) * pageSize, page * pageSize);
+		return SR.ok({ total: ordenadas.length, page, pageSize, items });
 	}
 }

@@ -29,7 +29,10 @@ export interface OrdensServicoGatewayPort {
 	buscarPorId(id: string): Promise<OsResumo | null>;
 	buscarDetalhePorId(id: string): Promise<OsDetalhe | null>;
 	buscarPorNumero(numero: string): Promise<OsDetalhe | null>;
-	listar(params: { status?: OsStatus; clienteId?: string; skip: number; take: number }): Promise<[number, OsDetalhe[]]>;
+	// Sem skip/take: a ordenação por prioridade (§5.4) acontece no caso de uso,
+	// antes da paginação. Volume de OS ativas é pequeno; se crescer, otimizar
+	// com ORDER BY CASE espelhando PRIORIDADE_LISTAGEM.
+	listarParaOrdenacao(filtros: { status?: OsStatus; excluirStatus?: OsStatus[]; clienteId?: string }): Promise<OsDetalhe[]>;
 	listarHistorico(ordemServicoId: string): Promise<HistoricoItemApp[]>;
 	contarPorAno(ano: number): Promise<number>;
 	tempoMedioPorServico(filtro: "ativos" | "inativos" | "ambos"): Promise<TempoMedioServicoApp[]>;

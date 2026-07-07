@@ -67,21 +67,13 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 		return os as unknown as OsDetalhe | null;
 	}
 
-	async listar(params: { status?: OsStatus; clienteId?: string; skip: number; take: number }): Promise<[number, OsDetalhe[]]> {
+	async listarParaOrdenacao(filtros: { status?: OsStatus; excluirStatus?: OsStatus[]; clienteId?: string }): Promise<OsDetalhe[]> {
 		const where: Prisma.OrdemServicoWhereInput = {};
-		if (params.status) where.status = params.status;
-		if (params.clienteId) where.clienteId = params.clienteId;
-		const [total, items] = await this.prisma.$transaction([
-			this.prisma.ordemServico.count({ where }),
-			this.prisma.ordemServico.findMany({
-				where,
-				skip: params.skip,
-				take: params.take,
-				orderBy: { createdAt: "desc" },
-				include: OS_INCLUDE,
-			}),
-		]);
-		return [total, items as unknown as OsDetalhe[]];
+		if (filtros.status) where.status = filtros.status;
+		else if (filtros.excluirStatus?.length) where.status = { notIn: filtros.excluirStatus as unknown as PrismaOsStatus[] };
+		if (filtros.clienteId) where.clienteId = filtros.clienteId;
+		const items = await this.prisma.ordemServico.findMany({ where, include: OS_INCLUDE });
+		return items as unknown as OsDetalhe[];
 	}
 
 	async listarHistorico(ordemServicoId: string): Promise<HistoricoItemApp[]> {

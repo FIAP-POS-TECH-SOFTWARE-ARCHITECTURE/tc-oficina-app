@@ -76,12 +76,20 @@ describe("OrdensServicoPrismaGateway", () => {
 		);
 	});
 
-	it("listar filtra por status e clienteId", async () => {
-		prisma.$transaction.mockResolvedValueOnce([0, []]);
-		await gateway.listar({ skip: 0, take: 10, status: OsStatus.EM_EXECUCAO, clienteId: "c1" });
-		expect(prisma.ordemServico.count).toHaveBeenCalledWith({
-			where: { status: PrismaOsStatus.EM_EXECUCAO, clienteId: "c1" },
-		});
+	it("listarParaOrdenacao filtra por status e clienteId", async () => {
+		prisma.ordemServico.findMany.mockResolvedValueOnce([]);
+		await gateway.listarParaOrdenacao({ status: OsStatus.EM_EXECUCAO, clienteId: "c1" });
+		expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({ where: { status: PrismaOsStatus.EM_EXECUCAO, clienteId: "c1" } }),
+		);
+	});
+
+	it("listarParaOrdenacao aplica notIn quando recebe excluirStatus", async () => {
+		prisma.ordemServico.findMany.mockResolvedValueOnce([]);
+		await gateway.listarParaOrdenacao({ excluirStatus: [OsStatus.FINALIZADA, OsStatus.ENTREGUE] });
+		expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({ where: { status: { notIn: [PrismaOsStatus.FINALIZADA, PrismaOsStatus.ENTREGUE] } } }),
+		);
 	});
 
 	it("transicionarComHistorico atualiza status com dadosExtras e grava histórico", async () => {

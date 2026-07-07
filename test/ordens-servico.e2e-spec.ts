@@ -440,4 +440,74 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 			.set("Authorization", bearer(mecanicoToken));
 		expect(res.status).toBe(422);
 	});
+
+	describe("GET /os — ordenação §5.4", () => {
+		async function criarOsComVeiculo(clienteId: string) {
+			const v = await request(app.getHttpServer())
+				.post(`/clientes/${clienteId}/veiculos`)
+				.set("Authorization", bearer(atendenteToken))
+				.send({ placa: nextPlaca(), marca: "Fiat", modelo: "Uno", ano: 2020 });
+			return createOS(app, atendenteToken, clienteId, v.body.data.id);
+		}
+
+		async function levarAteExecucao(os: { id: string; numero: string }, documento: string) {
+			await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
+			const s = await createServico(app, adminToken);
+			const add = await request(app.getHttpServer())
+				.post(`/os/${os.id}/itens-servico`)
+				.set("Authorization", bearer(mecanicoToken))
+				.send({ servicoId: s.id, quantidade: 1 });
+			const itemId = add.body.data.itensServico[0].id;
+			await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
+			await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento });
+			return itemId;
+		}
+
+		async function levarAteEntregue(os: { id: string; numero: string }, documento: string) {
+			const itemId = await levarAteExecucao(os, documento);
+			await request(app.getHttpServer())
+				.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
+				.set("Authorization", bearer(mecanicoToken));
+			await request(app.getHttpServer())
+				.post(`/os/${os.id}/itens-servico/${itemId}/concluir`)
+				.set("Authorization", bearer(mecanicoToken));
+			await request(app.getHttpServer()).post(`/os/${os.id}/finalizar`).set("Authorization", bearer(mecanicoToken));
+			await request(app.getHttpServer()).post(`/os/${os.id}/entregar`).set("Authorization", bearer(atendenteToken));
+		}
+
+		it("ordena por prioridade de status, empata por antiguidade e oculta ENTREGUE", async () => {
+			const { cliente, veiculo } = await setupClienteVeiculo();
+
+			const recebidaAntiga = await createOS(app, atendenteToken, cliente.id, veiculo.id);
+			const recebidaNova = await criarOsComVeiculo(cliente.id);
+
+			const emDiagnostico = await criarOsComVeiculo(cliente.id);
+			await request(app.getHttpServer())
+				.post(`/os/${emDiagnostico.id}/diagnostico/iniciar`)
+				.set("Authorization", bearer(mecanicoToken));
+
+			const emExecucao = await criarOsComVeiculo(cliente.id);
+			await levarAteExecucao(emExecucao, cliente.documento);
+
+			const entregue = await criarOsComVeiculo(cliente.id);
+			await levarAteEntregue(entregue, cliente.documento);
+
+			const res = await request(app.getHttpServer()).get("/os").set("Authorization", bearer(atendenteToken));
+			expect(res.status).toBe(200);
+
+			const numeros = res.body.data.items.map((i: any) => i.numero);
+			expect(numeros).not.toContain(entregue.numero);
+			expect(numeros).toEqual([emExecucao.numero, emDiagnostico.numero, recebidaAntiga.numero, recebidaNova.numero]);
+		});
+
+		it("filtro explícito ?status=ENTREGUE ainda retorna as entregues", async () => {
+			const { cliente, veiculo } = await setupClienteVeiculo();
+			const entregue = await createOS(app, atendenteToken, cliente.id, veiculo.id);
+			await levarAteEntregue(entregue, cliente.documento);
+
+			const res = await request(app.getHttpServer()).get("/os?status=ENTREGUE").set("Authorization", bearer(atendenteToken));
+			expect(res.status).toBe(200);
+			expect(res.body.data.items.map((i: any) => i.numero)).toContain(entregue.numero);
+		});
+	});
 });
