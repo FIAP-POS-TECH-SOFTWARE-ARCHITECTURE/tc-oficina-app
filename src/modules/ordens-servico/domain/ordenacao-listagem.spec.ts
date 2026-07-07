@@ -5,7 +5,9 @@ const os = (status: OsStatus, createdAt: string) => ({ status, createdAt: new Da
 
 describe("ordenacao-listagem", () => {
 	it("EM_EXECUCAO vem antes de AGUARDANDO_APROVACAO", () => {
-		expect(compararParaListagem(os(OsStatus.EM_EXECUCAO, "2026-02-01"), os(OsStatus.AGUARDANDO_APROVACAO, "2026-01-01"))).toBeLessThan(0);
+		expect(compararParaListagem(os(OsStatus.EM_EXECUCAO, "2026-02-01"), os(OsStatus.AGUARDANDO_APROVACAO, "2026-01-01"))).toBeLessThan(
+			0,
+		);
 	});
 
 	it("ordem completa: EM_EXECUCAO > AGUARDANDO_APROVACAO > EM_DIAGNOSTICO > RECEBIDA > BLOQUEADA > CANCELADA", () => {
