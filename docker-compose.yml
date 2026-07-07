@@ -18,6 +18,13 @@ services:
     volumes:
       - postgres_data_v18:/var/lib/postgresql
 
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: oficina-mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # UI web (http://localhost:8025)
+
   api:
     build:
       context: .
@@ -39,6 +46,9 @@ services:
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-admin@oficina.local}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-ChangeMe!123}
       DATABASE_URL: ${DATABASE_URL:?Arquivo .env ausente ou DATABASE_URL nao definido}
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-oficina@localhost}
 
 volumes:
   postgres_data_v18:

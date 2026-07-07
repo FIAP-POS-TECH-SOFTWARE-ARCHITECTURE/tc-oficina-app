@@ -9,7 +9,7 @@ import {
 	ServicosConsultaPrismaGateway,
 	VeiculosConsultaPrismaGateway,
 } from "./adapters/gateways/consultas-externas.prisma.gateway";
-import { NotificadorLoggerGateway } from "./adapters/gateways/notificador.logger.gateway";
+import { SmtpNotificadorGateway } from "./adapters/gateways/notificador.smtp.gateway";
 import { OrdensServicoPrismaGateway } from "./adapters/gateways/ordens-servico.prisma.gateway";
 import { OrdensServicoController } from "./adapters/ordens-servico.controller";
 import {
@@ -78,7 +78,7 @@ const useCases = [
 		{ provide: VEICULOS_CONSULTA, useClass: VeiculosConsultaPrismaGateway },
 		{ provide: SERVICOS_CONSULTA, useClass: ServicosConsultaPrismaGateway },
 		{ provide: INSUMOS_CONSULTA, useClass: InsumosConsultaPrismaGateway },
-		{ provide: NOTIFICADOR, useClass: NotificadorLoggerGateway },
+		{ provide: NOTIFICADOR, useClass: SmtpNotificadorGateway },
 	],
 })
 export class OrdensServicoModule {}
