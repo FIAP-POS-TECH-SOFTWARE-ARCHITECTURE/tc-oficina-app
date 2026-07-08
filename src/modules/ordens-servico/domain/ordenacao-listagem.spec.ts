@@ -33,6 +33,12 @@ describe("ordenacao-listagem", () => {
 		expect(compararParaListagem(os(OsStatus.RECEBIDA, "2026-01-01"), os(OsStatus.RECEBIDA, "2026-02-01"))).toBeLessThan(0);
 	});
 
+	it("status fora da lista de prioridade vai pro fim", () => {
+		const desconhecido = os("STATUS_NOVO" as OsStatus, "2026-01-01");
+		expect(compararParaListagem(desconhecido, os(OsStatus.CANCELADA, "2026-02-01"))).toBeGreaterThan(0);
+		expect(compararParaListagem(os(OsStatus.EM_EXECUCAO, "2026-02-01"), desconhecido)).toBeLessThan(0);
+	});
+
 	it("FINALIZADA e ENTREGUE são status ocultos", () => {
 		expect(STATUS_OCULTOS_LISTAGEM).toEqual([OsStatus.FINALIZADA, OsStatus.ENTREGUE]);
 	});

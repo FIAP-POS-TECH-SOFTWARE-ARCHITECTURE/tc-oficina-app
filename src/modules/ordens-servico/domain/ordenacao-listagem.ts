@@ -11,8 +11,13 @@ export const PRIORIDADE_LISTAGEM: OsStatus[] = [
 
 export const STATUS_OCULTOS_LISTAGEM: OsStatus[] = [OsStatus.FINALIZADA, OsStatus.ENTREGUE];
 
+function prioridadeDe(status: OsStatus): number {
+	const indice = PRIORIDADE_LISTAGEM.indexOf(status);
+	return indice === -1 ? PRIORIDADE_LISTAGEM.length : indice;
+}
+
 export function compararParaListagem(a: { status: OsStatus; createdAt: Date }, b: { status: OsStatus; createdAt: Date }): number {
-	const prioridade = PRIORIDADE_LISTAGEM.indexOf(a.status) - PRIORIDADE_LISTAGEM.indexOf(b.status);
+	const prioridade = prioridadeDe(a.status) - prioridadeDe(b.status);
 	if (prioridade !== 0) return prioridade;
 	return a.createdAt.getTime() - b.createdAt.getTime();
 }
