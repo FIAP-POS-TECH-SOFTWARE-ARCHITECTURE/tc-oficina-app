@@ -45,4 +45,51 @@ describe("SmtpNotificadorGateway", () => {
 		const sut = new SmtpNotificadorGateway();
 		await expect(sut.notificarMudancaStatus(notificacao)).resolves.toBeUndefined();
 	});
+
+	describe("configuração do transporte", () => {
+		const envOriginal = process.env;
+
+		beforeEach(() => {
+			process.env = { ...envOriginal };
+			(nodemailer.createTransport as jest.Mock).mockClear();
+		});
+
+		afterAll(() => {
+			process.env = envOriginal;
+		});
+
+		const configTransporte = () => (nodemailer.createTransport as jest.Mock).mock.calls[0][0];
+
+		it("usa porta 1025 quando SMTP_PORT é inválida", () => {
+			process.env.SMTP_PORT = "abc";
+			new SmtpNotificadorGateway();
+			expect(configTransporte().port).toBe(1025);
+		});
+
+		it("usa porta 1025 quando SMTP_PORT é vazia", () => {
+			process.env.SMTP_PORT = "";
+			new SmtpNotificadorGateway();
+			expect(configTransporte().port).toBe(1025);
+		});
+
+		it("usa SMTP_PORT quando válida", () => {
+			process.env.SMTP_PORT = "2525";
+			new SmtpNotificadorGateway();
+			expect(configTransporte().port).toBe(2525);
+		});
+
+		it("não habilita auth quando falta SMTP_PASS", () => {
+			process.env.SMTP_USER = "user";
+			delete process.env.SMTP_PASS;
+			new SmtpNotificadorGateway();
+			expect(configTransporte().auth).toBeUndefined();
+		});
+
+		it("habilita auth com SMTP_USER e SMTP_PASS presentes", () => {
+			process.env.SMTP_USER = "user";
+			process.env.SMTP_PASS = "senha";
+			new SmtpNotificadorGateway();
+			expect(configTransporte().auth).toEqual({ user: "user", pass: "senha" });
+		});
+	});
 });

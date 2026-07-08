@@ -10,11 +10,14 @@ export class SmtpNotificadorGateway implements NotificadorPort {
 
 	constructor() {
 		this.from = process.env.SMTP_FROM ?? "oficina@localhost";
+		const porta = Number.parseInt(process.env.SMTP_PORT ?? "", 10);
+		const user = process.env.SMTP_USER;
+		const pass = process.env.SMTP_PASS;
 		this.transporter = nodemailer.createTransport({
 			host: process.env.SMTP_HOST ?? "localhost",
-			port: Number(process.env.SMTP_PORT ?? 1025),
+			port: Number.isInteger(porta) && porta > 0 && porta <= 65535 ? porta : 1025,
 			secure: false,
-			auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+			auth: user && pass ? { user, pass } : undefined,
 		});
 	}
 
