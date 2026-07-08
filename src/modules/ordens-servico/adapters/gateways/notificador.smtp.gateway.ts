@@ -39,7 +39,7 @@ export class SmtpNotificadorGateway implements NotificadorPort {
 					`\nQualquer dúvida, entre em contato com a oficina.`,
 			});
 		} catch (error) {
-			this.logger.error(`Falha ao notificar OS ${n.numeroOs}: ${(error as Error).message}`);
+			this.logger.error(`Falha ao notificar OS ${n.numeroOs}: ${(error as Error).message}`, (error as Error).stack);
 		}
 	}
 }
