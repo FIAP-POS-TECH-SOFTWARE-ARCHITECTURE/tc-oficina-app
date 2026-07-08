@@ -3,7 +3,7 @@ import { OsItemServicoStatus, OsStatus as PrismaOsStatus, Prisma, TipoMovimentoE
 import { PrismaService } from "../../../../prisma/prisma.service";
 import { OsStatus } from "../../domain/os-status";
 import { OrdensServicoGatewayPort, ResultadoAprovacao, TransicaoPersistencia } from "../../application/ports/ordens-servico.gateway";
-import { HistoricoItemApp, OsDetalhe, OsResumo, TempoMedioServicoApp } from "../../application/ports/os-types";
+import { HistoricoItemApp, OsChaveOrdenacao, OsDetalhe, OsResumo, TempoMedioServicoApp } from "../../application/ports/os-types";
 
 const OS_INCLUDE = {
 	cliente: true,
@@ -67,12 +67,18 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 		return os as unknown as OsDetalhe | null;
 	}
 
-	async listarParaOrdenacao(filtros: { status?: OsStatus; excluirStatus?: OsStatus[]; clienteId?: string }): Promise<OsDetalhe[]> {
+	async listarParaOrdenacao(filtros: { status?: OsStatus; excluirStatus?: OsStatus[]; clienteId?: string }): Promise<OsChaveOrdenacao[]> {
 		const where: Prisma.OrdemServicoWhereInput = {};
 		if (filtros.status) where.status = filtros.status;
 		else if (filtros.excluirStatus?.length) where.status = { notIn: filtros.excluirStatus as unknown as PrismaOsStatus[] };
 		if (filtros.clienteId) where.clienteId = filtros.clienteId;
-		const items = await this.prisma.ordemServico.findMany({ where, include: OS_INCLUDE });
+		const items = await this.prisma.ordemServico.findMany({ where, select: { id: true, status: true, createdAt: true } });
+		return items as unknown as OsChaveOrdenacao[];
+	}
+
+	async buscarDetalhesPorIds(ids: string[]): Promise<OsDetalhe[]> {
+		if (!ids.length) return [];
+		const items = await this.prisma.ordemServico.findMany({ where: { id: { in: ids } }, include: OS_INCLUDE });
 		return items as unknown as OsDetalhe[];
 	}
 

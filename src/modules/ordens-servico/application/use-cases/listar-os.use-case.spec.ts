@@ -2,10 +2,13 @@ import { OsStatus } from "../../domain/os-status";
 import { STATUS_OCULTOS_LISTAGEM } from "../../domain/ordenacao-listagem";
 import { ListarOsUseCase } from "./listar-os.use-case";
 
-const gateway = { listarParaOrdenacao: jest.fn() };
+const gateway = { listarParaOrdenacao: jest.fn(), buscarDetalhesPorIds: jest.fn() };
 
 describe("ListarOsUseCase", () => {
-	beforeEach(() => jest.clearAllMocks());
+	beforeEach(() => {
+		jest.clearAllMocks();
+		gateway.buscarDetalhesPorIds.mockImplementation(async (ids: string[]) => ids.map((id) => ({ id })));
+	});
 
 	it("usa paginação default (page 1, pageSize 20) e exclui status ocultos", async () => {
 		gateway.listarParaOrdenacao.mockResolvedValue([]);
@@ -59,5 +62,6 @@ describe("ListarOsUseCase", () => {
 		const body = res.data as { total: number; items: unknown[] };
 		expect(body.total).toBe(25);
 		expect(body.items).toHaveLength(5);
+		expect(gateway.buscarDetalhesPorIds).toHaveBeenCalledWith(["20", "21", "22", "23", "24"]);
 	});
 });

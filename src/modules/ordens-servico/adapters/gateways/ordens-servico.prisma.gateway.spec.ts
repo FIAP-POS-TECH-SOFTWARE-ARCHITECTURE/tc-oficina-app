@@ -76,12 +76,28 @@ describe("OrdensServicoPrismaGateway", () => {
 		);
 	});
 
-	it("listarParaOrdenacao filtra por status e clienteId", async () => {
+	it("listarParaOrdenacao filtra por status e clienteId com projeção mínima", async () => {
 		prisma.ordemServico.findMany.mockResolvedValueOnce([]);
 		await gateway.listarParaOrdenacao({ status: OsStatus.EM_EXECUCAO, clienteId: "c1" });
 		expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
-			expect.objectContaining({ where: { status: PrismaOsStatus.EM_EXECUCAO, clienteId: "c1" } }),
+			expect.objectContaining({
+				where: { status: PrismaOsStatus.EM_EXECUCAO, clienteId: "c1" },
+				select: { id: true, status: true, createdAt: true },
+			}),
 		);
+	});
+
+	it("buscarDetalhesPorIds busca com include completo só os ids pedidos", async () => {
+		prisma.ordemServico.findMany.mockResolvedValueOnce([]);
+		await gateway.buscarDetalhesPorIds(["os1", "os2"]);
+		expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({ where: { id: { in: ["os1", "os2"] } }, include: expect.any(Object) }),
+		);
+	});
+
+	it("buscarDetalhesPorIds com lista vazia não consulta o banco", async () => {
+		await expect(gateway.buscarDetalhesPorIds([])).resolves.toEqual([]);
+		expect(prisma.ordemServico.findMany).not.toHaveBeenCalled();
 	});
 
 	it("listarParaOrdenacao aplica notIn quando recebe excluirStatus", async () => {

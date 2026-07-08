@@ -18,14 +18,17 @@ export class ListarOsUseCase {
 		const page = query.page ?? 1;
 		const pageSize = query.pageSize ?? 20;
 
-		const todas = await this.gateway.listarParaOrdenacao({
+		const chaves = await this.gateway.listarParaOrdenacao({
 			status: query.status,
 			excluirStatus: query.status ? undefined : STATUS_OCULTOS_LISTAGEM,
 			clienteId: query.clienteId,
 		});
 
-		const ordenadas = [...todas].sort(compararParaListagem);
-		const items = ordenadas.slice((page - 1) * pageSize, page * pageSize);
+		const ordenadas = [...chaves].sort(compararParaListagem);
+		const pagina = ordenadas.slice((page - 1) * pageSize, page * pageSize);
+		const detalhes = await this.gateway.buscarDetalhesPorIds(pagina.map((c) => c.id));
+		const porId = new Map(detalhes.map((d) => [d.id, d]));
+		const items = pagina.flatMap((c) => porId.get(c.id) ?? []);
 		return SR.ok({ total: ordenadas.length, page, pageSize, items });
 	}
 }

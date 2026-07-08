@@ -1,5 +1,5 @@
 import { OsStatus } from "../../domain/os-status";
-import { HistoricoItemApp, OsDetalhe, OsResumo, TempoMedioServicoApp } from "./os-types";
+import { HistoricoItemApp, OsChaveOrdenacao, OsDetalhe, OsResumo, TempoMedioServicoApp } from "./os-types";
 
 export const ORDENS_SERVICO_GATEWAY = Symbol("ORDENS_SERVICO_GATEWAY");
 
@@ -29,7 +29,8 @@ export interface OrdensServicoGatewayPort {
 	buscarPorId(id: string): Promise<OsResumo | null>;
 	buscarDetalhePorId(id: string): Promise<OsDetalhe | null>;
 	buscarPorNumero(numero: string): Promise<OsDetalhe | null>;
-	listarParaOrdenacao(filtros: { status?: OsStatus; excluirStatus?: OsStatus[]; clienteId?: string }): Promise<OsDetalhe[]>;
+	listarParaOrdenacao(filtros: { status?: OsStatus; excluirStatus?: OsStatus[]; clienteId?: string }): Promise<OsChaveOrdenacao[]>;
+	buscarDetalhesPorIds(ids: string[]): Promise<OsDetalhe[]>;
 	listarHistorico(ordemServicoId: string): Promise<HistoricoItemApp[]>;
 	contarPorAno(ano: number): Promise<number>;
 	tempoMedioPorServico(filtro: "ativos" | "inativos" | "ambos"): Promise<TempoMedioServicoApp[]>;

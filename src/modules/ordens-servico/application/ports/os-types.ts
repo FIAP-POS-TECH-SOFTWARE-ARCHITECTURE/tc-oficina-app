@@ -36,6 +36,12 @@ export interface OsItemInsumoApp {
 	[extra: string]: unknown;
 }
 
+export interface OsChaveOrdenacao {
+	id: string;
+	status: OsStatus;
+	createdAt: Date;
+}
+
 export interface OsDetalhe extends OsResumo {
 	valorTotal: unknown;
 	cliente: { nome: string; documento: string; email: string | null; [extra: string]: unknown };
