@@ -39,7 +39,7 @@ export class BootstrapAdminUseCase {
 			this.logger.log(`Administrador inicial criado: ${email}`);
 		} catch (error) {
 			const jaCriado = await this.gateway.buscarPorEmail(email);
-			
+
 			if (jaCriado) {
 				this.logger.log(`Administrador inicial já criado por outra instância: ${email}`);
 				return;
