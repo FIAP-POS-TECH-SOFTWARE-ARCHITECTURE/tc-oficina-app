@@ -4,6 +4,7 @@ import { AppService } from "./app.service";
 import { ConfigModule } from "@nestjs/config";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ModulesModule } from "./modules/modules.module";
+import { HealthModule } from "./modules/health/health.module";
 import { JwtModule } from "@nestjs/jwt";
 
 @Module({
@@ -16,6 +17,7 @@ import { JwtModule } from "@nestjs/jwt";
 		}),
 		PrismaModule,
 		ModulesModule,
+		HealthModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
