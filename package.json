@@ -38,6 +38,7 @@
 		"express-rate-limit": "^8.4.1",
 		"helmet": "^8.1.0",
 		"morgan": "^1.10.1",
+		"nodemailer": "^9.0.3",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.1",
 		"semantic-response": "^1.0.4"
@@ -54,6 +55,7 @@
 		"@types/mocha": "^10.0.10",
 		"@types/morgan": "^1.9.10",
 		"@types/node": "^22.10.7",
+		"@types/nodemailer": "^8.0.1",
 		"@types/supertest": "^6.0.2",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
