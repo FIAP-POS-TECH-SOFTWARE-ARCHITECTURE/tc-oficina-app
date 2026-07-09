@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
-import { ClientesRepository } from "../../../clientes/clientes.repository";
-import { InsumosRepository } from "../../../insumos/insumos.repository";
-import { ServicosRepository } from "../../../servicos/servicos.repository";
-import { VeiculosRepository } from "../../../veiculos/veiculos.repository";
+import { Inject, Injectable } from "@nestjs/common";
+import { CLIENTES_GATEWAY, type ClientesGatewayPort } from "../../../clientes/application/ports/clientes.gateway";
+import { INSUMOS_GATEWAY, type InsumosGatewayPort } from "../../../insumos/application/ports/insumos.gateway";
+import { SERVICOS_GATEWAY, type ServicosGatewayPort } from "../../../servicos/application/ports/servicos.gateway";
+import { VEICULOS_GATEWAY, type VeiculosGatewayPort } from "../../../veiculos/application/ports/veiculos.gateway";
 import {
 	ClientesConsultaPort,
 	InsumosConsultaPort,
@@ -12,32 +12,32 @@ import {
 
 @Injectable()
 export class ClientesConsultaPrismaGateway implements ClientesConsultaPort {
-	constructor(private readonly repo: ClientesRepository) {}
+	constructor(@Inject(CLIENTES_GATEWAY) private readonly clientes: ClientesGatewayPort) {}
 	buscarPorId(id: string) {
-		return this.repo.findById(id);
+		return this.clientes.buscarPorId(id);
 	}
 }
 
 @Injectable()
 export class VeiculosConsultaPrismaGateway implements VeiculosConsultaPort {
-	constructor(private readonly repo: VeiculosRepository) {}
+	constructor(@Inject(VEICULOS_GATEWAY) private readonly veiculos: VeiculosGatewayPort) {}
 	buscarPorId(id: string) {
-		return this.repo.findById(id);
+		return this.veiculos.buscarPorId(id);
 	}
 }
 
 @Injectable()
 export class ServicosConsultaPrismaGateway implements ServicosConsultaPort {
-	constructor(private readonly repo: ServicosRepository) {}
+	constructor(@Inject(SERVICOS_GATEWAY) private readonly servicos: ServicosGatewayPort) {}
 	buscarPorId(id: string) {
-		return this.repo.findById(id);
+		return this.servicos.buscarPorId(id);
 	}
 }
 
 @Injectable()
 export class InsumosConsultaPrismaGateway implements InsumosConsultaPort {
-	constructor(private readonly repo: InsumosRepository) {}
+	constructor(@Inject(INSUMOS_GATEWAY) private readonly insumos: InsumosGatewayPort) {}
 	buscarPorId(id: string) {
-		return this.repo.findById(id);
+		return this.insumos.buscarPorId(id);
 	}
 }

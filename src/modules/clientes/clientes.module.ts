@@ -1,11 +1,26 @@
 import { Module } from "@nestjs/common";
-import { ClientesController } from "./clientes.controller";
-import { ClientesRepository } from "./clientes.repository";
-import { ClientesService } from "./clientes.service";
+import { ClientesController } from "./adapters/clientes.controller";
+import { ClientesPrismaGateway } from "./adapters/gateways/clientes.prisma.gateway";
+import { CLIENTES_GATEWAY } from "./application/ports/clientes.gateway";
+import { AtualizarClienteUseCase } from "./application/use-cases/atualizar-cliente.use-case";
+import { BuscarClientePorDocumentoUseCase } from "./application/use-cases/buscar-cliente-por-documento.use-case";
+import { BuscarClienteUseCase } from "./application/use-cases/buscar-cliente.use-case";
+import { CriarClienteUseCase } from "./application/use-cases/criar-cliente.use-case";
+import { InativarClienteUseCase } from "./application/use-cases/inativar-cliente.use-case";
+import { ListarClientesUseCase } from "./application/use-cases/listar-clientes.use-case";
+
+const useCases = [
+	CriarClienteUseCase,
+	ListarClientesUseCase,
+	BuscarClienteUseCase,
+	BuscarClientePorDocumentoUseCase,
+	AtualizarClienteUseCase,
+	InativarClienteUseCase,
+];
 
 @Module({
 	controllers: [ClientesController],
-	providers: [ClientesService, ClientesRepository],
-	exports: [ClientesService, ClientesRepository],
+	providers: [...useCases, { provide: CLIENTES_GATEWAY, useClass: ClientesPrismaGateway }],
+	exports: [CLIENTES_GATEWAY],
 })
 export class ClientesModule {}

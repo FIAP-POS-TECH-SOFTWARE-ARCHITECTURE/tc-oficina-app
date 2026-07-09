@@ -23,4 +23,16 @@ describe("App (e2e) — healthcheck público", () => {
 		expect(res.status).toBe(200);
 		expect(res.body).toEqual({ status: 200, success: true, data: "API Online!" });
 	});
+
+	it("GET /health responde 200 (liveness) sem token", async () => {
+		const res = await request(app.getHttpServer()).get("/health");
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual({ status: 200, success: true, data: { status: "ok" } });
+	});
+
+	it("GET /health/ready responde 200 com banco up (readiness) sem token", async () => {
+		const res = await request(app.getHttpServer()).get("/health/ready");
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual({ status: 200, success: true, data: { status: "ok", database: "up" } });
+	});
 });

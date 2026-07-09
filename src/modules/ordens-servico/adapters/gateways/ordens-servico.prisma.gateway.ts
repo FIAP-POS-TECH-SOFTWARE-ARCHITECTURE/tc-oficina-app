@@ -67,7 +67,11 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 		return os as unknown as OsDetalhe | null;
 	}
 
-	async listarParaOrdenacao(filtros: { status?: OsStatus; excluirStatus?: OsStatus[]; clienteId?: string }): Promise<OsChaveOrdenacao[]> {
+	async listarParaOrdenacao(filtros: {
+		status?: OsStatus;
+		excluirStatus?: OsStatus[];
+		clienteId?: string;
+	}): Promise<OsChaveOrdenacao[]> {
 		const where: Prisma.OrdemServicoWhereInput = {};
 		if (filtros.status) where.status = filtros.status;
 		else if (filtros.excluirStatus?.length) where.status = { notIn: filtros.excluirStatus as unknown as PrismaOsStatus[] };

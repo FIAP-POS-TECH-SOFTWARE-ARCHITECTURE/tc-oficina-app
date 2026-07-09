@@ -16,6 +16,11 @@ COPY nest-cli.json tsconfig*.json ./
 COPY src ./src
 RUN npm run build
 
+RUN npm ci --omit=dev
+
+# Regenera o Prisma Client na árvore enxuta (npm ci recria node_modules do zero).
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate
+
 FROM node:25-alpine3.22 AS runtime
 
 WORKDIR /app

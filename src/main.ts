@@ -27,6 +27,8 @@ async function bootstrap() {
 			max: 100,
 			standardHeaders: true,
 			legacyHeaders: false,
+			// probes do Kubernetes batem em /health de forma frequente — isentar do rate limit
+			skip: (req) => req.path.startsWith("/health"),
 		}),
 	);
 
