@@ -22,7 +22,7 @@ describe("LoginUseCase", () => {
 		token.gerarToken.mockResolvedValue("token-123");
 	});
 
-	const useCase = () => new LoginUseCase(usuarios as any, hasher as any, token as any);
+	const useCase = () => new LoginUseCase(usuarios as any, hasher, token);
 
 	it("retorna 401 se usuário não existe", async () => {
 		usuarios.buscarPorEmail.mockResolvedValueOnce(null);

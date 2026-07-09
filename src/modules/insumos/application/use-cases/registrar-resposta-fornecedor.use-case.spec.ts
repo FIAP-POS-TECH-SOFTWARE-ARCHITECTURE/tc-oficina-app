@@ -46,9 +46,6 @@ describe("RegistrarRespostaFornecedorUseCase", () => {
 		gateway.buscarDetalhePorId.mockResolvedValueOnce({ id: "rc1" });
 		const r = await useCase().execute("rc1", { aprovado: false, mensagem: "mensagem como motivo" });
 		expect(r.status).toBe(200);
-		expect(gateway.atualizar).toHaveBeenCalledWith(
-			"rc1",
-			expect.objectContaining({ motivoRecusa: "mensagem como motivo" }),
-		);
+		expect(gateway.atualizar).toHaveBeenCalledWith("rc1", expect.objectContaining({ motivoRecusa: "mensagem como motivo" }));
 	});
 });

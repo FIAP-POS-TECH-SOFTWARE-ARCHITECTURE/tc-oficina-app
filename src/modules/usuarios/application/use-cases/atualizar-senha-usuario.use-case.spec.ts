@@ -17,7 +17,7 @@ const usuarioDb = {
 describe("AtualizarSenhaUsuarioUseCase", () => {
 	beforeEach(() => jest.clearAllMocks());
 
-	const useCase = () => new AtualizarSenhaUsuarioUseCase(gateway as any, hasher as any);
+	const useCase = () => new AtualizarSenhaUsuarioUseCase(gateway as any, hasher);
 
 	it("403 quando ator é outro usuário não-admin", async () => {
 		const r = await useCase().execute("1", { senha: "12345678" }, { id: "2", role: Role.ATENDENTE });

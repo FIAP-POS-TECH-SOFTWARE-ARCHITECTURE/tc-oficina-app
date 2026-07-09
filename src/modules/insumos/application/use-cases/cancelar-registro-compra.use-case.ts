@@ -12,11 +12,9 @@ export class CancelarRegistroCompraUseCase {
 		const registro = await this.gateway.buscarPorId(id);
 		if (!registro) return SR.notFound(undefined, "Registro de compra não encontrado");
 
-		if (registro.status === "RECEBIDO")
-			return SR.unprocessableEntity(undefined, "Não é possível cancelar um registro já recebido");
+		if (registro.status === "RECEBIDO") return SR.unprocessableEntity(undefined, "Não é possível cancelar um registro já recebido");
 
-		if (registro.status === "CANCELADO")
-			return SR.unprocessableEntity(undefined, "Registro de compra já está cancelado");
+		if (registro.status === "CANCELADO") return SR.unprocessableEntity(undefined, "Registro de compra já está cancelado");
 
 		await this.gateway.atualizar(id, {
 			status: "CANCELADO",

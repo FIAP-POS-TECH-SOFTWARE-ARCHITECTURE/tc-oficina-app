@@ -6,7 +6,7 @@ const fornecedor = { enviarCompra: jest.fn() };
 describe("EnviarFornecedorUseCase", () => {
 	beforeEach(() => jest.clearAllMocks());
 
-	const useCase = () => new EnviarFornecedorUseCase(gateway as any, fornecedor as any);
+	const useCase = () => new EnviarFornecedorUseCase(gateway as any, fornecedor);
 
 	it("404 quando registro não existe", async () => {
 		gateway.buscarDetalhePorId.mockResolvedValueOnce(null);

@@ -7,7 +7,7 @@ const hasher = { hash: jest.fn(), verificar: jest.fn() };
 describe("BootstrapAdminUseCase", () => {
 	beforeEach(() => jest.clearAllMocks());
 
-	const useCase = () => new BootstrapAdminUseCase(gateway as any, hasher as any);
+	const useCase = () => new BootstrapAdminUseCase(gateway as any, hasher);
 
 	it("não cria se já existe admin", async () => {
 		gateway.contarAdminsAtivos.mockResolvedValueOnce(1);

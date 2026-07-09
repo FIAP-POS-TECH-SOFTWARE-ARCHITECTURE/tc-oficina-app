@@ -21,8 +21,6 @@ describe("Servico (entidade)", () => {
 	});
 
 	it("lança DomainError quando preço é negativo", () => {
-		expect(() => Servico.criar({ nome: "X", preco: -1, tempoEstimadoMin: 10 })).toThrow(
-			"Preço do serviço não pode ser negativo",
-		);
+		expect(() => Servico.criar({ nome: "X", preco: -1, tempoEstimadoMin: 10 })).toThrow("Preço do serviço não pode ser negativo");
 	});
 });

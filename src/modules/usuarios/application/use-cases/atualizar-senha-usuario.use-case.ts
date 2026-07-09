@@ -14,11 +14,7 @@ export class AtualizarSenhaUsuarioUseCase {
 		@Inject(SENHA_HASHER) private readonly hasher: SenhaHasherPort,
 	) {}
 
-	async execute(
-		id: string,
-		dto: UpdateSenhaDto,
-		actor: { id: string; role: Role },
-	): Promise<IServiceResponse<UsuarioResponseDto>> {
+	async execute(id: string, dto: UpdateSenhaDto, actor: { id: string; role: Role }): Promise<IServiceResponse<UsuarioResponseDto>> {
 		if (actor.id !== id && actor.role !== Role.ADMINISTRADOR)
 			return SR.forbidden<UsuarioResponseDto>(undefined, "Apenas o próprio usuário ou um administrador");
 

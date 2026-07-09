@@ -50,9 +50,7 @@ describe("RegistrosCompraPrismaGateway", () => {
 
 	it("listarTodos ordena por createdAt desc com include", async () => {
 		await gateway.listarTodos();
-		expect(prisma.registroCompra.findMany).toHaveBeenCalledWith(
-			expect.objectContaining({ orderBy: { createdAt: "desc" } }),
-		);
+		expect(prisma.registroCompra.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { createdAt: "desc" } }));
 	});
 
 	it("atualizar delega data + where", async () => {

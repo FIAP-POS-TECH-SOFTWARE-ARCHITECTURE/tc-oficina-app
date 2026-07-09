@@ -30,9 +30,7 @@ describe("Insumo (entidade)", () => {
 	});
 
 	it("lança DomainError com quantidadeEstoque negativa", () => {
-		expect(() => Insumo.criar({ ...params, quantidadeEstoque: -1 })).toThrow(
-			"Quantidade em estoque não pode ser negativa",
-		);
+		expect(() => Insumo.criar({ ...params, quantidadeEstoque: -1 })).toThrow("Quantidade em estoque não pode ser negativa");
 	});
 
 	it("lança DomainError com estoqueMinimo negativo", () => {

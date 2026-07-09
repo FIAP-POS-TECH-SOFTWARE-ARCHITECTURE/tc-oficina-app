@@ -8,13 +8,7 @@ import { CriarServicoUseCase } from "./application/use-cases/criar-servico.use-c
 import { InativarServicoUseCase } from "./application/use-cases/inativar-servico.use-case";
 import { ListarServicosUseCase } from "./application/use-cases/listar-servicos.use-case";
 
-const useCases = [
-	CriarServicoUseCase,
-	ListarServicosUseCase,
-	BuscarServicoUseCase,
-	AtualizarServicoUseCase,
-	InativarServicoUseCase,
-];
+const useCases = [CriarServicoUseCase, ListarServicosUseCase, BuscarServicoUseCase, AtualizarServicoUseCase, InativarServicoUseCase];
 
 @Module({
 	controllers: [ServicosController],

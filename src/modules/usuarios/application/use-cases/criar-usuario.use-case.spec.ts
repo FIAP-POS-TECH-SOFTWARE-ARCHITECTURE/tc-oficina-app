@@ -18,7 +18,7 @@ const usuarioDb = {
 describe("CriarUsuarioUseCase", () => {
 	beforeEach(() => jest.clearAllMocks());
 
-	const useCase = () => new CriarUsuarioUseCase(gateway as any, hasher as any);
+	const useCase = () => new CriarUsuarioUseCase(gateway as any, hasher);
 
 	it("409 quando e-mail já existe", async () => {
 		gateway.buscarPorEmail.mockResolvedValueOnce({ id: "x" });

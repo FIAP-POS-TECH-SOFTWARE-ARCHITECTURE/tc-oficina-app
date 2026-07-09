@@ -26,10 +26,7 @@ export class VeiculosPrismaGateway implements VeiculosGatewayPort {
 		return this.prisma.veiculo.findUnique({ where: { placa } });
 	}
 
-	atualizar(
-		id: string,
-		dados: Partial<{ marca: string; modelo: string; ano: number; ativo: boolean }>,
-	): Promise<Veiculo> {
+	atualizar(id: string, dados: Partial<{ marca: string; modelo: string; ano: number; ativo: boolean }>): Promise<Veiculo> {
 		return this.prisma.veiculo.update({ where: { id }, data: dados });
 	}
 

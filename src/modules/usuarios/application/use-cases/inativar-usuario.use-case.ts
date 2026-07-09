@@ -11,8 +11,7 @@ export class InativarUsuarioUseCase {
 	async execute(id: string): Promise<IServiceResponse<UsuarioResponseDto>> {
 		const usuario = await this.gateway.buscarPorId(id);
 		if (!usuario) return SR.notFound<UsuarioResponseDto>(undefined, "Usuário não encontrado");
-		if (usuario.ativo === false)
-			return SR.unprocessableEntity<UsuarioResponseDto>(undefined, "Usuário já está inativado");
+		if (usuario.ativo === false) return SR.unprocessableEntity<UsuarioResponseDto>(undefined, "Usuário já está inativado");
 
 		const updated = await this.gateway.inativar(id);
 		return SR.ok(UsuarioResponseDto.fromEntity(updated), "Usuário inativado");

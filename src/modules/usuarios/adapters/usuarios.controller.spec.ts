@@ -50,11 +50,7 @@ describe("UsuariosController", () => {
 	it("updateSenha delega passando ator", async () => {
 		atualizarSenhaUsuario.execute.mockResolvedValueOnce({ status: 200 });
 		await controller.updateSenha("u1", { senha: "abcd1234" }, { id: "u9", email: "x@x", role: Role.ADMINISTRADOR });
-		expect(atualizarSenhaUsuario.execute).toHaveBeenCalledWith(
-			"u1",
-			{ senha: "abcd1234" },
-			{ id: "u9", role: Role.ADMINISTRADOR },
-		);
+		expect(atualizarSenhaUsuario.execute).toHaveBeenCalledWith("u1", { senha: "abcd1234" }, { id: "u9", role: Role.ADMINISTRADOR });
 	});
 
 	it("remove delega", async () => {

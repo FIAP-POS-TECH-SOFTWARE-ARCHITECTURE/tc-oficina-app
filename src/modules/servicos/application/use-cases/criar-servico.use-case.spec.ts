@@ -24,8 +24,6 @@ describe("CriarServicoUseCase", () => {
 			tempoEstimadoMin: 30,
 		});
 		expect(r.status).toBe(201);
-		expect(gateway.criar).toHaveBeenCalledWith(
-			expect.objectContaining({ nome: "Troca de óleo", preco: 50, tempoEstimadoMin: 30 }),
-		);
+		expect(gateway.criar).toHaveBeenCalledWith(expect.objectContaining({ nome: "Troca de óleo", preco: 50, tempoEstimadoMin: 30 }));
 	});
 });
