@@ -1,0 +1,4 @@
+# copiar para terraform.tfvars (NÃO commitado) e preencher:
+# db_username e db_password: preferir TF_VAR_db_username / TF_VAR_db_password no ambiente
+project_name      = "oficina"
+eks_instance_type = "t3.medium"
