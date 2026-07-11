@@ -1,7 +1,7 @@
 # Uso:
 #   1. AWS Academy -> Learner Lab -> AWS Details -> AWS CLI: Show -> copiar o bloco [default]
 #   2. .\scripts\aws-academy-refresh.ps1   (cola o bloco, Enter, Ctrl+Z + Enter para finalizar)
-# Atualiza ~/.aws/credentials e os secrets AWS_* do repositório GitHub (via gh CLI).
+# Atualiza ~/.aws/credentials, a região default e os secrets AWS_* do repositório GitHub (via gh CLI).
 
 $ErrorActionPreference = "Stop"
 
@@ -25,6 +25,10 @@ aws_secret_access_key = $secretKey
 aws_session_token = $sessionToken
 "@ | Set-Content (Join-Path $awsDir "credentials")
 Write-Host "~/.aws/credentials atualizado."
+
+# Região default — sem isso, todo comando aws sem --region falha com NoRegion
+aws configure set region us-east-1
+Write-Host "Região default configurada (us-east-1)."
 
 # 2) GitHub Secrets (repo atual)
 gh secret set AWS_ACCESS_KEY_ID --body $accessKey
