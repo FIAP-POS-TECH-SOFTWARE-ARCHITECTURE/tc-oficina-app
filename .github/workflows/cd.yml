@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
+  workflow_dispatch:
 
 concurrency:
   group: cd-main
@@ -12,7 +13,7 @@ concurrency:
 jobs:
   docker:
     name: Imagem Docker (ECR)
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.meta.outputs.image }}
@@ -20,7 +21,7 @@ jobs:
       - name: Checkout do commit mesclado
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -36,7 +37,7 @@ jobs:
 
       - name: Definir tag da imagem
         id: meta
-        run: echo "image=${{ steps.ecr.outputs.registry }}/oficina-api:${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
+        run: echo "image=${{ steps.ecr.outputs.registry }}/oficina-api:${{ github.event.pull_request.merge_commit_sha || github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Build e push
         run: |
@@ -51,7 +52,7 @@ jobs:
       - name: Checkout do commit mesclado
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
