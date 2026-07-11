@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: oficina-api
-          # placeholder — a pipeline (Plano 7) troca via `kubectl set image`.
+          # placeholder — a pipeline troca via `kubectl set image`.
           # No minikube usa-se a imagem construída localmente (ver k8s/README.md).
           image: oficina-api:local
           imagePullPolicy: IfNotPresent
