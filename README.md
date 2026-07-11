@@ -221,6 +221,24 @@ A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras
 
 ## Apêndice
 
+### Stack
+
+| Camada | Tecnologia |
+| -------------- | -------------------- |
+| Runtime | Node.js + TypeScript |
+| Framework | NestJS 11 |
+| Banco | PostgreSQL 18 (RDS em produção) |
+| ORM | Prisma 6 |
+| Autenticação | JWT + Argon2 |
+| Testes | Jest + Supertest + Testcontainers |
+| Carga | k6 |
+| Cliente de API | Bruno (export Postman disponível) |
+| Containers | Docker + Docker Compose |
+| Orquestração | Kubernetes (EKS / minikube) |
+| IaC | Terraform (state em S3) |
+| CI/CD | GitHub Actions |
+| E-mail (dev) | Mailhog |
+
 ### Dados iniciais (seed)
 
 `npm run db:seed` popula usuários (atendente, mecânico, estoquista), clientes, veículos, serviços e insumos. Credenciais de exemplo estão no corpo da request `Auth > Login` da collection.
