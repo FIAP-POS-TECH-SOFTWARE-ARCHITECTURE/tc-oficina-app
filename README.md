@@ -120,12 +120,12 @@ Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
-| Serviço | URL |
-|---|---|
-| API | <http://localhost:3000> |
-| Swagger | <http://localhost:3000/docs> |
-| Health | <http://localhost:3000/health> |
-| Mailhog (e-mails de notificação) | <http://localhost:8025> |
+| Serviço                          | URL                            |
+| -------------------------------- | ------------------------------ |
+| API                              | <http://localhost:3000>        |
+| Swagger                          | <http://localhost:3000/docs>   |
+| Health                           | <http://localhost:3000/health> |
+| Mailhog (e-mails de notificação) | <http://localhost:8025>        |
 
 Comandos de referência: `docker compose up`, `docker compose build`, `docker compose logs`, `docker compose ps`, `docker compose down`.
 
@@ -187,13 +187,13 @@ Teste de carga (demonstração do HPA): script [k6/load-test.js](k6/load-test.js
 
 Mapeamento dos requisitos obrigatórios (§5 da spec) para os endpoints reais (os nomes de rota mantêm o padrão da Fase 1, conforme permitido pela spec):
 
-| Requisito | Endpoint | Auth |
-|---|---|---|
-| §5.1 Abertura de OS (retorna id único, número `OS-<ano>-<seq>`) | `POST /os` | JWT (atendente/admin) |
-| §5.2 Consulta de status | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id` | Pública · JWT |
-| §5.3 Webhook aprovação/recusa de orçamento | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar` | Pública (validação por documento do cliente) |
-| §5.4 Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica) | `GET /os` | JWT |
-| §5.5 Atualização de status com notificação por e-mail | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT |
+| Requisito                                                                                                                                         | Endpoint                                                                                                                                                                                       | Auth                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| §5.1 Abertura de OS (retorna id único, número `OS-<ano>-<seq>`)                                                                                   | `POST /os`                                                                                                                                                                                     | JWT (atendente/admin)                        |
+| §5.2 Consulta de status                                                                                                                           | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id`                                                                                                                     | Pública · JWT                                |
+| §5.3 Webhook aprovação/recusa de orçamento                                                                                                        | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Pública (validação por documento do cliente) |
+| §5.4 Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica) | `GET /os`                                                                                                                                                                                      | JWT                                          |
+| §5.5 Atualização de status com notificação por e-mail                                                                                             | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT                                          |
 
 A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras e todas as operações de OS) está documentada no **Swagger**: `http://localhost:3000/docs`.
 
@@ -204,7 +204,7 @@ A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras
 
 ## 5. Vídeo demonstrativo
 
-> 🎬 **Link:** _a publicar_ (YouTube, não listado; deploy, CI/CD, consumo das APIs e HPA escalando sob carga K6, ≤15 min).
+> 🎬 **Link:** _a publicar_
 
 ## 6. Decisões e trade-offs
 
@@ -223,21 +223,21 @@ A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras
 
 ### Stack
 
-| Camada | Tecnologia |
-| -------------- | -------------------- |
-| Runtime | Node.js + TypeScript |
-| Framework | NestJS 11 |
-| Banco | PostgreSQL 18 (RDS em produção) |
-| ORM | Prisma 6 |
-| Autenticação | JWT + Argon2 |
-| Testes | Jest + Supertest + Testcontainers |
-| Carga | k6 |
+| Camada         | Tecnologia                        |
+| -------------- | --------------------------------- |
+| Runtime        | Node.js + TypeScript              |
+| Framework      | NestJS 11                         |
+| Banco          | PostgreSQL 18 (RDS em produção)   |
+| ORM            | Prisma 6                          |
+| Autenticação   | JWT + Argon2                      |
+| Testes         | Jest + Supertest + Testcontainers |
+| Carga          | k6                                |
 | Cliente de API | Bruno (export Postman disponível) |
-| Containers | Docker + Docker Compose |
-| Orquestração | Kubernetes (EKS / minikube) |
-| IaC | Terraform (state em S3) |
-| CI/CD | GitHub Actions |
-| E-mail (dev) | Mailhog |
+| Containers     | Docker + Docker Compose           |
+| Orquestração   | Kubernetes (EKS / minikube)       |
+| IaC            | Terraform (state em S3)           |
+| CI/CD          | GitHub Actions                    |
+| E-mail (dev)   | Mailhog                           |
 
 ### Dados iniciais (seed)
 
