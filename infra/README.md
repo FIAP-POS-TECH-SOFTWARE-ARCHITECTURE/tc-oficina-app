@@ -38,6 +38,14 @@ Cole o bloco `[default]` de *AWS Details → AWS CLI: Show* e finalize com `Ctrl
 
 Por isso **não há `terraform apply` automático em pipeline** — as credenciais expiram e o apply é sempre manual e consciente.
 
+## Pipeline falhou com ExpiredToken / UnrecognizedClientException?
+
+Sessão do AWS Academy expirou. Correção (2 min):
+
+1. Iniciar/reabrir o Learner Lab e copiar o bloco AWS CLI (AWS Details).
+2. Rodar: `.\scripts\aws-academy-refresh.ps1` (cola o bloco)
+3. Re-executar o workflow: `gh run rerun --failed`
+
 ## Bootstrap do bucket de tfstate (uma única vez)
 
 O backend S3 não cria o próprio bucket. Antes do primeiro `terraform init`:

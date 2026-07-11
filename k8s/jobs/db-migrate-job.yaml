@@ -1,0 +1,18 @@
+# Aplicado pela pipeline com a imagem do commit; não faz parte do `kubectl apply -f k8s/` padrão.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: oficina-db-migrate
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: PLACEHOLDER_IMAGE
+          command: ["npx", "prisma", "migrate", "deploy"]
+          envFrom:
+            - secretRef:
+                name: oficina-secrets
