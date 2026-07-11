@@ -133,10 +133,19 @@ kubectl get pods -w
 **Esperado:** pods `Running`. Teste de fumaça:
 
 ```powershell
-kubectl port-forward svc/oficina-api 3000:80   # ajustar nome/porta conforme k8s/
-# noutro terminal:
-curl http://localhost:3000/health
+# O Service LoadBalancer publica um hostname na AWS (pode levar alguns minutos).
+kubectl get svc oficina-api
+$hostname = kubectl get svc oficina-api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+$healthUrl = "http://$hostname/health"
+
+curl.exe -fsS $healthUrl
+Start-Process $healthUrl   # abre somente o health no navegador
 ```
+
+**Esperado:** resposta HTTP 200 com `status: "ok"`. Se `EXTERNAL-IP` ainda estiver
+como `<pending>`, aguardar a criação do Load Balancer com
+`kubectl get svc oficina-api -w` e repetir os comandos. O endpoint atual usa HTTP
+na porta 80; não trocar a URL para HTTPS.
 
 ## 8. Testar conectividade com o RDS (do seu host)
 
