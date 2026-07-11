@@ -1,0 +1,11 @@
+// Espelho do enum Prisma — valores string idênticos; domínio não importa @prisma/client.
+export enum OsStatus {
+	RECEBIDA = "RECEBIDA",
+	EM_DIAGNOSTICO = "EM_DIAGNOSTICO",
+	AGUARDANDO_APROVACAO = "AGUARDANDO_APROVACAO",
+	BLOQUEADA = "BLOQUEADA",
+	EM_EXECUCAO = "EM_EXECUCAO",
+	FINALIZADA = "FINALIZADA",
+	ENTREGUE = "ENTREGUE",
+	CANCELADA = "CANCELADA",
+}

@@ -8,6 +8,7 @@
 	},
 	"setupFiles": ["<rootDir>/setupEnv.ts"],
 	"globalSetup": "<rootDir>/globalSetup.ts",
+	"globalTeardown": "<rootDir>/globalTeardown.ts",
 	"maxWorkers": 1,
 	"testTimeout": 30000
 }

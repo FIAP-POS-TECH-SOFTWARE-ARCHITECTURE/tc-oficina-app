@@ -13,6 +13,7 @@
 		"start:prod": "node dist/src/main.js",
 		"format": "prettier --write .",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+		"lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
 		"db:seed": "ts-node -P tsconfig.seed.json prisma/seed.ts",
 		"sonar:up": "docker compose -f dev/docker-compose.yml up -d sonarqube",
 		"sonar:down": "docker compose -f dev/docker-compose.yml stop sonarqube",
@@ -37,9 +38,13 @@
 		"express-rate-limit": "^8.4.1",
 		"helmet": "^8.1.0",
 		"morgan": "^1.10.1",
+		"nodemailer": "^9.0.3",
+		"prisma": "^6.0.0",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.1",
-		"semantic-response": "^1.0.4"
+		"semantic-response": "^1.0.4",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.7.3"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.2.0",
@@ -47,11 +52,13 @@
 		"@nestjs/cli": "^11.0.0",
 		"@nestjs/schematics": "^11.0.0",
 		"@nestjs/testing": "^11.0.1",
+		"@testcontainers/postgresql": "^12.0.4",
 		"@types/express": "^5.0.0",
 		"@types/jest": "^30.0.0",
 		"@types/mocha": "^10.0.10",
 		"@types/morgan": "^1.9.10",
 		"@types/node": "^22.10.7",
+		"@types/nodemailer": "^8.0.1",
 		"@types/supertest": "^6.0.2",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
@@ -59,15 +66,12 @@
 		"globals": "^16.0.0",
 		"jest": "^30.0.0",
 		"prettier": "^3.4.2",
-		"prisma": "^6.0.0",
 		"sonar-scanner": "^3.1.0",
 		"source-map-support": "^0.5.21",
 		"supertest": "^7.0.0",
 		"ts-jest": "^29.2.5",
 		"ts-loader": "^9.5.2",
-		"ts-node": "^10.9.2",
 		"tsconfig-paths": "^4.2.0",
-		"typescript": "^5.7.3",
 		"typescript-eslint": "^8.20.0"
 	},
 	"jest": {
@@ -103,19 +107,19 @@
 				"functions": 80,
 				"lines": 80
 			},
-			"src/modules/ordens-servico/ordens-servico.service.ts": {
+			"src/modules/ordens-servico/application/**/*.ts": {
 				"statements": 80,
 				"branches": 70,
 				"functions": 80,
 				"lines": 80
 			},
-			"src/modules/insumos/insumos.service.ts": {
+			"src/modules/insumos/application/**/*.ts": {
 				"statements": 80,
 				"branches": 80,
 				"functions": 80,
 				"lines": 80
 			},
-			"src/modules/auth/auth.service.ts": {
+			"src/modules/auth/application/**/*.ts": {
 				"statements": 80,
 				"branches": 70,
 				"functions": 80,
