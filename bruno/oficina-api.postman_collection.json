@@ -1,0 +1,1871 @@
+{
+	"info": {
+		"name": "Oficina API — Tech Challenge FIAP (Fase 2)",
+		"description": "Export da collection Bruno (bruno/Oficina-API). Rode 'Auth > Login' primeiro — o script salva o JWT na variável 'token'.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "url",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "clienteId",
+			"value": ""
+		},
+		{
+			"key": "usuarioId",
+			"value": ""
+		},
+		{
+			"key": "veiculoId",
+			"value": ""
+		},
+		{
+			"key": "servicoId",
+			"value": ""
+		},
+		{
+			"key": "insumoId",
+			"value": ""
+		},
+		{
+			"key": "osId",
+			"value": ""
+		},
+		{
+			"key": "osNumero",
+			"value": ""
+		},
+		{
+			"key": "itemServicoId",
+			"value": ""
+		},
+		{
+			"key": "itemInsumoId",
+			"value": ""
+		},
+		{
+			"key": "documentoCliente",
+			"value": ""
+		},
+		{
+			"key": "registroCompraId",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "API Online",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": []
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/auth/login",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "// ADMINISTRADOR\n{\n  \"email\": \"admin@oficina.local\",\n  \"senha\": \"ChangeMe!123\"\n}\n\n// ATENDENTE\n// {\n//   \"email\": \"atendente@oficina.local\",\n//   \"senha\": \"Atendente@2024\"\n// }\n\n// MECANICO\n// {\n//   \"email\": \"mecanico@oficina.local\",\n//   \"senha\": \"Mecanico@2024\"\n// }\n\n// ESTOQUISTA\n// {\n//   \"email\": \"estoquista@oficina.local\",\n//   \"senha\": \"Estoquista@2024\"\n// }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && pm.response.json().data.accessToken) {",
+									"  pm.collectionVariables.set(\"token\", pm.response.json().data.accessToken);",
+									"}"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Clientes",
+			"item": [
+				{
+					"name": "Criar Cliente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/clientes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Fulano da Silva\",\n    \"documento\": \"168.995.350-09\",\n    \"email\": \"fulano@email.com\",\n    \"telefone\": \"(11) 99999-9999\",\n    \"endereco\": \"Rua das Flores, 100\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && pm.response.json().data.id) {",
+									"  pm.collectionVariables.set(\"clienteId\", pm.response.json().data.id);",
+									"  pm.collectionVariables.set(\"documentoCliente\", pm.response.json().data.documento);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Listar Clientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/clientes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detalhar Cliente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/clientes/{{clienteId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes",
+								"{{clienteId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por Documento",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/clientes/buscar?documento={{documentoCliente}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "documento",
+									"value": "{{documentoCliente}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Cliente",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/clientes/{{clienteId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes",
+								"{{clienteId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Fulano da Silva Atualizado\",\n    \"email\": \"fulano.atualizado@email.com\",\n    \"telefone\": \"(11) 98888-7777\",\n    \"endereco\": \"Rua Atualizada, 200\",\n    \"ativo\": true\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Cliente",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/clientes/{{clienteId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes",
+								"{{clienteId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Veiculos",
+			"item": [
+				{
+					"name": "Criar Veiculo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/clientes/{{clienteId}}/veiculos",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes",
+								"{{clienteId}}",
+								"veiculos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"placa\": \"ABC1D23\",\n    \"marca\": \"Volkswagen\",\n    \"modelo\": \"Gol\",\n    \"ano\": 2020\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && pm.response.json().data.id) {",
+									"  pm.collectionVariables.set(\"veiculoId\", pm.response.json().data.id);",
+									"  pm.collectionVariables.set(\"placa\", pm.response.json().data.placa);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Listar do Cliente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/clientes/{{clienteId}}/veiculos",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"clientes",
+								"{{clienteId}}",
+								"veiculos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detalhar Veiculo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/veiculos/{{veiculoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"veiculos",
+								"{{veiculoId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por Placa",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/veiculos/buscar?placa={{placa}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"veiculos",
+								"buscar"
+							],
+							"query": [
+								{
+									"key": "placa",
+									"value": "{{placa}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Veiculo",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/veiculos/{{veiculoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"veiculos",
+								"{{veiculoId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"marca\": \"Toyota\",\n    \"modelo\": \"Corolla XEi\",\n    \"ano\": 2021,\n    \"ativo\": true\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Veiculo",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/veiculos/{{veiculoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"veiculos",
+								"{{veiculoId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Servicos",
+			"item": [
+				{
+					"name": "Criar Servico",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/servicos",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"servicos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Troca de Óleo\",\n    \"descricao\": \"Troca de óleo do motor com filtro\",\n    \"preco\": 80.00,\n    \"tempoEstimadoMin\": 30\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && pm.response.json().data.id) {",
+									"  pm.collectionVariables.set(\"servicoId\", pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Listar Servicos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/servicos",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"servicos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detalhar Servico",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/servicos/{{servicoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"servicos",
+								"{{servicoId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Servico",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/servicos/{{servicoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"servicos",
+								"{{servicoId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Alinhamento e Balanceamento\",\n    \"descricao\": \"Alinhamento completo e balanceamento das rodas\",\n    \"preco\": 180,\n    \"tempoEstimadoMin\": 90,\n    \"ativo\": true\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Servico",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/servicos/{{servicoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"servicos",
+								"{{servicoId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Insumos",
+			"item": [
+				{
+					"name": "Criar Insumo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/insumos",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"codigo\": \"P-001\",\n    \"nome\": \"Filtro de óleo\",\n    \"descricao\": \"Filtro de óleo motor 1.0\",\n    \"precoUnitario\": 25.00,\n    \"estoqueMinimo\": 5,\n    \"quantidadeEstoque\": 10\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && pm.response.json().data.id) {",
+									"  pm.collectionVariables.set(\"insumoId\", pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Listar Insumos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/insumos",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detalhar Insumo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/insumos/{{insumoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos",
+								"{{insumoId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Insumo",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/insumos/{{insumoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos",
+								"{{insumoId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Filtro de óleo premium\",\n    \"descricao\": \"Filtro de óleo para motor 1.0 e 1.6\",\n    \"precoUnitario\": 28.9,\n    \"estoqueMinimo\": 8,\n    \"ativo\": true\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Entrada Estoque",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/insumos/{{insumoId}}/entrada",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos",
+								"{{insumoId}}",
+								"entrada"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"quantidade\": 5,\n    \"motivo\": \"Compra fornecedor\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ajuste Estoque",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/insumos/{{insumoId}}/ajuste",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos",
+								"{{insumoId}}",
+								"ajuste"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"novaQuantidade\": 12,\n    \"motivo\": \"Contagem de inventario\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Movimentos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/insumos/{{insumoId}}/movimentos",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos",
+								"{{insumoId}}",
+								"movimentos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Alertas Estoque Baixo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/insumos/alertas/estoque-baixo",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos",
+								"alertas",
+								"estoque-baixo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Insumo",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/insumos/{{insumoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"insumos",
+								"{{insumoId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Compras",
+					"item": [
+						{
+							"name": "Criar Registro de Compra",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/insumos/compras",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"insumos",
+										"compras"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"insumoId\": \"{{insumoId}}\",\n    \"quantidadeSolicitada\": 10,\n    \"ordemServicoId\": \"{{osId}}\"\n  }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"if (pm.response.json() && pm.response.json().data && pm.response.json().data.id) {",
+											"  pm.collectionVariables.set(\"registroCompraId\", pm.response.json().data.id);",
+											"}"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Enviar para Fornecedor",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url}}/insumos/compras/{{registroCompraId}}/enviar-fornecedor",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"insumos",
+										"compras",
+										"{{registroCompraId}}",
+										"enviar-fornecedor"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Registrar Resposta Fornecedor",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/insumos/compras/{{registroCompraId}}/resposta-fornecedor",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"insumos",
+										"compras",
+										"{{registroCompraId}}",
+										"resposta-fornecedor"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"aprovado\": true,\n    \"codigo\": \"APR-001\",\n    \"mensagem\": \"Compra aprovada pelo fornecedor\"\n  }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Receber Compra",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/insumos/compras/{{registroCompraId}}/receber",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"insumos",
+										"compras",
+										"{{registroCompraId}}",
+										"receber"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"notaFiscalNumero\": \"NF-001\",\n    \"notaFiscalChave\": \"35260500000000000000550010000000011000000019\",\n    \"arquivoNome\": \"nota-fiscal-001.pdf\",\n    \"arquivoTipo\": \"application/pdf\",\n    \"arquivoTamanho\": 204800,\n    \"arquivoUrl\": \"s3://oficina-docs/notas-fiscais/nota-fiscal-001.pdf\"\n  }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cancelar Registro de Compra",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{url}}/insumos/compras/{{registroCompraId}}/cancelar",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"insumos",
+										"compras",
+										"{{registroCompraId}}",
+										"cancelar"
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"motivo\": \"Insumo não mais necessário\"\n  }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Listar Registros de Compra",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}/insumos/compras",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"insumos",
+										"compras"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Detalhar Registro de Compra",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url}}/insumos/compras/{{registroCompraId}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"insumos",
+										"compras",
+										"{{registroCompraId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "OrdensServico",
+			"item": [
+				{
+					"name": "Criar OS",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clienteId\": \"{{clienteId}}\",\n    \"veiculoId\": \"{{veiculoId}}\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && pm.response.json().data.id) {",
+									"  pm.collectionVariables.set(\"osId\", pm.response.json().data.id);",
+									"  pm.collectionVariables.set(\"osNumero\", pm.response.json().data.numero);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Iniciar Diagnostico",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/diagnostico/iniciar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"diagnostico",
+								"iniciar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Diagnostico",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/diagnostico",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"diagnostico"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"diagnostico\": \"Veiculo com desgaste acentuado nas pastilhas de freio dianteiras.\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Adicionar Item Servico",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/itens-servico",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"itens-servico"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"servicoId\": \"{{servicoId}}\",\n    \"quantidade\": 1\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && Array.isArray(pm.response.json().data.itensServico)) {",
+									"  const itens = pm.response.json().data.itensServico;",
+									"  const servicoId = bru.getEnvVar(\"servicoId\");",
+									"  const item = itens",
+									"    .filter((i) => !servicoId || i.servicoId === servicoId)",
+									"    .reduce((latest, current) => {",
+									"      if (!latest) return current;",
+									"      return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;",
+									"    }, null) || itens[itens.length - 1];",
+									"",
+									"  if (item && item.id) {",
+									"    pm.collectionVariables.set(\"itemServicoId\", item.id);",
+									"  }",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remover Item Servico",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/itens-servico/{{itemServicoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"itens-servico",
+								"{{itemServicoId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Adicionar Item Insumo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/itens-insumo",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"itens-insumo"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"insumoId\": \"{{insumoId}}\",\n    \"quantidade\": 1\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && Array.isArray(pm.response.json().data.itensInsumo)) {",
+									"  const itens = pm.response.json().data.itensInsumo;",
+									"  const insumoId = bru.getEnvVar(\"insumoId\");",
+									"  const item = itens.slice().reverse().find((i) => !insumoId || i.insumoId === insumoId) || itens[itens.length - 1];",
+									"  if (item && item.id) {",
+									"    pm.collectionVariables.set(\"itemInsumoId\", item.id);",
+									"  }",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remover Item Insumo",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/itens-insumo/{{itemInsumoId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"itens-insumo",
+								"{{itemInsumoId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Gerar Orcamento",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/orcamento/gerar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"orcamento",
+								"gerar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Aprovar Orcamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os/{{osNumero}}/orcamento/aprovar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osNumero}}",
+								"orcamento",
+								"aprovar"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"documento\": \"{{documentoCliente}}\",\n    \"observacao\": \"Pode iniciar o serviço\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Desbloquear OS",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/desbloquear",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"desbloquear"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"observacao\": \"Estoque reposto, OS liberada para execução\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Rejeitar Orcamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os/{{osNumero}}/orcamento/rejeitar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osNumero}}",
+								"orcamento",
+								"rejeitar"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"documento\": \"{{documentoCliente}}\",\n    \"observacao\": \"Cliente desistiu do reparo\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Iniciar Item Servico",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/itens-servico/{{itemServicoId}}/iniciar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"itens-servico",
+								"{{itemServicoId}}",
+								"iniciar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Concluir Item Servico",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/itens-servico/{{itemServicoId}}/concluir",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"itens-servico",
+								"{{itemServicoId}}",
+								"concluir"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar Item Servico",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/itens-servico/{{itemServicoId}}/cancelar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"itens-servico",
+								"{{itemServicoId}}",
+								"cancelar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Finalizar",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/finalizar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"finalizar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Entregar",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/entregar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"entregar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/cancelar",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"cancelar"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"motivo\": \"Cancelamento administrativo\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detalhar OS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar OS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os?page=1&pageSize=20",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Consulta Publica",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/publica/{{osNumero}}?documento={{documentoCliente}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"publica",
+								"{{osNumero}}"
+							],
+							"query": [
+								{
+									"key": "documento",
+									"value": "{{documentoCliente}}"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Metrica Tempo Medio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/metricas/tempo-medio",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"metricas",
+								"tempo-medio"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Historico OS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/os/{{osId}}/historico",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"os",
+								"{{osId}}",
+								"historico"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Usuarios",
+			"item": [
+				{
+					"name": "Criar Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/usuarios",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"usuarios"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"João Atendente\",\n    \"email\": \"joao@oficina.local\",\n    \"senha\": \"12345678\",\n    \"role\": \"ATENDENTE\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.json() && pm.response.json().data && pm.response.json().data.id) {",
+									"  pm.collectionVariables.set(\"usuarioId\", pm.response.json().data.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Listar Usuarios",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/usuarios",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"usuarios"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detalhar Usuario",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/usuarios/{{usuarioId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{usuarioId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Usuario",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/usuarios/{{usuarioId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{usuarioId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Administrador Atualizado\",\n    \"email\": \"admin.atualizado@oficina.local\",\n    \"role\": \"ADMINISTRADOR\",\n    \"ativo\": true\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Senha",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/usuarios/{{usuarioId}}/senha",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{usuarioId}}",
+								"senha"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"senha\": \"NovaSenha@123\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Usuario",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/usuarios/{{usuarioId}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{usuarioId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/health",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health Ready",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/health/ready",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"health",
+								"ready"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
