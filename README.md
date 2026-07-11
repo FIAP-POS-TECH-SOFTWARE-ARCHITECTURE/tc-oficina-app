@@ -1,202 +1,243 @@
-# Sistema da Oficina — API REST
+# Oficina API — Tech Challenge FIAP (Fase 2)
 
-## Comandos rápidos
+API REST para gestão de ordens de serviço (OS) de uma oficina mecânica — Tech Challenge da pós-graduação em Software Architecture (FIAP, 14SOAT).
 
-### 1) Subir a aplicação com Docker
+## 1. Descrição da solução e objetivos da fase
+
+O sistema da Fase 1 gerencia o ciclo completo de uma oficina: autenticação e usuários internos, clientes, veículos, catálogo de serviços, estoque de insumos (com compras) e ordens de serviço — do recebimento do veículo à entrega, passando por diagnóstico, orçamento, aprovação do cliente e execução.
+
+**Objetivos da Fase 2** — evoluir essa base para garantir qualidade, resiliência e escalabilidade:
+
+- **Clean Architecture**: refatoração de todos os módulos em camadas `domain / application / adapters`, com regra de dependência apontando para dentro e SOLID aplicado;
+- **Testes automatizados** dos fluxos críticos (casos de uso da OS) — unitários com mocks dos gateways + e2e com banco real (Testcontainers);
+- **APIs da OS** conforme §5 da spec: criação, consulta pública de status, webhook de aprovação/recusa de orçamento, listagem ordenada por prioridade de status com exclusão lógica e notificação por e-mail na mudança de status;
+- **Kubernetes** com autoescala (Deployment 2+ réplicas, Service, ConfigMap, Secret e HPA);
+- **IaC com Terraform** (EKS + RDS + ECR na AWS, state remoto em S3);
+- **CI/CD** com GitHub Actions: lint → build → testes → e2e → imagem Docker → migração do banco → deploy no cluster.
+
+## 2. Arquitetura
+
+### 2.1 Camadas da aplicação (Clean Architecture)
+
+Cada módulo de `src/modules/` (`auth`, `usuarios`, `clientes`, `veiculos`, `servicos`, `insumos`, `ordens-servico`) segue a mesma estrutura em camadas, com a regra de dependência apontando sempre para dentro:
+
+```mermaid
+flowchart TD
+    subgraph FD["Frameworks & Drivers (externo)"]
+        NEST["NestJS (HTTP, DI, guards)"]
+        PRISMA["Prisma / PostgreSQL"]
+        SMTP["Nodemailer / SMTP"]
+    end
+    subgraph AD["Adapters"]
+        CTRL["Controllers<br/>(adaptam entrada, chamam use case)"]
+        PRES["Presenter<br/>(envelope semantic-response)"]
+        GW["Gateways<br/>(repositório Prisma, notificador SMTP)"]
+    end
+    subgraph AP["Application"]
+        UC["Use Cases<br/>(um por operação)"]
+        PORTS["Ports (interfaces)<br/>OsRepository, NotificadorPort…"]
+    end
+    subgraph DM["Domain"]
+        ENT["Entidades<br/>(OrdemServico, Cliente, Veiculo…)"]
+        VO["Value Objects<br/>(StatusOS, NumeroOS, Placa, Documento)"]
+        REGRAS["Regras puras<br/>(fluxo de estados, ordenação §5.4)"]
+    end
+
+    NEST --> CTRL
+    CTRL --> UC
+    CTRL --> PRES
+    GW -. implementam .-> PORTS
+    PRISMA --> GW
+    SMTP --> GW
+    UC --> PORTS
+    UC --> ENT
+    ENT --- VO
+    ENT --- REGRAS
+```
+
+Regras seguidas (invioláveis):
+
+- `domain` não importa nada de Nest/Prisma; `application` só importa `domain`; `adapters` importam `application`/`domain`. O wiring (providers) fica no módulo Nest.
+- Use cases recebem dependências **por interface (ports)** via injeção — testáveis com mocks.
+- Regras de negócio (transições de status, ordenação da listagem) são código puro de domínio, não SQL.
+- **Decisão registrada:** o envelope de resposta padronizado (`semantic-response`, via interceptor global) cumpre o papel de **Presenter** — formata toda saída HTTP num único ponto.
+
+### 2.2 Infraestrutura provisionada (Terraform / AWS)
+
+```mermaid
+flowchart LR
+    DEV["Dev / GitHub"] -->|push| GHA["GitHub Actions<br/>(CI/CD)"]
+    GHA -->|"build + push :sha"| ECR["ECR<br/>oficina-api"]
+    GHA -->|"kubectl apply / set image"| EKS
+    GHA -->|"prisma migrate deploy"| RDS
+
+    subgraph VPC["VPC 10.0.0.0/16 (2 subnets públicas)"]
+        subgraph EKS["EKS oficina-eks (nodes t3.medium ×2)"]
+            SVC["Service<br/>LoadBalancer"] --> DEP["Deployment oficina-api<br/>2+ réplicas · probes · resources"]
+            HPA["HPA<br/>CPU 70% · 2→10"] -.escala.-> DEP
+            CM["ConfigMap"] -.-> DEP
+            SEC["Secret"] -.-> DEP
+        end
+        RDS[("RDS PostgreSQL<br/>oficina-db")]
+    end
+
+    DEP -->|imagem| ECR
+    DEP --> RDS
+    DEP -->|"notificação e-mail"| SMTPX["SMTP<br/>(Mailhog em dev)"]
+    CLIENTE["Cliente HTTP"] --> SVC
+```
+
+Recursos completos, trade-offs do AWS Academy e comandos: [infra/README.md](infra/README.md).
+
+### 2.3 Fluxo de deploy (CI/CD)
+
+Workflow único [.github/workflows/ci.yml](.github/workflows/ci.yml), estratégia de branches **GitHub Flow** (main implantável + feature branches + PRs):
+
+```mermaid
+flowchart LR
+    PUSH["push / PR"] --> Q["quality<br/>lint · build · testes unitários"]
+    PUSH --> E2E["e2e<br/>Testcontainers (Postgres real)"]
+    PUSH --> TF["terraform-check<br/>fmt · validate"]
+    Q --> DOCKER["docker<br/>build + push ECR (tag = SHA)"]
+    E2E --> DOCKER
+    DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -f k8s/<br/>kubectl set image<br/>smoke test /health"]
+```
+
+O `terraform apply` é **manual e documentado** (credenciais do AWS Academy expiram por sessão — apply automático quebraria a pipeline de forma intermitente). A pipeline valida o Terraform (`fmt`/`validate`) e faz o deploy da aplicação.
+
+## 3. Como executar
+
+### 3.1 Local (docker compose)
+
+Pré-requisitos: Docker + Docker Compose.
 
 ```bash
 # Linux/macOS
 cp .env.example .env
-
 # Windows PowerShell
 Copy-Item .env.example .env
 
 docker compose up -d --build
 ```
 
-API em: `http://localhost:3000`
+| Serviço | URL |
+|---|---|
+| API | <http://localhost:3000> |
+| Swagger | <http://localhost:3000/docs> |
+| Health | <http://localhost:3000/health> |
+| Mailhog (e-mails de notificação) | <http://localhost:8025> |
 
-### 2) Subir localmente sem Docker
+Comandos de referência: `docker compose up`, `docker compose build`, `docker compose logs`, `docker compose ps`, `docker compose down`.
 
-Pré-requisito: PostgreSQL instalado e rodando localmente.
+O entrypoint do container roda as migrações (`prisma migrate deploy`) e o seed automaticamente. Usuário administrador é criado no bootstrap com `ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD` do `.env`.
+
+<details>
+<summary>Rodar sem Docker (Postgres local)</summary>
 
 ```bash
 npm install
-
-# Linux/macOS
-cp .env.example .env
-
-# Windows PowerShell
-Copy-Item .env.example .env
-```
-
-No arquivo `.env`, ajuste `DATABASE_URL` para o Postgres local:
-
-```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/oficina"
-```
-
-Depois:
-
-```bash
+cp .env.example .env   # ajustar DATABASE_URL para o Postgres local
 npx prisma migrate dev
 npm run db:seed
 npm run start:dev
 ```
 
-### 3) Rodar testes
+</details>
+
+### 3.2 Kubernetes local (minikube)
+
+Os manifestos de `k8s/` (Deployment com probes e resources, Service LoadBalancer, ConfigMap, Secret via `kubectl create secret`, HPA 2→10 réplicas) sobem tanto no minikube quanto no EKS. Resumo minikube:
 
 ```bash
-# unitários
-npm test
-
-# unitários com cobertura
-npm run test:cov
-
-# e2e (sobe um Postgres efêmero via Testcontainers, não precisa de banco local rodando)
-# Linux/macOS: cp .env.test.example .env.test
-# Windows PowerShell: Copy-Item .env.test.example .env.test
-npm run test:e2e
+minikube start && minikube addons enable metrics-server
+minikube image build -t oficina-api:local .
+kubectl apply -f k8s/local/        # Postgres + Mailhog (só local)
+kubectl create secret generic oficina-secrets --from-literal=...   # ver k8s/README.md
+kubectl apply -f k8s/
 ```
 
----
+Passo a passo completo, acesso à aplicação, troubleshooting e teste de carga: [k8s/README.md](k8s/README.md).
 
-## Bruno (cliente de API)
+### 3.3 Provisionamento AWS (Terraform)
 
-Baixe o Bruno em: **<https://www.usebruno.com/downloads>**
+```powershell
+cd infra
+terraform init
+terraform fmt -check && terraform validate
+terraform plan
+terraform apply    # EKS ~10-15 min
+aws eks update-kubeconfig --region us-east-1 --name oficina-eks
+kubectl apply -f ../k8s/
+```
 
-### Como abrir a coleção deste projeto
+> **AWS Academy:** as credenciais do Learner Lab expiram a cada sessão — rodar `.\scripts\aws-academy-refresh.ps1` para renovar `~/.aws/credentials` e os secrets do GitHub em um comando. Recursos criados, bootstrap do bucket de tfstate e trade-offs: [infra/README.md](infra/README.md).
 
-1. Instale e abra o Bruno.
-2. Clique em **Open Collection**.
-3. Selecione a pasta: `bruno\Oficina-API`.
-4. No seletor de ambiente, escolha **Local** (`bruno\Oficina-API\environments\Local.yml`).
-
-### Como usar
-
-1. Execute `Auth > Login` para obter o JWT (o script da requisição salva o token automaticamente na variável `token`).
-2. Execute as demais requisições da coleção (Clientes, Veículos, Serviços, Insumos, OS etc.).
-3. Se necessário, ajuste `url` no ambiente Local (padrão: `http://localhost:3000`).
-
----
-
-## Sobre o projeto
-
-API REST para gestão de oficina mecânica, cobrindo:
-
-- autenticação e usuários internos
-- clientes e veículos
-- catálogo de serviços
-- estoque de insumos e compras
-- ordens de serviço (incluindo fluxo completo, consulta pública e métricas)
-
-### Stack atual
-
-| Camada         | Tecnologia           |
-| -------------- | -------------------- |
-| Runtime        | Node.js + TypeScript |
-| Framework      | NestJS 11            |
-| Banco          | PostgreSQL 18        |
-| ORM            | Prisma 6             |
-| Autenticação   | JWT + Argon2         |
-| Testes         | Jest + Supertest     |
-| Cliente de API | Bruno                |
-
-### Por que PostgreSQL
-
-- **ACID**: transações atômicas são essenciais para movimentações de estoque e aprovação de orçamento — nenhuma operação pode ficar "pela metade".
-- **Tipos nativos para valores monetários**, evitando problemas de arredondamento comuns em bancos não relacionais.
-- **Maturidade e integração** de primeira classe com o Prisma ORM.
-- **Modelo relacional robusto**, adequado à quantidade de relacionamentos complexos do domínio (cliente, veículo, ordem de serviço, insumos).
-
----
-
-## Arquitetura
-
-Módulos principais em `src/modules`:
-
-- `auth`
-- `usuarios`
-- `clientes`
-- `veiculos`
-- `servicos`
-- `insumos` (incluindo compras)
-- `ordens-servico`
-
-A aplicação usa Prisma para persistência, guards globais para autenticação/autorização e interceptor global para padronização de resposta.
-
----
-
-## Banco de dados e Prisma
-
-O schema Prisma é multi-arquivo dentro de `prisma/` e as migrations ficam em `prisma/migrations/`.
-
-Comandos úteis:
+### 3.4 Testes
 
 ```bash
-npx prisma format
-npx prisma validate
-npx prisma generate
-npx prisma migrate dev --name nome_da_migration
-npx prisma migrate deploy
-npx prisma studio
+npm test              # unitários (use cases e entidades, gateways mockados)
+npm run test:cov      # unitários com cobertura (thresholds no package.json)
+npm run test:e2e      # e2e com Testcontainers — requer Docker rodando
+                      # (antes: cp .env.test.example .env.test)
 ```
 
+Teste de carga (demonstração do HPA): script [k6/load-test.js](k6/load-test.js) — comando e resultado esperado em [k8s/README.md](k8s/README.md#teste-de-carga-k6--demonstração-do-hpa).
+
+## 4. APIs
+
+Mapeamento dos requisitos obrigatórios (§5 da spec) para os endpoints reais (os nomes de rota mantêm o padrão da Fase 1, conforme permitido pela spec):
+
+| Requisito | Endpoint | Auth |
+|---|---|---|
+| §5.1 Abertura de OS (retorna id único, número `OS-<ano>-<seq>`) | `POST /os` | JWT (atendente/admin) |
+| §5.2 Consulta de status | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id` | Pública · JWT |
+| §5.3 Webhook aprovação/recusa de orçamento | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar` | Pública (validação por documento do cliente) |
+| §5.4 Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas — exclusão lógica) | `GET /os` | JWT |
+| §5.5 Atualização de status com notificação por e-mail | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc. — cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT |
+
+A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras e todas as operações de OS) está documentada no **Swagger**: `http://localhost:3000/docs`.
+
+### Collection
+
+- **Bruno** (collection oficial, versionada): pasta [bruno/Oficina-API](bruno/Oficina-API) — abrir com [Bruno](https://www.usebruno.com/downloads) via **Open Collection**, selecionar o ambiente **Local** e executar `Auth > Login` (o script salva o JWT na variável `token` automaticamente).
+- **Postman** (export equivalente): [bruno/oficina-api.postman_collection.json](bruno/oficina-api.postman_collection.json) — importar no Postman; a variável de collection `url` aponta para `http://localhost:3000`.
+
+## 5. Vídeo demonstrativo
+
+> 🎬 **Link:** _a publicar_ (YouTube, não listado — deploy, CI/CD, consumo das APIs e HPA escalando sob carga K6, ≤15 min).
+
+## 6. Decisões e trade-offs
+
+- **Clean Architecture pragmática** — camadas `domain/application/adapters` dentro de cada módulo NestJS, usando a DI do próprio Nest como mecanismo de injeção. Migração incremental módulo a módulo com os e2e como rede de segurança (comportamento externo não mudou na refatoração).
+- **PostgreSQL** — ACID para movimentação de estoque e aprovação de orçamento, tipos nativos para valores monetários, modelo relacional adequado ao domínio e integração de primeira classe com o Prisma.
+- **EKS no AWS Academy + `LabRole`** — o Academy não permite criar IAM roles; cluster e node group usam a `LabRole` pré-existente via data source. Subnets públicas para evitar custo de NAT Gateway no lab.
+- **RDS público** (`publicly_accessible = true`) — o runner do GitHub Actions precisa alcançar o banco para rodar as migrações. Produção real: banco só na VPC, migração via bastion ou Job no cluster.
+- **`terraform apply` manual** — credenciais do Academy expiram por sessão; apply automático quebraria a pipeline de forma intermitente. Pipeline só valida (`fmt`/`validate`) e faz deploy da app.
+- **GitHub Flow** — main sempre implantável, feature branches + PRs com revisão; adequado ao deploy contínuo com versão única em produção.
+- **Notificação via SMTP (Nodemailer)** atrás da interface `NotificadorPort` — dev usa Mailhog no compose; produção troca por provedor real via ConfigMap/Secret; testes mockam a interface. Falha de SMTP nunca falha a operação de negócio.
+- **Evolução futura:** observabilidade (OpenTelemetry/Prometheus/Grafana) — fora do escopo obrigatório da fase.
+
 ---
 
-## Dados iniciais (seed)
+## Apêndice
 
-`npm run db:seed` popula:
+### Dados iniciais (seed)
 
-- usuários: atendente, mecânico, estoquista
-- clientes, veículos, serviços e insumos
+`npm run db:seed` popula usuários (atendente, mecânico, estoquista), clientes, veículos, serviços e insumos. Credenciais de exemplo estão no corpo da request `Auth > Login` da collection.
 
-Usuário administrador é criado automaticamente no bootstrap da aplicação quando não existe administrador ativo, usando:
+### Variáveis de ambiente
 
-- `ADMIN_BOOTSTRAP_EMAIL`
-- `ADMIN_BOOTSTRAP_PASSWORD`
+Base em `.env.example`. Obrigatórias: `PORT`, `DATABASE_URL`, `JWT_SECRET`. Também usadas: `JWT_EXPIRES_IN`, `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` (e `SMTP_USER`/`SMTP_PASS` opcionais).
 
----
+### Banco de dados e Prisma
 
-## Variáveis de ambiente
+Schema multi-arquivo em `prisma/`, migrations em `prisma/migrations/`. Comandos úteis: `npx prisma format | validate | generate | migrate dev | migrate deploy | studio`.
 
-Base para desenvolvimento em `.env.example`.
-
-Campos obrigatórios:
-
-- `PORT`
-- `DATABASE_URL`
-- `JWT_SECRET`
-
-Também usados:
-
-- `JWT_EXPIRES_IN`
-- `ADMIN_BOOTSTRAP_EMAIL`
-- `ADMIN_BOOTSTRAP_PASSWORD`
-
----
-
-## SonarQube local (opcional)
-
-Token do SonarQube:
-
-1. Acesse `http://localhost:9000` e faça login.
-2. Vá em **My Account** > **Security**.
-3. Em **Generate Tokens**, crie um token (**User Token**) e copie o valor.
-
-Java (pré-requisito do scanner): JDK 17+ instalado e `java` disponível no PATH.
+### SonarQube local (opcional)
 
 ```bash
 npm run sonar:up
 npm run test:cov
-
-# Linux/macOS
-export SONAR_TOKEN=SEU_TOKEN
-
-# Windows PowerShell
-$env:SONAR_TOKEN="SEU_TOKEN"
-
+# export SONAR_TOKEN=...   (gerar em http://localhost:9000 > My Account > Security)
 npm run sonar:scan
 ```
-
-Painel: `http://localhost:9000`
