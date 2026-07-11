@@ -6,7 +6,7 @@ on:
     types: [closed]
 
 concurrency:
-  group: deploy-main
+  group: cd-main
   cancel-in-progress: false
 
 jobs:
