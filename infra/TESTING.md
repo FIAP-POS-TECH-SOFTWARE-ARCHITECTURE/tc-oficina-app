@@ -84,8 +84,8 @@ terraform apply   # confirmar com "yes"; EKS demora ~10-15 min
 
 ```powershell
 aws s3 ls s3://$bucket/fase-2/          # deve listar terraform.tfstate
-git log -p -- . | Select-String -Pattern "password" -CaseSensitive:$false   # nada de senha real (só nomes de variável)
-git status --short                       # terraform.tfvars NÃO pode aparecer
+git log -p -- . | Select-String -Pattern "password" -CaseSensitive:$false
+git status --short
 ```
 
 ## 6. Validar o cluster com os manifestos do k8s/

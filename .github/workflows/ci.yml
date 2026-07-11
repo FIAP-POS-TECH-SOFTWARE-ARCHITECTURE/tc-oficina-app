@@ -1,11 +1,8 @@
-name: CI/CD
+name: CI
 
 on:
-  push:
-    branches: [main, "dev/**"]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, "dev/**"]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -68,80 +65,6 @@ jobs:
 
       - name: Testes e2e
         run: npm run test:e2e
-
-  docker:
-    name: Imagem Docker (ECR)
-    needs: [quality, e2e]
-    if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
-    runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configurar credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-
-      - name: Login no ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Definir tag da imagem
-        id: meta
-        run: echo "image=${{ steps.ecr.outputs.registry }}/oficina-api:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-
-      - name: Build e push
-        run: |
-          docker build -t "${{ steps.meta.outputs.image }}" .
-          docker push "${{ steps.meta.outputs.image }}"
-
-  deploy:
-    name: Deploy no EKS
-    needs: docker
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configurar credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-
-      - name: Configurar kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name oficina-eks
-
-      - name: Deploy do banco de dados (migrações)
-        run: |
-          kubectl delete job oficina-db-migrate --ignore-not-found
-          sed "s|PLACEHOLDER_IMAGE|${{ needs.docker.outputs.image }}|" k8s/jobs/db-migrate-job.yaml | kubectl apply -f -
-          kubectl wait --for=condition=complete job/oficina-db-migrate --timeout=300s
-
-      - name: Aplicar manifestos
-        run: kubectl apply -f k8s/
-
-      - name: Atualizar imagem do Deployment
-        run: |
-          kubectl set image deployment/oficina-api oficina-api="${{ needs.docker.outputs.image }}"
-          kubectl rollout status deployment/oficina-api --timeout=300s
-
-      - name: Smoke test
-        run: |
-          URL=$(kubectl get svc oficina-api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          for i in $(seq 1 30); do
-            if curl -fsS "http://$URL/health" > /dev/null; then echo "health OK"; exit 0; fi
-            sleep 10
-          done
-          echo "health check falhou"; exit 1
 
   terraform-check:
     name: Terraform fmt/validate
