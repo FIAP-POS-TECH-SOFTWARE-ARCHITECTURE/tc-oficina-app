@@ -1,15 +1,15 @@
-# Oficina API — Tech Challenge FIAP (Fase 2)
+# Oficina API - Tech Challenge FIAP (Fase 2)
 
-API REST para gestão de ordens de serviço (OS) de uma oficina mecânica — Tech Challenge da pós-graduação em Software Architecture (FIAP, 14SOAT).
+API REST para gestão de ordens de serviço (OS) de uma oficina mecânica, desenvolvida para o Tech Challenge da pós-graduação em Software Architecture (FIAP, 14SOAT).
 
 ## 1. Descrição da solução e objetivos da fase
 
-O sistema da Fase 1 gerencia o ciclo completo de uma oficina: autenticação e usuários internos, clientes, veículos, catálogo de serviços, estoque de insumos (com compras) e ordens de serviço — do recebimento do veículo à entrega, passando por diagnóstico, orçamento, aprovação do cliente e execução.
+O sistema da Fase 1 gerencia o ciclo completo de uma oficina: autenticação e usuários internos, clientes, veículos, catálogo de serviços, estoque de insumos (com compras) e ordens de serviço, do recebimento do veículo à entrega, passando por diagnóstico, orçamento, aprovação do cliente e execução.
 
-**Objetivos da Fase 2** — evoluir essa base para garantir qualidade, resiliência e escalabilidade:
+**Objetivos da Fase 2:** evoluir essa base para garantir qualidade, resiliência e escalabilidade:
 
 - **Clean Architecture**: refatoração de todos os módulos em camadas `domain / application / adapters`, com regra de dependência apontando para dentro e SOLID aplicado;
-- **Testes automatizados** dos fluxos críticos (casos de uso da OS) — unitários com mocks dos gateways + e2e com banco real (Testcontainers);
+- **Testes automatizados** dos fluxos críticos (casos de uso da OS): unitários com mocks dos gateways + e2e com banco real (Testcontainers);
 - **APIs da OS** conforme §5 da spec: criação, consulta pública de status, webhook de aprovação/recusa de orçamento, listagem ordenada por prioridade de status com exclusão lógica e notificação por e-mail na mudança de status;
 - **Kubernetes** com autoescala (Deployment 2+ réplicas, Service, ConfigMap, Secret e HPA);
 - **IaC com Terraform** (EKS + RDS + ECR na AWS, state remoto em S3);
@@ -58,9 +58,9 @@ flowchart TD
 Regras seguidas (invioláveis):
 
 - `domain` não importa nada de Nest/Prisma; `application` só importa `domain`; `adapters` importam `application`/`domain`. O wiring (providers) fica no módulo Nest.
-- Use cases recebem dependências **por interface (ports)** via injeção — testáveis com mocks.
+- Use cases recebem dependências **por interface (ports)** via injeção, o que permite testá-los com mocks.
 - Regras de negócio (transições de status, ordenação da listagem) são código puro de domínio, não SQL.
-- **Decisão registrada:** o envelope de resposta padronizado (`semantic-response`, via interceptor global) cumpre o papel de **Presenter** — formata toda saída HTTP num único ponto.
+- **Decisão registrada:** o envelope de resposta padronizado (`semantic-response`, via interceptor global) cumpre o papel de **Presenter**: formata toda saída HTTP num único ponto.
 
 ### 2.2 Infraestrutura provisionada (Terraform / AWS)
 
@@ -103,7 +103,7 @@ flowchart LR
     DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -f k8s/<br/>kubectl set image<br/>smoke test /health"]
 ```
 
-O `terraform apply` é **manual e documentado** (credenciais do AWS Academy expiram por sessão — apply automático quebraria a pipeline de forma intermitente). A pipeline valida o Terraform (`fmt`/`validate`) e faz o deploy da aplicação.
+O `terraform apply` é **manual e documentado**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline valida o Terraform (`fmt`/`validate`) e faz o deploy da aplicação.
 
 ## 3. Como executar
 
@@ -170,18 +170,18 @@ aws eks update-kubeconfig --region us-east-1 --name oficina-eks
 kubectl apply -f ../k8s/
 ```
 
-> **AWS Academy:** as credenciais do Learner Lab expiram a cada sessão — rodar `.\scripts\aws-academy-refresh.ps1` para renovar `~/.aws/credentials` e os secrets do GitHub em um comando. Recursos criados, bootstrap do bucket de tfstate e trade-offs: [infra/README.md](infra/README.md).
+> **AWS Academy:** as credenciais do Learner Lab expiram a cada sessão. Rode `.\scripts\aws-academy-refresh.ps1` para renovar `~/.aws/credentials` e os secrets do GitHub em um comando. Recursos criados, bootstrap do bucket de tfstate e trade-offs: [infra/README.md](infra/README.md).
 
 ### 3.4 Testes
 
 ```bash
 npm test              # unitários (use cases e entidades, gateways mockados)
 npm run test:cov      # unitários com cobertura (thresholds no package.json)
-npm run test:e2e      # e2e com Testcontainers — requer Docker rodando
+npm run test:e2e      # e2e com Testcontainers (requer Docker rodando)
                       # (antes: cp .env.test.example .env.test)
 ```
 
-Teste de carga (demonstração do HPA): script [k6/load-test.js](k6/load-test.js) — comando e resultado esperado em [k8s/README.md](k8s/README.md#teste-de-carga-k6--demonstração-do-hpa).
+Teste de carga (demonstração do HPA): script [k6/load-test.js](k6/load-test.js), com comando e resultado esperado em [k8s/README.md](k8s/README.md#teste-de-carga-k6--demonstração-do-hpa).
 
 ## 4. APIs
 
@@ -192,30 +192,30 @@ Mapeamento dos requisitos obrigatórios (§5 da spec) para os endpoints reais (o
 | §5.1 Abertura de OS (retorna id único, número `OS-<ano>-<seq>`) | `POST /os` | JWT (atendente/admin) |
 | §5.2 Consulta de status | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id` | Pública · JWT |
 | §5.3 Webhook aprovação/recusa de orçamento | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar` | Pública (validação por documento do cliente) |
-| §5.4 Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas — exclusão lógica) | `GET /os` | JWT |
-| §5.5 Atualização de status com notificação por e-mail | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc. — cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT |
+| §5.4 Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica) | `GET /os` | JWT |
+| §5.5 Atualização de status com notificação por e-mail | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT |
 
 A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras e todas as operações de OS) está documentada no **Swagger**: `http://localhost:3000/docs`.
 
 ### Collection
 
-- **Bruno** (collection oficial, versionada): pasta [bruno/Oficina-API](bruno/Oficina-API) — abrir com [Bruno](https://www.usebruno.com/downloads) via **Open Collection**, selecionar o ambiente **Local** e executar `Auth > Login` (o script salva o JWT na variável `token` automaticamente).
-- **Postman** (export equivalente): [bruno/oficina-api.postman_collection.json](bruno/oficina-api.postman_collection.json) — importar no Postman; a variável de collection `url` aponta para `http://localhost:3000`.
+- **Bruno** (collection oficial, versionada): pasta [bruno/Oficina-API](bruno/Oficina-API). Abrir com [Bruno](https://www.usebruno.com/downloads) via **Open Collection**, selecionar o ambiente **Local** e executar `Auth > Login` (o script salva o JWT na variável `token` automaticamente).
+- **Postman** (export equivalente): [bruno/oficina-api.postman_collection.json](bruno/oficina-api.postman_collection.json). Basta importar no Postman; a variável de collection `url` aponta para `http://localhost:3000`.
 
 ## 5. Vídeo demonstrativo
 
-> 🎬 **Link:** _a publicar_ (YouTube, não listado — deploy, CI/CD, consumo das APIs e HPA escalando sob carga K6, ≤15 min).
+> 🎬 **Link:** _a publicar_ (YouTube, não listado; deploy, CI/CD, consumo das APIs e HPA escalando sob carga K6, ≤15 min).
 
 ## 6. Decisões e trade-offs
 
-- **Clean Architecture pragmática** — camadas `domain/application/adapters` dentro de cada módulo NestJS, usando a DI do próprio Nest como mecanismo de injeção. Migração incremental módulo a módulo com os e2e como rede de segurança (comportamento externo não mudou na refatoração).
-- **PostgreSQL** — ACID para movimentação de estoque e aprovação de orçamento, tipos nativos para valores monetários, modelo relacional adequado ao domínio e integração de primeira classe com o Prisma.
-- **EKS no AWS Academy + `LabRole`** — o Academy não permite criar IAM roles; cluster e node group usam a `LabRole` pré-existente via data source. Subnets públicas para evitar custo de NAT Gateway no lab.
-- **RDS público** (`publicly_accessible = true`) — o runner do GitHub Actions precisa alcançar o banco para rodar as migrações. Produção real: banco só na VPC, migração via bastion ou Job no cluster.
-- **`terraform apply` manual** — credenciais do Academy expiram por sessão; apply automático quebraria a pipeline de forma intermitente. Pipeline só valida (`fmt`/`validate`) e faz deploy da app.
-- **GitHub Flow** — main sempre implantável, feature branches + PRs com revisão; adequado ao deploy contínuo com versão única em produção.
-- **Notificação via SMTP (Nodemailer)** atrás da interface `NotificadorPort` — dev usa Mailhog no compose; produção troca por provedor real via ConfigMap/Secret; testes mockam a interface. Falha de SMTP nunca falha a operação de negócio.
-- **Evolução futura:** observabilidade (OpenTelemetry/Prometheus/Grafana) — fora do escopo obrigatório da fase.
+- **Clean Architecture pragmática:** camadas `domain/application/adapters` dentro de cada módulo NestJS, usando a DI do próprio Nest como mecanismo de injeção. A migração foi incremental, módulo a módulo, com os e2e como rede de segurança (o comportamento externo não mudou na refatoração).
+- **PostgreSQL:** ACID para movimentação de estoque e aprovação de orçamento, tipos nativos para valores monetários, modelo relacional adequado ao domínio e integração de primeira classe com o Prisma.
+- **EKS no AWS Academy + `LabRole`:** o Academy não permite criar IAM roles, então cluster e node group usam a `LabRole` pré-existente via data source. Subnets públicas para evitar o custo de NAT Gateway no lab.
+- **RDS público** (`publicly_accessible = true`): o runner do GitHub Actions precisa alcançar o banco para rodar as migrações. Em produção real, o banco ficaria só na VPC, com migração via bastion ou Job no cluster.
+- **`terraform apply` manual:** as credenciais do Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline só valida (`fmt`/`validate`) e faz o deploy da app.
+- **GitHub Flow:** main sempre implantável, feature branches + PRs com revisão. Adequado ao deploy contínuo com versão única em produção.
+- **Notificação via SMTP (Nodemailer)** atrás da interface `NotificadorPort`: dev usa Mailhog no compose, produção troca por provedor real via ConfigMap/Secret e os testes mockam a interface. Falha de SMTP nunca falha a operação de negócio.
+- **Evolução futura:** observabilidade (OpenTelemetry/Prometheus/Grafana), fora do escopo obrigatório da fase.
 
 ---
 
