@@ -10,7 +10,7 @@ provisionado via Terraform (Plano 6) e o SMTP é um provedor real.
 | Arquivo | Recurso | Observação |
 |---|---|---|
 | `app-configmap.yaml` | ConfigMap `oficina-config` | Config **não sensível** (PORT, JWT_EXPIRES_IN, SMTP_HOST/PORT/FROM) |
-| `app-secret.example.yaml` | Secret `oficina-secrets` (template) | **Não aplicar direto** — criar via `kubectl` (abaixo). NÃO commitar valores reais |
+| `app-secret.yaml.example` | Secret `oficina-secrets` (template) | Extensão `.example` impede o `kubectl apply -f k8s/` de aplicá-lo por engano — criar via `kubectl` (abaixo). NÃO commitar valores reais |
 | `app-deployment.yaml` | Deployment `oficina-api` | 2 réplicas, probes, `resources.requests/limits` |
 | `app-service.yaml` | Service `oficina-api` | `LoadBalancer` (EKS) / `minikube service` (local) |
 | `app-hpa.yaml` | HPA `oficina-api-hpa` | CPU 70%, 2→10 réplicas (`autoscaling/v2`) |
