@@ -29,13 +29,13 @@ npx --yes yaml-lint .github/workflows/ci.yml
 
 **Esperado:** `YAML Lint successful.`
 
-Conferir a lógica de gate do deploy (só `push` na `main`):
+Conferir a lógica de gate do deploy (`push` na `main` ou disparo manual):
 
 ```powershell
-Select-String -Path .github/workflows/ci.yml -Pattern "if: github.ref"
+Select-String -Path .github/workflows/ci.yml -Pattern "if: github.event_name"
 ```
 
-**Esperado:** `if: github.ref == 'refs/heads/main' && github.event_name == 'push'` no job `docker`. O job `deploy` herda o gate via `needs: docker`.
+**Esperado:** `if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && github.event_name == 'push')` no job `docker`. O job `deploy` herda o gate via `needs: docker`.
 
 ## 3. Validar o Terraform check localmente
 
@@ -65,7 +65,7 @@ docker push $image
 **Esperado:** push concluído; conferir com:
 
 ```powershell
-aws ecr describe-images --repository-name oficina-api --query "imageDetails[].imageTags" --output json
+aws ecr describe-images --repository-name oficina-api --region us-east-1 --query "imageDetails[].imageTags" --output json
 ```
 
 ## 5. Simular o job deploy (migração + apply + rollout)
@@ -93,15 +93,13 @@ kubectl rollout status deployment/oficina-api --timeout=300s
 
 **Esperado:** `deployment "oficina-api" successfully rolled out`.
 
-> `kubectl apply -f k8s/` não entra em `k8s/local/` nem `k8s/jobs/` (subdiretórios exigem `-R`) — comportamento intencional.
-
 ```powershell
 # 5.3 Smoke test via LoadBalancer
 $url = kubectl get svc oficina-api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 curl.exe -fsS "http://$url/health"
 ```
 
-**Esperado:** resposta 200 do `/health`. O ELB pode levar ~2-3 min para ficar resolvível após o primeiro apply — repetir o curl se der falha de DNS.
+**Esperado:** resposta 200 do `/health`. O ELB pode levar ~2-3 min para ficar resolvível após o primeiro apply. Repetir o curl se der falha de DNS.
 
 ## 6. Testar o gate: branch dev NÃO faz deploy
 
@@ -112,6 +110,28 @@ gh run view --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
 ```
 
 **Esperado:** `quality`, `e2e` e `terraform-check` concluídos; `docker` e `deploy` como `skipped`. Esse é o teste negativo do gate.
+
+## 6.5. Testar o caminho de produção SEM merge (workflow_dispatch)
+
+O trigger `workflow_dispatch` roda a pipeline completa (build → ECR → migração → deploy → smoke) a partir de qualquer branch, sem tocar na main.
+
+**Antes de disparar (checklist local):**
+
+```powershell
+.\scripts\aws-academy-refresh.ps1        # sessão do lab ativa + secrets AWS_* renovados
+kubectl get nodes                        # cluster de pé, nodes Ready
+kubectl describe secret oficina-secrets  # chaves com tamanhos reais (DATABASE_URL ~100 bytes, não 9)
+git push origin HEAD                     # branch atualizada no remoto (o dispatch roda o que está LÁ, não o local)
+```
+
+**Disparar e acompanhar:**
+
+```powershell
+gh workflow run ci.yml --ref dev/lucas/cd-ecr-eks
+gh run watch --exit-status
+```
+
+**Esperado:** todos os jobs rodam (nenhum `skipped`); deployment termina com a imagem `:<sha do HEAD da branch>`; `/health` responde 200. Também dá pra disparar pela interface: **Actions → CI/CD → Run workflow**, escolhendo a branch.
 
 ## 7. Disparo real: push na main
 
@@ -139,7 +159,7 @@ Com a sessão do lab encerrada, re-rodar o workflow (`gh run rerun <id>`): os jo
 
 ```powershell
 kubectl delete job oficina-db-migrate --ignore-not-found
-aws ecr batch-delete-image --repository-name oficina-api --image-ids imageTag=teste-local
+aws ecr batch-delete-image --repository-name oficina-api --region us-east-1 --image-ids imageTag=teste-local
 ```
 
 Teardown completo da infra: passo 9 do [infra/TESTING.md](../infra/TESTING.md).
@@ -157,12 +177,13 @@ Teardown completo da infra: passo 9 do [infra/TESTING.md](../infra/TESTING.md).
 
 ## Problemas comuns
 
-| Sintoma                                              | Causa provável                                       | Ação                                                                       |
-| ---------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------- |
-| `ExpiredToken` / `UnrecognizedClientException`       | Sessão do lab expirou                                | Runbook do [infra/README.md](../infra/README.md): refresh + `gh run rerun` |
-| `no basic auth credentials` no push                  | Login do ECR expirou (12h)                           | Repetir o `docker login` do passo 4                                        |
-| Job de migração em `Error`/`BackoffLimitExceeded`    | `DATABASE_URL` errada no secret ou RDS fora do ar    | `kubectl logs job/oficina-db-migrate`; conferir secret e RDS               |
-| `kubectl wait` estoura timeout                       | Imagem grande (pull lento) ou migração travada       | `kubectl describe job oficina-db-migrate` e logs do pod                    |
-| Smoke test falha com DNS                             | ELB recém-criado ainda propagando                    | Aguardar ~2-3 min e repetir o curl                                         |
-| `docker`/`deploy` skipped num push na main           | Evento não é `push` (ex.: rerun de PR antigo)        | Conferir `github.event_name` no log do run                                 |
-| Rollout trava com `ImagePullBackOff`                 | Tag inexistente no ECR ou repo errado                | `aws ecr describe-images`; conferir output `image` do job docker           |
+| Sintoma                                           | Causa provável                                    | Ação                                                                       |
+| ------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
+| `ExpiredToken` / `UnrecognizedClientException`    | Sessão do lab expirou                             | Runbook do [infra/README.md](../infra/README.md): refresh + `gh run rerun` |
+| `no basic auth credentials` no push               | Login do ECR expirou (12h)                        | Repetir o `docker login` do passo 4                                        |
+| Job de migração em `Error`/`BackoffLimitExceeded` | `DATABASE_URL` errada no secret ou RDS fora do ar | `kubectl logs job/oficina-db-migrate`; conferir secret e RDS               |
+| `kubectl wait` estoura timeout                    | Imagem grande (pull lento) ou migração travada    | `kubectl describe job oficina-db-migrate` e logs do pod                    |
+| Smoke test falha com DNS                          | ELB recém-criado ainda propagando                 | Aguardar ~2-3 min e repetir o curl                                         |
+| `docker`/`deploy` skipped num push na main        | Evento não é `push` (ex.: rerun de PR antigo)     | Conferir `github.event_name` no log do run                                 |
+| Rollout trava com `ImagePullBackOff`              | Tag inexistente no ECR ou repo errado             | `aws ecr describe-images`; conferir output `image` do job docker           |
+| Pod `0/1` com erro Prisma `URL must start with postgresql://` | Secret `oficina-secrets` com valores placeholder (sobrescrito ou criado errado) | `kubectl describe secret oficina-secrets` (todas as chaves com 9 bytes = `CHANGE_ME`); recriar o secret (passo 6 do [infra/TESTING.md](../infra/TESTING.md)) |
