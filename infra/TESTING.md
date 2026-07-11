@@ -67,7 +67,7 @@ terraform validate
 
 ```powershell
 $env:TF_VAR_db_username = "oficina_admin"
-$env:TF_VAR_db_password = "<senha forte gerada agora — guarde para o passo 6>"
+$env:TF_VAR_db_password = "YuA9oKj6ZcFP4N" # senha para testes
 
 terraform plan
 ```
