@@ -2,7 +2,7 @@
 
 Roteiro completo para validar toda a infraestrutura (VPC, EKS, RDS, ECR, tfstate remoto e script de credenciais) numa sessão do AWS Academy Learner Lab.
 
-> **Custo:** o apply cria ~15 recursos que consomem o budget do lab (EKS control plane, 2× `t3.medium`, RDS). Ao terminar o teste, rode `terraform destroy` (passo 9).
+> **Custo:** o apply cria 13 recursos que consomem o budget do lab (EKS control plane, 2× `t3.medium`, RDS). Ao terminar o teste, rode `terraform destroy` (passo 9).
 
 ## Pré-requisitos
 
@@ -26,6 +26,7 @@ Roteiro completo para validar toda a infraestrutura (VPC, EKS, RDS, ECR, tfstate
 Colar o bloco, `Enter`, depois `Ctrl+Z` + `Enter`.
 
 **Resultado esperado:**
+
 - `~/.aws/credentials atualizado.`
 - `Secrets do GitHub atualizados (...)`
 - Saída do `aws sts get-caller-identity` com a conta do lab (isso já valida o script).
@@ -71,13 +72,13 @@ $env:TF_VAR_db_password = "<senha forte gerada agora — guarde para o passo 6>"
 terraform plan
 ```
 
-**Revisar o plan:** ~15 recursos a criar (VPC, 2 subnets, IGW, route table + 2 associações, cluster EKS, node group, subnet group do RDS, SG do RDS, instância RDS, repo ECR). Nenhum destroy/change inesperado.
+**Revisar o plan:** 13 recursos a criar (VPC, 2 subnets, IGW, route table + 2 associações, cluster EKS, node group, subnet group do RDS, SG do RDS, instância RDS, repo ECR). Nenhum destroy/change inesperado.
 
 ```powershell
 terraform apply   # confirmar com "yes"; EKS demora ~10-15 min
 ```
 
-**Esperado:** `Apply complete! Resources: 15 added...` e outputs exibidos (`cluster_name`, `cluster_endpoint`, `configure_kubectl`, `rds_endpoint`, `ecr_repository_url`; `database_url` aparece como `<sensitive>`).
+**Esperado:** `Apply complete! Resources: 13 added...` e outputs exibidos (`cluster_name`, `cluster_endpoint`, `configure_kubectl`, `rds_endpoint`, `ecr_repository_url`; `database_url` aparece como `<sensitive>`).
 
 ## 5. Verificar tfstate remoto e ausência de segredos
 
@@ -99,11 +100,12 @@ kubectl get nodes
 ```powershell
 $dbUrl = terraform output -raw database_url
 
+# valores padrão iguais ao .env.example (troque em produção real)
 kubectl create secret generic oficina-secrets `
   --from-literal=DATABASE_URL="$dbUrl" `
-  --from-literal=JWT_SECRET="<segredo>" `
+  --from-literal=JWT_SECRET="a3f9c1d8e7b2f4a6c9d1e0b3a5f7c8d9e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6" `
   --from-literal=ADMIN_BOOTSTRAP_EMAIL="admin@oficina.local" `
-  --from-literal=ADMIN_BOOTSTRAP_PASSWORD="<senha>" `
+  --from-literal=ADMIN_BOOTSTRAP_PASSWORD="ChangeMe!123" `
   --from-literal=SMTP_USER="" `
   --from-literal=SMTP_PASS=""
 
@@ -152,7 +154,7 @@ kubectl delete -f ../k8s/ --ignore-not-found
 terraform destroy   # confirmar com "yes"
 ```
 
-**Esperado:** `Destroy complete! Resources: 15 destroyed.` O tfstate permanece no S3 (vazio de recursos) — próximo `apply` recria tudo.
+**Esperado:** `Destroy complete! Resources: 13 destroyed.` O tfstate permanece no S3 (vazio de recursos) — próximo `apply` recria tudo.
 
 ## Checklist final
 
@@ -166,11 +168,11 @@ terraform destroy   # confirmar com "yes"
 
 ## Problemas comuns
 
-| Sintoma | Causa provável | Ação |
-| --- | --- | --- |
-| `ExpiredToken` / `InvalidClientTokenId` | Sessão do lab expirou | Reiniciar lab e rodar o script do passo 1 de novo |
-| `Error: reading IAM Role (LabRole): not found` | Sessão sem LabRole (raro) ou credencial errada | Conferir `aws sts get-caller-identity` |
-| Apply trava >20 min no EKS | Normal até ~15 min; acima disso, budget/limite do lab | Ver eventos no console AWS |
-| `AccessDenied` no S3 do backend | Bucket de outra conta ou nome errado no `backend.tf` | Conferir `$bucket` e o id da conta |
-| Pods `Pending` | Nodes ainda subindo ou sem capacidade | `kubectl describe pod` e `kubectl get nodes` |
-| RDS engine version inválida | Postgres 18 indisponível na região | `aws rds describe-db-engine-versions --engine postgres --query 'DBEngineVersions[].EngineVersion'` e ajustar `rds.tf` |
+| Sintoma                                        | Causa provável                                        | Ação                                                                                                                  |
+| ---------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `ExpiredToken` / `InvalidClientTokenId`        | Sessão do lab expirou                                 | Reiniciar lab e rodar o script do passo 1 de novo                                                                     |
+| `Error: reading IAM Role (LabRole): not found` | Sessão sem LabRole (raro) ou credencial errada        | Conferir `aws sts get-caller-identity`                                                                                |
+| Apply trava >20 min no EKS                     | Normal até ~15 min; acima disso, budget/limite do lab | Ver eventos no console AWS                                                                                            |
+| `AccessDenied` no S3 do backend                | Bucket de outra conta ou nome errado no `backend.tf`  | Conferir `$bucket` e o id da conta                                                                                    |
+| Pods `Pending`                                 | Nodes ainda subindo ou sem capacidade                 | `kubectl describe pod` e `kubectl get nodes`                                                                          |
+| RDS engine version inválida                    | Postgres 18 indisponível na região                    | `aws rds describe-db-engine-versions --engine postgres --query 'DBEngineVersions[].EngineVersion'` e ajustar `rds.tf` |
