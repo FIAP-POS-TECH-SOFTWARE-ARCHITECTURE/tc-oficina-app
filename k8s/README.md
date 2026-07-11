@@ -3,7 +3,7 @@
 Manifestos de deploy da aplicação. A raiz `k8s/` contém os manifestos **de produção**
 (aplicáveis tanto em minikube quanto em EKS). `k8s/local/` contém dependências que
 **só existem para validação local no minikube** — em produção o banco é o RDS
-provisionado via Terraform (Plano 6) e o SMTP é um provedor real.
+provisionado via Terraform (`infra/`) e o SMTP é um provedor real.
 
 ## Arquivos
 
@@ -69,7 +69,7 @@ receba um EXTERNAL-IP acessível.
 |---|---|---|
 | Banco | `k8s/local/postgres.yaml` (Service `postgres`) | RDS via Terraform; `DATABASE_URL` no Secret aponta para o endpoint do RDS |
 | SMTP | Mailhog (`k8s/local/mailhog.yaml`) | Provedor real; `SMTP_HOST` sobrescrito no ConfigMap |
-| Imagem | `oficina-api:local` construída no minikube | Imagem do ECR; pipeline faz `kubectl set image` (Plano 7) |
+| Imagem | `oficina-api:local` construída no minikube | Imagem do ECR; pipeline faz `kubectl set image` |
 | Service | `minikube service` / `tunnel` | `LoadBalancer` com ELB real |
 | Métricas p/ HPA | addon `metrics-server` | metrics-server instalado no cluster |
 
