@@ -5,6 +5,7 @@ on:
     branches: [main, "dev/**"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -71,7 +72,7 @@ jobs:
   docker:
     name: Imagem Docker (ECR)
     needs: [quality, e2e]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.meta.outputs.image }}
