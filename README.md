@@ -10,7 +10,7 @@ O sistema da Fase 1 gerencia o ciclo completo de uma oficina: autenticação e u
 
 - **Clean Architecture**: refatoração de todos os módulos em camadas `domain / application / adapters`, com regra de dependência apontando para dentro e SOLID aplicado;
 - **Testes automatizados** dos fluxos críticos (casos de uso da OS): unitários com mocks dos gateways + e2e com banco real (Testcontainers);
-- **APIs da OS** conforme §5 da spec: criação, consulta pública de status, webhook de aprovação/recusa de orçamento, listagem ordenada por prioridade de status com exclusão lógica e notificação por e-mail na mudança de status;
+- **APIs da OS**: criação, consulta pública de status, webhook de aprovação/recusa de orçamento, listagem ordenada por prioridade de status com exclusão lógica e notificação por e-mail na mudança de status;
 - **Kubernetes** com autoescala (Deployment 2+ réplicas, Service, ConfigMap, Secret e HPA);
 - **IaC com Terraform** (EKS + RDS + ECR na AWS, state remoto em S3);
 - **CI/CD** com GitHub Actions: lint → build → testes → e2e → imagem Docker → migração do banco → deploy no cluster.
@@ -40,7 +40,7 @@ flowchart TD
     subgraph DM["Domain"]
         ENT["Entidades<br/>(OrdemServico, Cliente, Veiculo…)"]
         VO["Value Objects<br/>(StatusOS, NumeroOS, Placa, Documento)"]
-        REGRAS["Regras puras<br/>(fluxo de estados, ordenação §5.4)"]
+        REGRAS["Regras puras<br/>(fluxo de estados, ordenação da listagem)"]
     end
 
     NEST --> CTRL
@@ -185,15 +185,15 @@ Teste de carga (demonstração do HPA): script [k6/load-test.js](k6/load-test.js
 
 ## 4. APIs
 
-Mapeamento dos requisitos obrigatórios (§5 da spec) para os endpoints reais (os nomes de rota mantêm o padrão da Fase 1, conforme permitido pela spec):
+Mapeamento dos requisitos obrigatórios para os endpoints reais (os nomes de rota mantêm o padrão da Fase 1):
 
 | Requisito                                                                                                                                         | Endpoint                                                                                                                                                                                       | Auth                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| §5.1 Abertura de OS (retorna id único, número `OS-<ano>-<seq>`)                                                                                   | `POST /os`                                                                                                                                                                                     | JWT (atendente/admin)                        |
-| §5.2 Consulta de status                                                                                                                           | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id`                                                                                                                     | Pública · JWT                                |
-| §5.3 Webhook aprovação/recusa de orçamento                                                                                                        | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Pública (validação por documento do cliente) |
-| §5.4 Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica) | `GET /os`                                                                                                                                                                                      | JWT                                          |
-| §5.5 Atualização de status com notificação por e-mail                                                                                             | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT                                          |
+| Abertura de OS (retorna id único, número `OS-<ano>-<seq>`)                                                                                        | `POST /os`                                                                                                                                                                                     | JWT (atendente/admin)                        |
+| Consulta de status                                                                                                                                 | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id`                                                                                                                     | Pública · JWT                                |
+| Webhook aprovação/recusa de orçamento                                                                                                             | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Pública (validação por documento do cliente) |
+| Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica)      | `GET /os`                                                                                                                                                                                      | JWT                                          |
+| Atualização de status com notificação por e-mail                                                                                                  | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT                                          |
 
 A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras e todas as operações de OS) está documentada no **Swagger**: `http://localhost:3000/docs`.
 
