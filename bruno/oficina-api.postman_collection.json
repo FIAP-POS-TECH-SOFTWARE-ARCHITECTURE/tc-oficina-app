@@ -1,7 +1,7 @@
 {
 	"info": {
-		"name": "Oficina API — Tech Challenge FIAP (Fase 2)",
-		"description": "Export da collection Bruno (bruno/Oficina-API). Rode 'Auth > Login' primeiro — o script salva o JWT na variável 'token'.",
+		"name": "Oficina API - Tech Challenge FIAP (Fase 2)",
+		"description": "Export da collection Bruno (bruno/Oficina-API). Rode 'Auth > Login' primeiro: o script salva o JWT na variável 'token'.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
