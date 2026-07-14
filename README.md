@@ -187,13 +187,13 @@ Teste de carga (demonstração do HPA): script [k6/load-test.js](k6/load-test.js
 
 Mapeamento dos requisitos obrigatórios para os endpoints reais (os nomes de rota mantêm o padrão da Fase 1):
 
-| Requisito                                                                                                                                         | Endpoint                                                                                                                                                                                       | Auth                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Abertura de OS (retorna id único, número `OS-<ano>-<seq>`)                                                                                        | `POST /os`                                                                                                                                                                                     | JWT (atendente/admin)                        |
-| Consulta de status                                                                                                                                 | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id`                                                                                                                     | Pública · JWT                                |
-| Webhook aprovação/recusa de orçamento                                                                                                             | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Pública (validação por documento do cliente) |
-| Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica)      | `GET /os`                                                                                                                                                                                      | JWT                                          |
-| Atualização de status com notificação por e-mail                                                                                                  | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT                                          |
+| Requisito                                                                                                                                    | Endpoint                                                                                                                                                                                       | Auth                                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Abertura de OS (retorna id único, número `OS-<ano>-<seq>`)                                                                                   | `POST /os`                                                                                                                                                                                     | JWT (atendente/admin)                        |
+| Consulta de status                                                                                                                           | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id`                                                                                                                     | Pública · JWT                                |
+| Webhook aprovação/recusa de orçamento                                                                                                        | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Pública (validação por documento do cliente) |
+| Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica) | `GET /os`                                                                                                                                                                                      | JWT                                          |
+| Atualização de status com notificação por e-mail                                                                                             | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT                                          |
 
 A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras e todas as operações de OS) está documentada no **Swagger**: `http://localhost:3000/docs`.
 
@@ -204,7 +204,8 @@ A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras
 
 ## 5. Vídeo demonstrativo
 
-> 🎬 **Link:** _a publicar_
+> 🎬1️⃣ **Link:** https://youtu.be/2yV4mSfs1Uw &nbsp;| Fase 1  
+> 🎬2️⃣ **Link:** https://youtu.be/5Tm29h77mHA | Fase 2
 
 ## 6. Decisões e trade-offs
 
