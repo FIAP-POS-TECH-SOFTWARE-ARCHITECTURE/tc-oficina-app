@@ -2,7 +2,7 @@
 
 Roteiro completo para validar o fluxo de CD (build da imagem → push no ECR → migração do banco → deploy no EKS → smoke test) a partir da sua máquina, antes e depois de disparar o pipeline de verdade.
 
-> **Dependência:** a infraestrutura precisa estar de pé (siga [infra/TESTING.md](../infra/TESTING.md) até o passo 6 — cluster com nodes `Ready`, secret `oficina-secrets` criado e manifestos aplicados). Sem isso, só os passos 2 e 3 funcionam.
+> **Dependência:** a infraestrutura precisa estar de pé (siga [infra/TESTING.md](../infra/TESTING.md) até o passo 6, cluster com nodes `Ready`, secret `oficina-secrets` criado e manifestos aplicados). Sem isso, só os passos 2 e 3 funcionam.
 
 ## Pré-requisitos
 
@@ -14,7 +14,7 @@ Roteiro completo para validar o fluxo de CD (build da imagem → push no ECR →
 
 ## 1. Conferir credenciais e secrets do GitHub
 
-O pipeline usa os secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` e `AWS_SESSION_TOKEN` — o script de refresh atualiza os três junto com o `~/.aws/credentials`:
+O pipeline usa os secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` e `AWS_SESSION_TOKEN`; o script de refresh atualiza os três junto com o `~/.aws/credentials`:
 
 ```powershell
 aws sts get-caller-identity   # conta do lab, sem erro
@@ -46,7 +46,7 @@ terraform -chdir=infra fmt -check     # sem saída = ok
 terraform -chdir=infra validate      # Success! The configuration is valid.
 ```
 
-> Se o `validate` reclamar de state/S3, é só o cache local de backend — no CI o job roda `init -backend=false` num checkout limpo e não toca o S3.
+> Se o `validate` reclamar de state/S3, é só o cache local de backend: no CI o job roda `init -backend=false` num checkout limpo e não toca o S3.
 
 ## 4. Simular o job docker (build + push manual no ECR)
 
@@ -153,7 +153,7 @@ kubectl get deployment oficina-api -o jsonpath='{.spec.template.spec.containers[
 
 ## 8. Testar o runbook de credencial expirada (opcional)
 
-Com a sessão do lab encerrada, re-rodar o workflow (`gh run rerun <id>`): os jobs `docker`/`deploy` falham com `ExpiredToken`/`UnrecognizedClientException` no log. Seguir o runbook do [infra/README.md](../infra/README.md): reiniciar o lab, rodar o script de refresh e `gh run rerun --failed` — deve passar.
+Com a sessão do lab encerrada, re-rodar o workflow (`gh run rerun <id>`): os jobs `docker`/`deploy` falham com `ExpiredToken`/`UnrecognizedClientException` no log. Seguir o runbook do [infra/README.md](../infra/README.md): reiniciar o lab, rodar o script de refresh e `gh run rerun --failed`, deve passar.
 
 ## 9. Limpeza
 

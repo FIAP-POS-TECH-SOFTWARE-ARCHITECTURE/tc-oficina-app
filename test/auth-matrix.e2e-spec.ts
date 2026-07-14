@@ -80,7 +80,7 @@ const ROUTES: RouteCase[] = [
 	{ method: "post", path: `/os/${FAKE_UUID}/cancelar` },
 ];
 
-describe("Auth Matrix (e2e) — sem token deve retornar 401", () => {
+describe("Auth Matrix (e2e) - sem token deve retornar 401", () => {
 	let app: INestApplication;
 	let prisma: PrismaService;
 

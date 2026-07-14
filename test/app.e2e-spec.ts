@@ -4,7 +4,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { setupApp } from "./helpers/app-factory";
 import { truncateAll } from "./helpers/db";
 
-describe("App (e2e) — healthcheck público", () => {
+describe("App (e2e) - healthcheck público", () => {
 	let app: INestApplication;
 	let prisma: PrismaService;
 

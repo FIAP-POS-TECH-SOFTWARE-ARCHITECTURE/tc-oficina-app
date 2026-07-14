@@ -34,7 +34,7 @@ async function main() {
 			tipoDocumento: TipoDocumentoCliente.CPF,
 			email: "joao.silva@email.com",
 			telefone: "(11) 98765-4321",
-			endereco: "Rua das Flores, 123 — São Paulo/SP",
+			endereco: "Rua das Flores, 123 - São Paulo/SP",
 		},
 	});
 
@@ -47,7 +47,7 @@ async function main() {
 			tipoDocumento: TipoDocumentoCliente.CPF,
 			email: "maria.souza@email.com",
 			telefone: "(11) 91234-5678",
-			endereco: "Av. Paulista, 456 — São Paulo/SP",
+			endereco: "Av. Paulista, 456 - São Paulo/SP",
 		},
 	});
 
@@ -60,7 +60,7 @@ async function main() {
 			tipoDocumento: TipoDocumentoCliente.CNPJ,
 			email: "contato@autopecasxyz.com.br",
 			telefone: "(11) 3456-7890",
-			endereco: "Rua Industrial, 789 — Santo André/SP",
+			endereco: "Rua Industrial, 789 - Santo André/SP",
 		},
 	});
 	console.log("  ✔ Clientes");

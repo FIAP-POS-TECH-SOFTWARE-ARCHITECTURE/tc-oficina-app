@@ -1,8 +1,8 @@
-# Kubernetes — Oficina API
+# Kubernetes - Oficina API
 
 Manifestos de deploy da aplicação. A raiz `k8s/` contém os manifestos **de produção**
 (aplicáveis tanto em minikube quanto em EKS). `k8s/local/` contém dependências que
-**só existem para validação local no minikube** — em produção o banco é o RDS
+**só existem para validação local no minikube**: em produção o banco é o RDS
 provisionado via Terraform (`infra/`) e o SMTP é um provedor real.
 
 ## Arquivos
@@ -10,7 +10,7 @@ provisionado via Terraform (`infra/`) e o SMTP é um provedor real.
 | Arquivo | Recurso | Observação |
 |---|---|---|
 | `app-configmap.yaml` | ConfigMap `oficina-config` | Config **não sensível** (PORT, JWT_EXPIRES_IN, SMTP_HOST/PORT/FROM) |
-| `app-secret.yaml.example` | Secret `oficina-secrets` (template) | Extensão `.example` impede o `kubectl apply -f k8s/` de aplicá-lo por engano — criar via `kubectl` (abaixo). NÃO commitar valores reais |
+| `app-secret.yaml.example` | Secret `oficina-secrets` (template) | Extensão `.example` impede o `kubectl apply -f k8s/` de aplicá-lo por engano; criar via `kubectl` (abaixo). NÃO commitar valores reais |
 | `app-deployment.yaml` | Deployment `oficina-api` | 2 réplicas, probes, `resources.requests/limits` |
 | `app-service.yaml` | Service `oficina-api` | `LoadBalancer` (EKS) / `minikube service` (local) |
 | `app-hpa.yaml` | HPA `oficina-api-hpa` | CPU 70%, 2→10 réplicas (`autoscaling/v2`) |
@@ -21,7 +21,7 @@ provisionado via Terraform (`infra/`) e o SMTP é um provedor real.
 
 ```bash
 minikube start
-minikube addons enable metrics-server   # OBRIGATÓRIO — sem ele o HPA fica <unknown> e não escala
+minikube addons enable metrics-server   # OBRIGATÓRIO: sem ele o HPA fica <unknown> e não escala
 ```
 
 ## Ordem de aplicação (minikube)
@@ -33,7 +33,7 @@ minikube image build -t oficina-api:local .
 # 2. Dependências locais (banco + mailhog)
 kubectl apply -f k8s/local/
 
-# 3. Secret (NUNCA commitado — DATABASE_URL aponta para o Service `postgres` interno)
+# 3. Secret (NUNCA commitado; DATABASE_URL aponta para o Service `postgres` interno)
 kubectl create secret generic oficina-secrets \
   --from-literal=DATABASE_URL='postgresql://postgres:password@postgres:5432/oficina' \
   --from-literal=JWT_SECRET='dev-secret' \
@@ -84,16 +84,16 @@ receba um EXTERNAL-IP acessível.
 - **Pod em `CrashLoopBackOff` no boot** → checar `kubectl logs <pod>`; geralmente `DATABASE_URL`
   incorreta no Secret (deve usar o host `postgres`, não `localhost`).
 
-## Teste de carga (K6) — demonstração do HPA
+## Teste de carga (K6) - demonstração do HPA
 
 Script em [`k6/load-test.js`](../k6/load-test.js). Gera carga em `GET /health` (público, isento
 de rate limit) para elevar a CPU acima de 70% e disparar o autoscaling.
 
 ```bash
-# terminal 1 — acompanhar o HPA escalar:
+# terminal 1: acompanhar o HPA escalar:
 kubectl get hpa oficina-api-hpa -w
 
-# terminal 2 — disparar a carga:
+# terminal 2: disparar a carga:
 k6 run -e BASE_URL=$(minikube service oficina-api --url) k6/load-test.js
 ```
 
@@ -102,5 +102,5 @@ e volta a 2 alguns minutos após o fim do teste (cooldown padrão do HPA).
 
 > **Se não escalar:** a carga de `/health` pode ser leve demais para saturar a CPU. Reduza
 > `resources.requests.cpu` do Deployment (ex.: `50m`), reaplique (`kubectl apply -f k8s/app-deployment.yaml`)
-> e repita — assim uma utilização menor já ultrapassa os 70%.
+> e repita; assim uma utilização menor já ultrapassa os 70%.
 

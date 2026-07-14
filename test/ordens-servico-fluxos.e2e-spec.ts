@@ -7,7 +7,7 @@ import { bearer, loginAs } from "./helpers/auth";
 import { truncateAll } from "./helpers/db";
 import { CPF_VALIDOS, createCliente, createInsumo, createOS, createServico, createVeiculo } from "./helpers/factories";
 
-describe("Ordens de Serviço (e2e) — fluxos cross-módulo", () => {
+describe("Ordens de Serviço (e2e) - fluxos cross-módulo", () => {
 	let app: INestApplication;
 	let prisma: PrismaService;
 	let atendenteToken: string;

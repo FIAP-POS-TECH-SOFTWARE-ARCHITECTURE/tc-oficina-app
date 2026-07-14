@@ -6,7 +6,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { setupApp } from "./helpers/app-factory";
 import { truncateAll } from "./helpers/db";
 
-describe("Auth (e2e) — POST /auth/login", () => {
+describe("Auth (e2e) - POST /auth/login", () => {
 	let app: INestApplication;
 	let prisma: PrismaService;
 

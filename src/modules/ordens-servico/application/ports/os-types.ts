@@ -18,7 +18,7 @@ export interface OsItemServicoApp {
 	servicoId: string;
 	status: OsItemServicoStatusApp;
 	quantidade: number;
-	precoUnitario: unknown; // Prisma.Decimal — opaco para a aplicação
+	precoUnitario: unknown; // Prisma.Decimal, opaco para a aplicação
 	subtotal: unknown;
 	iniciadoExecucaoEm: Date | null;
 	finalizadoExecucaoEm: Date | null;

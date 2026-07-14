@@ -1,4 +1,4 @@
-# Infraestrutura (Terraform — AWS Academy)
+# Infraestrutura (Terraform, AWS Academy)
 
 Provisiona toda a infraestrutura da aplicação na AWS Academy (Learner Lab): rede, cluster Kubernetes (EKS), banco de dados (RDS Postgres) e registro de imagens (ECR).
 
@@ -36,7 +36,7 @@ Cole o bloco `[default]` de *AWS Details → AWS CLI: Show* e finalize com `Ctrl
 1. `~/.aws/credentials` (perfil `default`)
 2. Secrets do repositório GitHub: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
 
-Por isso **não há `terraform apply` automático em pipeline** — as credenciais expiram e o apply é sempre manual e consciente.
+Por isso **não há `terraform apply` automático em pipeline**: as credenciais expiram e o apply é sempre manual e consciente.
 
 ## Pipeline falhou com ExpiredToken / UnrecognizedClientException?
 
@@ -55,14 +55,14 @@ aws s3api create-bucket --bucket <SEU_BUCKET_TFSTATE> --region us-east-1
 aws s3api put-bucket-versioning --bucket <SEU_BUCKET_TFSTATE> --versioning-configuration Status=Enabled
 ```
 
-Nome de bucket é global — sufixe com o id da conta (ex.: `tc-fiap-oficina-tfstate-123456789012`) e ajuste `bucket` em `backend.tf`.
+Nome de bucket é global, sufixe com o id da conta (ex.: `tc-fiap-oficina-tfstate-123456789012`) e ajuste `bucket` em `backend.tf`.
 
 ## Fluxo de uso
 
 ```powershell
 cd infra
 
-# credenciais do banco via ambiente — nunca commitar
+# credenciais do banco via ambiente, nunca commitar
 $env:TF_VAR_db_username = "oficina_admin"
 $env:TF_VAR_db_password = "<senha forte>"
 
@@ -89,11 +89,11 @@ terraform destroy
 
 ## Trade-offs do AWS Academy (decisões conscientes)
 
-- **`LabRole` para tudo** — o Academy não permite criar IAM roles; cluster e node group usam a role pré-existente via data source.
-- **Subnets públicas para os nodes** — evita o custo de NAT Gateway no lab. Produção real: subnets privadas + NAT.
-- **RDS público (`publicly_accessible = true` + ingress `0.0.0.0/0`)** — o runner do GitHub Actions e o dev local precisam alcançar o banco para rodar migrações. Produção real: banco apenas na VPC, migração via bastion ou Job dentro do cluster.
-- **`skip_final_snapshot` e `force_delete` no ECR** — ambiente descartável; destroy sem fricção.
+- **`LabRole` para tudo**: o Academy não permite criar IAM roles; cluster e node group usam a role pré-existente via data source.
+- **Subnets públicas para os nodes**: evita o custo de NAT Gateway no lab. Produção real: subnets privadas + NAT.
+- **RDS público (`publicly_accessible = true` + ingress `0.0.0.0/0`)**: o runner do GitHub Actions e o dev local precisam alcançar o banco para rodar migrações. Produção real: banco apenas na VPC, migração via bastion ou Job dentro do cluster.
+- **`skip_final_snapshot` e `force_delete` no ECR**: ambiente descartável; destroy sem fricção.
 
 ## Custos
 
-O Learner Lab tem budget limitado. Os recursos que mais consomem: nodes EC2 (`t3.medium` × 2), o control plane do EKS e o RDS. **Rode `terraform destroy` ao fim de cada sessão de estudo** se o budget preocupar — o tfstate fica no S3 e o próximo `apply` recria tudo.
+O Learner Lab tem budget limitado. Os recursos que mais consomem: nodes EC2 (`t3.medium` × 2), o control plane do EKS e o RDS. **Rode `terraform destroy` ao fim de cada sessão de estudo** se o budget preocupar: o tfstate fica no S3 e o próximo `apply` recria tudo.

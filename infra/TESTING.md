@@ -39,7 +39,7 @@ gh secret list   # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN c
 
 ## 2. Bootstrap do bucket de tfstate (só na primeira vez)
 
-Nome de bucket é global — use o id da conta como sufixo:
+Nome de bucket é global, use o id da conta como sufixo:
 
 ```powershell
 $accountId = aws sts get-caller-identity --query Account --output text
@@ -50,7 +50,7 @@ aws s3api put-bucket-versioning --bucket $bucket --versioning-configuration Stat
 
 Ajustar `bucket` em `infra/backend.tf` para o valor de `$bucket`.
 
-> Contas do Learner Lab costumam manter o mesmo id entre sessões — o bucket e o tfstate sobrevivem ao fim da sessão; só EC2/EKS/RDS são desligados.
+> Contas do Learner Lab costumam manter o mesmo id entre sessões: o bucket e o tfstate sobrevivem ao fim da sessão; só EC2/EKS/RDS são desligados.
 
 ## 3. Init, fmt e validate
 
@@ -113,9 +113,9 @@ kubectl apply -f ../k8s/
 kubectl get pods -w
 ```
 
-**Esperado:** pods `oficina-api` em `ImagePullBackOff` — **isso é sucesso neste estágio**: o ECR ainda está vazio (a imagem só chega via pipeline de CI/CD). O que importa: scheduler alocou os pods, secret montou, manifestos aplicaram sem erro.
+**Esperado:** pods `oficina-api` em `ImagePullBackOff`, **isso é sucesso neste estágio**: o ECR ainda está vazio (a imagem só chega via pipeline de CI/CD). O que importa: scheduler alocou os pods, secret montou, manifestos aplicaram sem erro.
 
-## 7. (Opcional) Testar com imagem real — push manual para o ECR
+## 7. (Opcional) Testar com imagem real, push manual para o ECR
 
 Valida o caminho completo até `Running` sem esperar o pipeline:
 
@@ -188,7 +188,7 @@ $rds = terraform output -raw rds_endpoint
 Test-NetConnection $rds -Port 5432    # TcpTestSucceeded : True
 ```
 
-(RDS é público por decisão documentada no [README](README.md) — trade-off do Academy.)
+(RDS é público por decisão documentada no [README](README.md), trade-off do Academy.)
 
 ## 9. Teardown
 
@@ -197,7 +197,7 @@ kubectl delete -f ../k8s/ --ignore-not-found
 terraform destroy   # confirmar com "yes"
 ```
 
-**Esperado:** `Destroy complete! Resources: 13 destroyed.` O tfstate permanece no S3 (vazio de recursos) — próximo `apply` recria tudo.
+**Esperado:** `Destroy complete! Resources: 13 destroyed.` O tfstate permanece no S3 (vazio de recursos); próximo `apply` recria tudo.
 
 ## Checklist final
 

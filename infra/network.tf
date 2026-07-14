@@ -1,4 +1,4 @@
-# Nodes em subnet pública com IP público — simplificação aceita no Academy para
+# Nodes em subnet pública com IP público: simplificação aceita no Academy para
 # evitar custo de NAT Gateway; produção real usaria subnets privadas + NAT.
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"

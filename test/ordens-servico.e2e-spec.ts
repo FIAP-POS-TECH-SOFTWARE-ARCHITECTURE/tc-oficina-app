@@ -7,7 +7,7 @@ import { bearer, loginAs } from "./helpers/auth";
 import { truncateAll } from "./helpers/db";
 import { CPF_VALIDOS, createCliente, createInsumo, createOS, createServico, createVeiculo, nextPlaca } from "./helpers/factories";
 
-describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
+describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 	let app: INestApplication;
 	let prisma: PrismaService;
 	let atendenteToken: string;
@@ -441,7 +441,7 @@ describe("Ordens de Serviço (e2e) — endpoints individuais", () => {
 		expect(res.status).toBe(422);
 	});
 
-	describe("GET /os — ordenação", () => {
+	describe("GET /os - ordenação", () => {
 		async function criarOsComVeiculo(clienteId: string) {
 			const v = await request(app.getHttpServer())
 				.post(`/clientes/${clienteId}/veiculos`)

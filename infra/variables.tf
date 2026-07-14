@@ -43,7 +43,7 @@ variable "db_username" {
 }
 
 variable "db_password" {
-  description = "Senha master do RDS (via TF_VAR_db_password — nunca commitar)"
+  description = "Senha master do RDS (via TF_VAR_db_password, nunca commitar)"
   type        = string
   sensitive   = true
 }

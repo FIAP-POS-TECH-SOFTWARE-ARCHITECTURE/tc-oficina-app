@@ -26,7 +26,7 @@ aws_session_token = $sessionToken
 "@ | Set-Content (Join-Path $awsDir "credentials")
 Write-Host "~/.aws/credentials atualizado."
 
-# Região default — sem isso, todo comando aws sem --region falha com NoRegion
+# Região default: sem isso, todo comando aws sem --region falha com NoRegion
 aws configure set region us-east-1
 Write-Host "Região default configurada (us-east-1)."
 

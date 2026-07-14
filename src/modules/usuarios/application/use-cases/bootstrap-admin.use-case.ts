@@ -20,7 +20,7 @@ export class BootstrapAdminUseCase {
 		const senha = process.env.ADMIN_BOOTSTRAP_PASSWORD;
 
 		if (!email || !senha) {
-			this.logger.warn("Sem ADMIN_BOOTSTRAP_EMAIL/PASSWORD no .env — bootstrap de admin pulado.");
+			this.logger.warn("Sem ADMIN_BOOTSTRAP_EMAIL/PASSWORD no .env, bootstrap de admin pulado.");
 			return;
 		}
 

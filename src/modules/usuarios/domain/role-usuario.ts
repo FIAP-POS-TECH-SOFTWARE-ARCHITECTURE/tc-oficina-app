@@ -1,4 +1,4 @@
-// Espelho do enum Prisma — valores string idênticos; domínio não importa @prisma/client.
+// Espelho do enum Prisma, valores string idênticos; domínio não importa @prisma/client.
 export enum RoleUsuario {
 	ATENDENTE = "ATENDENTE",
 	MECANICO = "MECANICO",

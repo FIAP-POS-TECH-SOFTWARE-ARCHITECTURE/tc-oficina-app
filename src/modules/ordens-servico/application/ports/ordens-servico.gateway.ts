@@ -52,7 +52,7 @@ export interface OrdensServicoGatewayPort {
 	buscarItemInsumo(itemId: string): Promise<{ id: string; ordemServicoId: string } | null>;
 	removerItemInsumo(itemId: string): Promise<void>;
 
-	// Fluxos com estoque — atômicos por exigência de consistência; a política
+	// Fluxos com estoque, atômicos por exigência de consistência; a política
 	// (bloquear se faltar estoque / estornar) é decidida pelo caso de uso e
 	// executada dentro da transação do gateway.
 	executarAprovacao(os: OsDetalhe, observacao: string | null | undefined, agora: Date): Promise<ResultadoAprovacao>;
