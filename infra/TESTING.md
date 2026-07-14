@@ -147,6 +147,40 @@ como `<pending>`, aguardar a criação do Load Balancer com
 `kubectl get svc oficina-api -w` e repetir os comandos. O endpoint atual usa HTTP
 na porta 80; não trocar a URL para HTTPS.
 
+## 7.1 Metrics-server (pré-requisito do HPA) + teste de carga (K6)
+
+O EKS **não vem com metrics-server instalado por padrão**: sem ele, `kubectl get hpa`
+mostra `TARGETS: <unknown>/70%` para sempre e o autoscaling nunca dispara.
+
+```powershell
+kubectl get deployment metrics-server -n kube-system   # NotFound = falta instalar
+```
+
+Instalar:
+
+```powershell
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+# EKS precisa dessa flag por causa do certificado TLS self-signed do kubelet
+kubectl patch deployment metrics-server -n kube-system --type='json' `
+  -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+```
+
+**Esperado:** após ~30s, `kubectl top pods` retorna dados (em vez de `error: Metrics API not available`).
+
+Com o metrics-server ativo, gerar carga com [k6](https://k6.io) (`k6/load-test.js`) para validar o HPA de ponta a ponta:
+
+```powershell
+# terminal 1: acompanhar o HPA escalar
+kubectl get hpa oficina-api-hpa -w
+
+# terminal 2: disparar a carga (sem "/" no fim do BASE_URL, o script já concatena "/health")
+k6 run -e BASE_URL=http://$hostname k6/load-test.js
+```
+
+**Esperado:** `REPLICAS` sobe de 2 conforme a CPU passa de 70% (até 10), e volta a 2 alguns
+minutos após o fim do teste (cooldown padrão do HPA).
+
 ## 8. Testar conectividade com o RDS (do seu host)
 
 ```powershell
@@ -173,6 +207,8 @@ terraform destroy   # confirmar com "yes"
 - [ ] Nenhum segredo commitado (`git log -p` limpo, `terraform.tfvars` fora do git)
 - [ ] `kubectl get nodes` mostra 2 nodes Ready
 - [ ] Manifestos de `k8s/` aplicam; pods sobem (`ImagePullBackOff` aceito com ECR vazio)
+- [ ] metrics-server instalado; `kubectl top pods` retorna dados
+- [ ] Teste de carga K6 dispara o HPA (`REPLICAS` sobe acima de 2)
 - [ ] `terraform destroy` desmonta tudo
 
 ## Problemas comuns
@@ -185,3 +221,4 @@ terraform destroy   # confirmar com "yes"
 | `AccessDenied` no S3 do backend                | Bucket de outra conta ou nome errado no `backend.tf`  | Conferir `$bucket` e o id da conta                                                                                    |
 | Pods `Pending`                                 | Nodes ainda subindo ou sem capacidade                 | `kubectl describe pod` e `kubectl get nodes`                                                                          |
 | RDS engine version inválida                    | Postgres 18 indisponível na região                    | `aws rds describe-db-engine-versions --engine postgres --query 'DBEngineVersions[].EngineVersion'` e ajustar `rds.tf` |
+| HPA `TARGETS: <unknown>` / `kubectl top` falha  | metrics-server não instalado (não vem por padrão no EKS) | Ver seção 7.1                                                                                                        |
