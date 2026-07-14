@@ -2,7 +2,7 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 
 // Uso: k6 run -e BASE_URL=$(minikube service oficina-api --url) k6/load-test.js
-const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
+const BASE_URL = (__ENV.BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
 
 export const options = {
 	stages: [
