@@ -1,5 +1,7 @@
 # Oficina API - Tech Challenge FIAP (Fase 2)
 
+[![CI](https://github.com/Lucas-Gardini/Tech-Challenge-FIAP-Software-Architecture/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Lucas-Gardini/Tech-Challenge-FIAP-Software-Architecture/actions/workflows/ci.yml)
+
 API REST para gestão de ordens de serviço (OS) de uma oficina mecânica, desenvolvida para o Tech Challenge da pós-graduação em Software Architecture (FIAP, 14SOAT).
 
 ## 1. Descrição da solução e objetivos da fase
@@ -180,6 +182,26 @@ npm run test:cov      # unitários com cobertura (thresholds no package.json)
 npm run test:e2e      # e2e com Testcontainers (requer Docker rodando)
                       # (antes: cp .env.test.example .env.test)
 ```
+
+**Estado atual (rodado localmente, mesmo pipeline do CI):**
+
+| Camada             | Suites | Testes | Cobertura (statements) |
+| ------------------ | ------ | ------ | ----------------------- |
+| Unitários (`jest`)  | 105    | 522    | 97,4% (thresholds mínimos de 80% por módulo em `package.json`) |
+| E2E (`Testcontainers`, Postgres real) | 11 | 197 | fluxos HTTP ponta a ponta |
+
+Todo push/PR roda os dois níveis na pipeline (badge de status no topo do README); um PR não é mergeável se algum teste quebrar.
+
+**Fluxos críticos cobertos** (unitário = regra de negócio isolada com gateways mockados; e2e = fluxo HTTP completo com banco real):
+
+- **Ciclo de vida da OS**: criação → diagnóstico → geração de orçamento → aprovação/rejeição (webhook público) → execução dos itens → finalização → entrega, incluindo as transições inválidas (ex.: finalizar sem todos os itens concluídos, aprovar orçamento já decidido).
+- **Listagem priorizada**: ordenação por status (Execução > Aguardando Aprovação > Diagnóstico > Recebida, mais antigas primeiro) e exclusão lógica de Finalizada/Entregue — testada tanto na regra pura de domínio (`ordenacao-listagem.spec.ts`) quanto no e2e (`ordens-servico.e2e-spec.ts`).
+- **Bloqueio/desbloqueio de OS** e cancelamento de itens de serviço/insumo, incluindo estorno de estoque.
+- **Notificação por e-mail** em cada transição de status: gateway `NotificadorPort` mockado nos unitários (inclusive cenário de falha de SMTP, que não deve derrubar a operação de negócio) e verificado de ponta a ponta via Mailhog no e2e.
+- **Controle de estoque de insumos**: entrada, ajuste, registro de compra e alerta de estoque baixo.
+- **Autenticação e autorização**: login, guards de JWT e de papéis (`roles.guard.spec.ts`), matriz de acesso por perfil (`auth-matrix.e2e-spec.ts`).
+
+Relatório de cobertura completo (HTML, por arquivo): `npm run test:cov` gera em `coverage/lcov-report/index.html`.
 
 Teste de carga (demonstração do HPA): script [k6/load-test.js](k6/load-test.js), com comando e resultado esperado em [k8s/README.md](k8s/README.md#teste-de-carga-k6--demonstração-do-hpa).
 
