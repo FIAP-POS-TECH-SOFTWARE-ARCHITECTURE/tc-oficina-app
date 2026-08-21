@@ -30,11 +30,20 @@ Write-Host "~/.aws/credentials atualizado."
 aws configure set region us-east-1
 Write-Host "Região default configurada (us-east-1)."
 
-# 2) GitHub Secrets (repo atual)
-gh secret set AWS_ACCESS_KEY_ID --body $accessKey
-gh secret set AWS_SECRET_ACCESS_KEY --body $secretKey
-gh secret set AWS_SESSION_TOKEN --body $sessionToken
-Write-Host "Secrets do GitHub atualizados (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)."
+# 2) GitHub Secrets nos 4 repositórios da Fase 3
+$repos = @(
+    "FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-app",
+    "FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-lambda-auth",
+    "FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-k8s",
+    "FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-db"
+)
+
+foreach ($repo in $repos) {
+    gh secret set AWS_ACCESS_KEY_ID --repo $repo --body $accessKey
+    gh secret set AWS_SECRET_ACCESS_KEY --repo $repo --body $secretKey
+    gh secret set AWS_SESSION_TOKEN --repo $repo --body $sessionToken
+    Write-Host "Secrets atualizados em $repo"
+}
 
 aws sts get-caller-identity
 Write-Host "Credenciais válidas. Pronto."
