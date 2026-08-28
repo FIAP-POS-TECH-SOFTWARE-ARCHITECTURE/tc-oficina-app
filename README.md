@@ -89,7 +89,7 @@ flowchart LR
     CLIENTE["Cliente HTTP"] --> SVC
 ```
 
-Recursos completos, trade-offs do AWS Academy e comandos: [infra/README.md](infra/README.md).
+Recursos completos, trade-offs do AWS Academy e comandos: [tc-oficina-infra-k8s](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-k8s) e [tc-oficina-infra-db](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-db).
 
 ### 2.3 Fluxo de deploy (CI/CD)
 
@@ -99,7 +99,6 @@ Workflow único [.github/workflows/ci.yml](.github/workflows/ci.yml), estratégi
 flowchart LR
     PUSH["push / PR"] --> Q["quality<br/>lint · build · testes unitários"]
     PUSH --> E2E["e2e<br/>Testcontainers (Postgres real)"]
-    PUSH --> TF["terraform-check<br/>fmt · validate"]
     Q --> DOCKER["docker<br/>build + push ECR (tag = SHA)"]
     E2E --> DOCKER
     DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -f k8s/<br/>kubectl set image<br/>smoke test /health"]
@@ -162,17 +161,12 @@ Passo a passo completo, acesso à aplicação, troubleshooting e teste de carga:
 
 ### 3.3 Provisionamento AWS (Terraform)
 
-```powershell
-cd infra
-terraform init
-terraform fmt -check && terraform validate
-terraform plan
-terraform apply    # EKS ~10-15 min
-aws eks update-kubeconfig --region us-east-1 --name oficina-eks
-kubectl apply -f ../k8s/
-```
+O provisionamento da infraestrutura (VPC, EKS, ECR, RDS) foi migrado para repositórios dedicados na Fase 3:
 
-> **AWS Academy:** as credenciais do Learner Lab expiram a cada sessão. Rode `.\scripts\aws-academy-refresh.ps1` para renovar `~/.aws/credentials` e os secrets do GitHub em um comando. Recursos criados, bootstrap do bucket de tfstate e trade-offs: [infra/README.md](infra/README.md).
+- **EKS + VPC + ECR:** [tc-oficina-infra-k8s](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-k8s)
+- **RDS:** [tc-oficina-infra-db](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-db)
+
+Consulte os READMEs desses repositórios para instruções completas de provisionamento, trade-offs do AWS Academy e configuração de credenciais.
 
 ### 3.4 Testes
 
