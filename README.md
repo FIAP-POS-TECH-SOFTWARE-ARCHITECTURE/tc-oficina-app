@@ -14,7 +14,7 @@ O sistema da Fase 1 gerencia o ciclo completo de uma oficina: autenticação e u
 - **Testes automatizados** dos fluxos críticos (casos de uso da OS): unitários com mocks dos gateways + e2e com banco real (Testcontainers);
 - **APIs da OS**: criação, consulta pública de status, webhook de aprovação/recusa de orçamento, listagem ordenada por prioridade de status com exclusão lógica e notificação por e-mail na mudança de status;
 - **Kubernetes** com autoescala (Deployment 2+ réplicas, Service, ConfigMap, Secret e HPA);
-- **IaC com Terraform** (EKS + RDS + ECR na AWS, state remoto em S3);
+- **IaC com Terraform** (EKS + RDS + ECR na AWS, state remoto em S3; repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`);
 - **CI/CD** com GitHub Actions: lint → build → testes → e2e → imagem Docker → migração do banco → deploy no cluster.
 
 ## 2. Arquitetura
@@ -104,7 +104,7 @@ flowchart LR
     DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -f k8s/<br/>kubectl set image<br/>smoke test /health"]
 ```
 
-O `terraform apply` é **manual e documentado**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline valida o Terraform (`fmt`/`validate`) e faz o deploy da aplicação.
+O `terraform apply` é **manual e documentado nos repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. Esta pipeline (app) faz o deploy da aplicação (migração RDS, kubectl apply, set image).
 
 ## 3. Como executar
 
@@ -229,7 +229,7 @@ A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras
 - **PostgreSQL:** ACID para movimentação de estoque e aprovação de orçamento, tipos nativos para valores monetários, modelo relacional adequado ao domínio e integração de primeira classe com o Prisma.
 - **EKS no AWS Academy + `LabRole`:** o Academy não permite criar IAM roles, então cluster e node group usam a `LabRole` pré-existente via data source. Subnets públicas para evitar o custo de NAT Gateway no lab.
 - **RDS público** (`publicly_accessible = true`): o runner do GitHub Actions precisa alcançar o banco para rodar as migrações. Em produção real, o banco ficaria só na VPC, com migração via bastion ou Job no cluster.
-- **`terraform apply` manual:** as credenciais do Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline só valida (`fmt`/`validate`) e faz o deploy da app.
+- **`terraform apply` manual (em `tc-oficina-infra-k8s` / `tc-oficina-infra-db`):** as credenciais do Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline desta aplicação faz o deploy (migração RDS, manifests Kubernetes, atualização de imagem).
 - **GitHub Flow:** main sempre implantável, feature branches + PRs com revisão. Adequado ao deploy contínuo com versão única em produção.
 - **Notificação via SMTP (Nodemailer)** atrás da interface `NotificadorPort`: dev usa Mailhog no compose, produção troca por provedor real via ConfigMap/Secret e os testes mockam a interface. Falha de SMTP nunca falha a operação de negócio.
 - **Evolução futura:** observabilidade (OpenTelemetry/Prometheus/Grafana), fora do escopo obrigatório da fase.
