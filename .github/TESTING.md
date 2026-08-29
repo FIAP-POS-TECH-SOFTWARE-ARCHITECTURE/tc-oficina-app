@@ -73,29 +73,30 @@ aws ecr describe-images --repository-name oficina-api --region us-east-1 --query
 Mesma sequência do job `deploy`, usando a imagem do passo 4:
 
 ```powershell
+$env = "homolog"   # ou "prod"
 aws eks update-kubeconfig --region us-east-1 --name oficina-eks
 
 # 5.1 Deploy do banco (migração como Job, bloqueante)
-kubectl delete job oficina-db-migrate --ignore-not-found
-(Get-Content k8s/jobs/db-migrate-job.yaml -Raw) -replace "PLACEHOLDER_IMAGE", $image | kubectl apply -f -
-kubectl wait --for=condition=complete job/oficina-db-migrate --timeout=300s
-kubectl logs job/oficina-db-migrate
+kubectl delete job oficina-db-migrate -n $env --ignore-not-found
+(Get-Content k8s/base/db-migrate-job.yaml -Raw) -replace "PLACEHOLDER_IMAGE", $image | kubectl apply -n $env -f -
+kubectl wait --for=condition=complete job/oficina-db-migrate -n $env --timeout=300s
+kubectl logs job/oficina-db-migrate -n $env
 ```
 
 **Esperado:** Job `Complete`; logs mostram `No pending migrations` ou a lista de migrações aplicadas.
 
 ```powershell
 # 5.2 Manifestos + imagem nova
-kubectl apply -f k8s/
-kubectl set image deployment/oficina-api oficina-api=$image
-kubectl rollout status deployment/oficina-api --timeout=300s
+kubectl apply -k k8s/overlays/$env
+kubectl set image deployment/oficina-api oficina-api=$image -n $env
+kubectl rollout status deployment/oficina-api -n $env --timeout=300s
 ```
 
 **Esperado:** `deployment "oficina-api" successfully rolled out`.
 
 ```powershell
 # 5.3 Smoke test via LoadBalancer
-$url = kubectl get svc oficina-api -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+$url = kubectl get svc oficina-api -n $env -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 curl.exe -fsS "http://$url/health"
 ```
 
