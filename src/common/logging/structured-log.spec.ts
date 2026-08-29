@@ -65,13 +65,13 @@ describe("logs estruturados — shape serializado", () => {
 		const requestScoped = pino({ level: "info" }, stream).child({ requestId: "req-abc-123" });
 
 		storage.run(new Store(requestScoped), () => {
-			logger.log({ event: "os.criada", osId: "def-456", numero: "OS-0002" });
+			logger.log({ event: "os.created", osId: "def-456", numero: "OS-0002" });
 		});
 
 		expect(captured).toHaveLength(1);
 		const record = captured[0];
 		expect(record.requestId).toBe("req-abc-123");
-		expect(record.event).toBe("os.criada");
+		expect(record.event).toBe("os.created");
 		expect(record.numero).toBe("OS-0002");
 	});
 });

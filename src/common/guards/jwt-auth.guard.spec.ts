@@ -164,7 +164,15 @@ describe("JwtAuthGuard - tokens de cliente", () => {
 		const token = await jwt.signAsync({ sub: "c1", type: "cliente" });
 		const { ctx } = contexto({ authorization: `Bearer ${token}` }, { [IS_CLIENTE_AUTH_KEY]: true });
 
-		await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Cliente inativo");
+	});
+
+	it("rejeita token de cliente inexistente", async () => {
+		prisma.cliente.findUnique.mockResolvedValue(null);
+		const token = await jwt.signAsync({ sub: "c1", type: "cliente" });
+		const { ctx } = contexto({ authorization: `Bearer ${token}` }, { [IS_CLIENTE_AUTH_KEY]: true });
+
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Cliente não encontrado");
 	});
 
 	it("regressão: rota @Public segue passando sem token", async () => {

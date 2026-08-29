@@ -4,7 +4,7 @@ import { SR } from "../../../../common/utils/service-response.util";
 import { ORDENS_SERVICO_GATEWAY, type OrdensServicoGatewayPort } from "../ports/ordens-servico.gateway";
 
 @Injectable()
-export class ConsultaPublicaOsUseCase {
+export class ConsultaAcompanhamentoOsUseCase {
 	constructor(@Inject(ORDENS_SERVICO_GATEWAY) private readonly gateway: OrdensServicoGatewayPort) {}
 
 	async execute(numero: string, clienteId: string): Promise<IServiceResponse<unknown>> {

@@ -14,7 +14,11 @@ import { randomUUID } from "node:crypto";
 		ConfigModule.forRoot(),
 		LoggerModule.forRoot({
 			pinoHttp: {
-				genReqId: (req) => (req.headers["x-request-id"] as string) ?? randomUUID(),
+				genReqId: (req) => {
+					const headerRequestId = req.headers["x-request-id"];
+					if (Array.isArray(headerRequestId)) return headerRequestId[0] ?? randomUUID();
+					return headerRequestId ?? randomUUID();
+				},
 				customProps: (req) => ({ requestId: req.id }),
 				redact: ["req.headers.authorization"],
 				autoLogging: {

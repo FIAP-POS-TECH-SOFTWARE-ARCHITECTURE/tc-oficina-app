@@ -25,7 +25,7 @@ import { BuscarOsUseCase } from "../application/use-cases/buscar-os.use-case";
 import { CancelarItemServicoUseCase } from "../application/use-cases/cancelar-item-servico.use-case";
 import { CancelarOsUseCase } from "../application/use-cases/cancelar-os.use-case";
 import { ConcluirItemServicoUseCase } from "../application/use-cases/concluir-item-servico.use-case";
-import { ConsultaPublicaOsUseCase } from "../application/use-cases/consulta-publica-os.use-case";
+import { ConsultaAcompanhamentoOsUseCase } from "../application/use-cases/consulta-publica-os.use-case";
 import { CriarOsUseCase } from "../application/use-cases/criar-os.use-case";
 import { DesbloquearOsUseCase } from "../application/use-cases/desbloquear-os.use-case";
 import { EntregarOsUseCase } from "../application/use-cases/entregar-os.use-case";
@@ -50,7 +50,7 @@ export class OrdensServicoController {
 		private readonly buscarOs: BuscarOsUseCase,
 		private readonly historicoOs: HistoricoOsUseCase,
 		private readonly tempoMedioServicos: TempoMedioServicosUseCase,
-		private readonly consultaPublicaOs: ConsultaPublicaOsUseCase,
+		private readonly consultaAcompanhamentoOs: ConsultaAcompanhamentoOsUseCase,
 		private readonly iniciarDiagnosticoUc: IniciarDiagnosticoUseCase,
 		private readonly atualizarDiagnosticoUc: AtualizarDiagnosticoUseCase,
 		private readonly addItemServicoUc: AddItemServicoUseCase,
@@ -108,7 +108,7 @@ export class OrdensServicoController {
 	@ApiOperation({ summary: "Acompanhamento da OS pelo cliente autenticado (token via CPF)" })
 	@ApiEnvelopedResponse(OsConsultaPublicaResponseDto)
 	acompanhamento(@Param("numero") numero: string, @CurrentCliente() cliente: AuthenticatedCliente) {
-		return this.consultaPublicaOs.execute(numero, cliente.id);
+		return this.consultaAcompanhamentoOs.execute(numero, cliente.id);
 	}
 
 	@Get(":id")

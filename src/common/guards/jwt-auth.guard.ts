@@ -50,7 +50,8 @@ export class JwtAuthGuard implements CanActivate {
 					where: { id: payload.sub },
 					select: { ativo: true, nome: true },
 				});
-				if (!cliente?.ativo) throw new UnauthorizedException("Cliente inativo");
+				if (!cliente) throw new UnauthorizedException("Cliente não encontrado");
+				if (!cliente.ativo) throw new UnauthorizedException("Cliente inativo");
 
 				req.cliente = { id: payload.sub, cpf: payload.cpf ?? "", nome: cliente.nome };
 				return true;

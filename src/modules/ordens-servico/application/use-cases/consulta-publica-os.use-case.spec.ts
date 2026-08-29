@@ -1,4 +1,4 @@
-import { ConsultaPublicaOsUseCase } from "./consulta-publica-os.use-case";
+import { ConsultaAcompanhamentoOsUseCase } from "./consulta-publica-os.use-case";
 
 const gateway = { buscarPorNumero: jest.fn() };
 
@@ -25,10 +25,10 @@ const osMock = () => ({
 });
 
 function makeSut() {
-	return new ConsultaPublicaOsUseCase(gateway as any);
+	return new ConsultaAcompanhamentoOsUseCase(gateway as any);
 }
 
-describe("ConsultaPublicaOsUseCase", () => {
+describe("ConsultaAcompanhamentoOsUseCase", () => {
 	beforeEach(() => jest.clearAllMocks());
 
 	it("404 quando número não existe", async () => {
