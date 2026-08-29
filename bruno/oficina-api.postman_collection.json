@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "Oficina API - Tech Challenge FIAP (Fase 2)",
-		"description": "Export da collection Bruno (bruno/Oficina-API). Rode 'Auth > Login' primeiro: o script salva o JWT na variável 'token'.",
+		"description": "Export da collection Bruno (bruno/Oficina-API). Rode 'Auth > Login' primeiro: o script salva o JWT na variável 'token'. As rotas de cliente (OrdensServico > Acompanhamento OS / Aprovar Orcamento / Rejeitar Orcamento) usam a variável 'clienteToken', um JWT emitido pela autenticação via CPF (repositório tc-oficina-lambda-auth); não há request aqui que o gere, cole o valor manualmente.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -61,6 +61,10 @@
 		},
 		{
 			"key": "documentoCliente",
+			"value": ""
+		},
+		{
+			"key": "clienteToken",
 			"value": ""
 		},
 		{
@@ -1328,9 +1332,19 @@
 								"aprovar"
 							]
 						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clienteToken}}",
+									"type": "string"
+								}
+							]
+						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"documento\": \"{{documentoCliente}}\",\n    \"observacao\": \"Pode iniciar o serviço\"\n  }",
+							"raw": "{\n    \"observacao\": \"Pode iniciar o serviço\"\n  }",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1395,9 +1409,19 @@
 								"rejeitar"
 							]
 						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clienteToken}}",
+									"type": "string"
+								}
+							]
+						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"documento\": \"{{documentoCliente}}\",\n    \"observacao\": \"Cliente desistiu do reparo\"\n  }",
+							"raw": "{\n    \"observacao\": \"Cliente desistiu do reparo\"\n  }",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1587,29 +1611,30 @@
 					"response": []
 				},
 				{
-					"name": "Consulta Publica",
+					"name": "Acompanhamento OS",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{url}}/os/publica/{{osNumero}}?documento={{documentoCliente}}",
+							"raw": "{{url}}/os/acompanhamento/{{osNumero}}",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"os",
-								"publica",
+								"acompanhamento",
 								"{{osNumero}}"
-							],
-							"query": [
-								{
-									"key": "documento",
-									"value": "{{documentoCliente}}"
-								}
 							]
 						},
 						"auth": {
-							"type": "noauth"
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{clienteToken}}",
+									"type": "string"
+								}
+							]
 						}
 					},
 					"response": []

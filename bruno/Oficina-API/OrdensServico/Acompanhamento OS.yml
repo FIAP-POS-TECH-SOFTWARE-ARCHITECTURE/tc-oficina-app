@@ -1,18 +1,12 @@
 info:
-  name: Rejeitar Orcamento
+  name: Acompanhamento OS
   type: http
-  seq: 11
+  seq: 20
 
 http:
-  method: POST
-  url: "{{url}}/os/{{osNumero}}/orcamento/rejeitar"
+  method: GET
+  url: "{{url}}/os/acompanhamento/{{osNumero}}"
   auth: none
-  body:
-    type: json
-    data: |-
-      {
-          "observacao": "Cliente desistiu do reparo"
-        }
 
 headers:
   - name: Authorization

@@ -1,6 +1,9 @@
 vars:
   url: http://localhost:3000
   token: ""
+  # JWT de cliente emitido pela autenticacao via CPF (repositorio tc-oficina-lambda-auth);
+  # esta collection nao tem request que gera esse token, cole o valor manualmente.
+  clienteToken: ""
   clienteId: ""
   usuarioId: ""
   veiculoId: ""
