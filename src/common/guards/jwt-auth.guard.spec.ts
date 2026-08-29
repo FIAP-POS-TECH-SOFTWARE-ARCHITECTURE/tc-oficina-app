@@ -140,17 +140,23 @@ describe("JwtAuthGuard - tokens de cliente", () => {
 	});
 
 	it("rejeita token de cliente em rota comum (não @ClienteAuth)", async () => {
+		// cliente ativo no banco: se o gate da linha 47 sumisse, cairia no
+		// fluxo de cliente e passaria — a mensagem exata discrimina isso.
+		prisma.cliente.findUnique.mockResolvedValue({ ativo: true, nome: "Ana" });
 		const token = await jwt.signAsync({ sub: "c1", type: "cliente" });
 		const { ctx } = contexto({ authorization: `Bearer ${token}` });
 
-		await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Rota não permitida para clientes");
 	});
 
 	it("rejeita token de usuário interno em rota @ClienteAuth", async () => {
+		// usuário ativo no banco: sem o gate da linha 59, cairia no "Usuário inativo"
+		// e o teste passaria à toa; a mensagem exata garante que o gate está no lugar.
+		prisma.usuario.findUnique.mockResolvedValue({ ativo: true });
 		const token = await jwt.signAsync({ sub: "u1", email: "a@b.c", role: "ADMINISTRADOR" });
 		const { ctx } = contexto({ authorization: `Bearer ${token}` }, { [IS_CLIENTE_AUTH_KEY]: true });
 
-		await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Rota exclusiva para clientes autenticados por CPF");
 	});
 
 	it("rejeita token de cliente inativo", async () => {
