@@ -40,6 +40,12 @@ export class SmtpNotificadorGateway implements NotificadorPort {
 			});
 		} catch (error) {
 			this.logger.error(`Falha ao notificar OS ${n.numeroOs}: ${(error as Error).message}`, (error as Error).stack);
+			this.logger.error({
+				event: "integration.error",
+				integration: "smtp",
+				osId: n.numeroOs,
+				error: (error as Error).message,
+			});
 		}
 	}
 }
