@@ -6,7 +6,7 @@ import { __resetOutOfContextForTests } from "nestjs-pino/PinoLogger";
 import { storage, Store } from "nestjs-pino/storage";
 
 /**
- * Garante o contrato de serialização exigido pelo spec 06 (queries NRQL no New Relic)
+ * Garante o contrato de serialização exigido pelas queries NRQL no New Relic
  * pelo MESMO caminho de emissão que a produção usa: `app.useLogger(app.get(Logger))`
  * (nestjs-pino) e, nos serviços, `new Logger("Contexto")` do `@nestjs/common`.
  * Aqui isso é reproduzido com `Logger.overrideLogger(...)`, o mecanismo estático que
