@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { CriarOsUseCase } from "./criar-os.use-case";
 
 const gateway = {
@@ -28,6 +29,20 @@ describe("CriarOsUseCase", () => {
 		expect(gateway.criarComHistorico).toHaveBeenCalledWith(
 			expect.objectContaining({ clienteId: "c1", veiculoId: "v1", numero: expect.stringMatching(/^OS-\d{4}-\d{6}$/) }),
 		);
+	});
+
+	it("emite evento os.created após persistir", async () => {
+		const logSpy = jest.spyOn(Logger.prototype, "log").mockImplementation(() => undefined);
+		clientes.buscarPorId.mockResolvedValue({ id: "c1", ativo: true });
+		veiculos.buscarPorId.mockResolvedValue({ id: "v1", ativo: true, clienteId: "c1" });
+
+		await makeSut().execute({ clienteId: "c1", veiculoId: "v1" });
+
+		expect(logSpy).toHaveBeenCalledWith(
+			expect.objectContaining({ event: "os.created", osId: "os-1", numero: expect.stringMatching(/^OS-\d{4}-\d{6}$/) }),
+			"CriarOsUseCase",
+		);
+		logSpy.mockRestore();
 	});
 
 	it("404 quando cliente não existe", async () => {

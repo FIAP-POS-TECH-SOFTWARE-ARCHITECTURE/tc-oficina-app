@@ -14,7 +14,7 @@ O sistema da Fase 1 gerencia o ciclo completo de uma oficina: autenticação e u
 - **Testes automatizados** dos fluxos críticos (casos de uso da OS): unitários com mocks dos gateways + e2e com banco real (Testcontainers);
 - **APIs da OS**: criação, consulta pública de status, webhook de aprovação/recusa de orçamento, listagem ordenada por prioridade de status com exclusão lógica e notificação por e-mail na mudança de status;
 - **Kubernetes** com autoescala (Deployment 2+ réplicas, Service, ConfigMap, Secret e HPA);
-- **IaC com Terraform** (EKS + RDS + ECR na AWS, state remoto em S3);
+- **IaC com Terraform** (EKS + RDS + ECR na AWS, state remoto em S3; repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`);
 - **CI/CD** com GitHub Actions: lint → build → testes → e2e → imagem Docker → migração do banco → deploy no cluster.
 
 ## 2. Arquitetura
@@ -89,23 +89,23 @@ flowchart LR
     CLIENTE["Cliente HTTP"] --> SVC
 ```
 
-Recursos completos, trade-offs do AWS Academy e comandos: [infra/README.md](infra/README.md).
+Recursos completos, trade-offs do AWS Academy e comandos: [tc-oficina-infra-k8s](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-k8s) e [tc-oficina-infra-db](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-db).
 
 ### 2.3 Fluxo de deploy (CI/CD)
 
-Workflow único [.github/workflows/ci.yml](.github/workflows/ci.yml), estratégia de branches **GitHub Flow** (main implantável + feature branches + PRs):
+Dois workflows: [.github/workflows/ci.yml](.github/workflows/ci.yml) (roda em PRs para `main`/`develop`) e [.github/workflows/cd.yml](.github/workflows/cd.yml) (build + deploy, dispara em `push` para `develop`/`main` e por `workflow_dispatch`). Estratégia de branches: `develop` → homolog, `main` → prod, feature branches + PRs.
 
 ```mermaid
 flowchart LR
-    PUSH["push / PR"] --> Q["quality<br/>lint · build · testes unitários"]
-    PUSH --> E2E["e2e<br/>Testcontainers (Postgres real)"]
-    PUSH --> TF["terraform-check<br/>fmt · validate"]
-    Q --> DOCKER["docker<br/>build + push ECR (tag = SHA)"]
-    E2E --> DOCKER
-    DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -f k8s/<br/>kubectl set image<br/>smoke test /health"]
+    PR["PR → main/develop"] --> Q["ci: quality<br/>lint · build · testes unitários"]
+    PR --> E2E["ci: e2e<br/>Testcontainers (Postgres real)"]
+    MERGE["push develop/main"] --> DOCKER["cd: build + push ECR (tag = env-SHA)"]
+    DOCKER --> MIG["cd: migração RDS (Job prisma migrate deploy)"]
+    MIG --> APPLY["cd: kubectl apply -k k8s/overlays/&lt;env&gt;<br/>(imagem injetada no overlay)"]
+    APPLY --> SMOKE["cd: rollout status + smoke test /health"]
 ```
 
-O `terraform apply` é **manual e documentado**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline valida o Terraform (`fmt`/`validate`) e faz o deploy da aplicação.
+O `terraform apply` é **manual e documentado nos repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. Esta pipeline (app) faz o deploy da aplicação (migração RDS, kubectl apply do overlay já com a imagem do build).
 
 ## 3. Como executar
 
@@ -148,31 +148,26 @@ npm run start:dev
 
 ### 3.2 Kubernetes local (minikube)
 
-Os manifestos de `k8s/` (Deployment com probes e resources, Service LoadBalancer, ConfigMap, Secret via `kubectl create secret`, HPA 2→10 réplicas) sobem tanto no minikube quanto no EKS. Resumo minikube:
+Os manifestos de `k8s/` são organizados com Kustomize (`k8s/base/` + `k8s/overlays/{homolog,prod}/`): Deployment com probes e resources, Service LoadBalancer, ConfigMap, Secret via `kubectl create secret`, HPA 2→10 réplicas. Sobem tanto no minikube quanto no EKS. Resumo minikube:
 
 ```bash
 minikube start && minikube addons enable metrics-server
 minikube image build -t oficina-api:local .
 kubectl apply -f k8s/local/        # Postgres + Mailhog (só local)
 kubectl create secret generic oficina-secrets --from-literal=...   # ver k8s/README.md
-kubectl apply -f k8s/
+kubectl apply -k k8s/base
 ```
 
 Passo a passo completo, acesso à aplicação, troubleshooting e teste de carga: [k8s/README.md](k8s/README.md).
 
 ### 3.3 Provisionamento AWS (Terraform)
 
-```powershell
-cd infra
-terraform init
-terraform fmt -check && terraform validate
-terraform plan
-terraform apply    # EKS ~10-15 min
-aws eks update-kubeconfig --region us-east-1 --name oficina-eks
-kubectl apply -f ../k8s/
-```
+O provisionamento da infraestrutura (VPC, EKS, ECR, RDS) foi migrado para repositórios dedicados na Fase 3:
 
-> **AWS Academy:** as credenciais do Learner Lab expiram a cada sessão. Rode `.\scripts\aws-academy-refresh.ps1` para renovar `~/.aws/credentials` e os secrets do GitHub em um comando. Recursos criados, bootstrap do bucket de tfstate e trade-offs: [infra/README.md](infra/README.md).
+- **EKS + VPC + ECR:** [tc-oficina-infra-k8s](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-k8s)
+- **RDS:** [tc-oficina-infra-db](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-infra-db)
+
+Consulte os READMEs desses repositórios para instruções completas de provisionamento, trade-offs do AWS Academy e configuração de credenciais.
 
 ### 3.4 Testes
 
@@ -212,8 +207,8 @@ Mapeamento dos requisitos obrigatórios para os endpoints reais (os nomes de rot
 | Requisito                                                                                                                                    | Endpoint                                                                                                                                                                                       | Auth                                         |
 | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | Abertura de OS (retorna id único, número `OS-<ano>-<seq>`)                                                                                   | `POST /os`                                                                                                                                                                                     | JWT (atendente/admin)                        |
-| Consulta de status                                                                                                                           | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id`                                                                                                                     | Pública · JWT                                |
-| Webhook aprovação/recusa de orçamento                                                                                                        | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Pública (validação por documento do cliente) |
+| Consulta de status                                                                                                                           | `GET /os/acompanhamento/:numero` (sem dados sensíveis) · `GET /os/:id`                                                                                                                         | Token de cliente (CPF) · JWT                 |
+| Webhook aprovação/recusa de orçamento                                                                                                        | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Token de cliente (CPF)                       |
 | Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica) | `GET /os`                                                                                                                                                                                      | JWT                                          |
 | Atualização de status com notificação por e-mail                                                                                             | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT                                          |
 
@@ -235,7 +230,7 @@ A API completa (auth, usuários, clientes, veículos, serviços, insumos/compras
 - **PostgreSQL:** ACID para movimentação de estoque e aprovação de orçamento, tipos nativos para valores monetários, modelo relacional adequado ao domínio e integração de primeira classe com o Prisma.
 - **EKS no AWS Academy + `LabRole`:** o Academy não permite criar IAM roles, então cluster e node group usam a `LabRole` pré-existente via data source. Subnets públicas para evitar o custo de NAT Gateway no lab.
 - **RDS público** (`publicly_accessible = true`): o runner do GitHub Actions precisa alcançar o banco para rodar as migrações. Em produção real, o banco ficaria só na VPC, com migração via bastion ou Job no cluster.
-- **`terraform apply` manual:** as credenciais do Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline só valida (`fmt`/`validate`) e faz o deploy da app.
+- **`terraform apply` manual (em `tc-oficina-infra-k8s` / `tc-oficina-infra-db`):** as credenciais do Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. A pipeline desta aplicação faz o deploy (migração RDS, manifests Kubernetes, atualização de imagem).
 - **GitHub Flow:** main sempre implantável, feature branches + PRs com revisão. Adequado ao deploy contínuo com versão única em produção.
 - **Notificação via SMTP (Nodemailer)** atrás da interface `NotificadorPort`: dev usa Mailhog no compose, produção troca por provedor real via ConfigMap/Secret e os testes mockam a interface. Falha de SMTP nunca falha a operação de negócio.
 - **Evolução futura:** observabilidade (OpenTelemetry/Prometheus/Grafana), fora do escopo obrigatório da fase.

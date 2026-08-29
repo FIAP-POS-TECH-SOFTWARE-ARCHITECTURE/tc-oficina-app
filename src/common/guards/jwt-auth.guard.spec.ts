@@ -3,6 +3,8 @@ import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../../prisma/prisma.service";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { IS_CLIENTE_AUTH_KEY } from "../decorators/cliente-auth.decorator";
 
 const ctxFor = (req: any): ExecutionContext =>
 	({
@@ -92,5 +94,89 @@ describe("JwtAuthGuard", () => {
 	it("401 quando header Bearer sem token após espaço", async () => {
 		reflector.getAllAndOverride.mockReturnValueOnce(false);
 		await expect(guard.canActivate(ctxFor({ headers: { authorization: "Bearer " } }))).rejects.toBeInstanceOf(UnauthorizedException);
+	});
+});
+
+describe("JwtAuthGuard - tokens de cliente", () => {
+	let jwt: JwtService;
+	let reflector: { getAllAndOverride: jest.Mock };
+	let prisma: { usuario: { findUnique: jest.Mock }; cliente: { findUnique: jest.Mock } };
+	let guard: JwtAuthGuard;
+
+	const SEGREDO = "segredo-de-teste";
+
+	// metadados[IS_CLIENTE_AUTH_KEY] = true simula rota @ClienteAuth()
+	const contexto = (headers: Record<string, string>, metadados: Record<string, boolean> = {}) => {
+		reflector.getAllAndOverride.mockImplementation((key: string) => metadados[key] ?? false);
+		const req: Record<string, unknown> = { headers };
+		return {
+			ctx: {
+				getHandler: () => ({}),
+				getClass: () => ({}),
+				switchToHttp: () => ({ getRequest: () => req }),
+			} as never,
+			req,
+		};
+	};
+
+	beforeEach(() => {
+		process.env.JWT_SECRET = SEGREDO;
+		jwt = new JwtService({ secret: SEGREDO });
+		reflector = { getAllAndOverride: jest.fn() };
+		prisma = {
+			usuario: { findUnique: jest.fn() },
+			cliente: { findUnique: jest.fn() },
+		};
+		guard = new JwtAuthGuard(jwt, reflector as unknown as Reflector, prisma as never);
+	});
+
+	it("aceita token de cliente ativo em rota @ClienteAuth e popula req.cliente", async () => {
+		prisma.cliente.findUnique.mockResolvedValue({ ativo: true, nome: "Ana Souza" });
+		const token = await jwt.signAsync({ sub: "c1", cpf: "12345678909", type: "cliente" });
+		const { ctx, req } = contexto({ authorization: `Bearer ${token}` }, { [IS_CLIENTE_AUTH_KEY]: true });
+
+		await expect(guard.canActivate(ctx)).resolves.toBe(true);
+		expect(req.cliente).toEqual({ id: "c1", cpf: "12345678909", nome: "Ana Souza" });
+	});
+
+	it("rejeita token de cliente em rota comum (não @ClienteAuth)", async () => {
+		// cliente ativo no banco: se o gate da linha 47 sumisse, cairia no
+		// fluxo de cliente e passaria — a mensagem exata discrimina isso.
+		prisma.cliente.findUnique.mockResolvedValue({ ativo: true, nome: "Ana" });
+		const token = await jwt.signAsync({ sub: "c1", type: "cliente" });
+		const { ctx } = contexto({ authorization: `Bearer ${token}` });
+
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Rota não permitida para clientes");
+	});
+
+	it("rejeita token de usuário interno em rota @ClienteAuth", async () => {
+		// usuário ativo no banco: sem o gate da linha 59, cairia no "Usuário inativo"
+		// e o teste passaria à toa; a mensagem exata garante que o gate está no lugar.
+		prisma.usuario.findUnique.mockResolvedValue({ ativo: true });
+		const token = await jwt.signAsync({ sub: "u1", email: "a@b.c", role: "ADMINISTRADOR" });
+		const { ctx } = contexto({ authorization: `Bearer ${token}` }, { [IS_CLIENTE_AUTH_KEY]: true });
+
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Rota exclusiva para clientes autenticados por CPF");
+	});
+
+	it("rejeita token de cliente inativo", async () => {
+		prisma.cliente.findUnique.mockResolvedValue({ ativo: false, nome: "Ana" });
+		const token = await jwt.signAsync({ sub: "c1", type: "cliente" });
+		const { ctx } = contexto({ authorization: `Bearer ${token}` }, { [IS_CLIENTE_AUTH_KEY]: true });
+
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Cliente inativo");
+	});
+
+	it("rejeita token de cliente inexistente", async () => {
+		prisma.cliente.findUnique.mockResolvedValue(null);
+		const token = await jwt.signAsync({ sub: "c1", type: "cliente" });
+		const { ctx } = contexto({ authorization: `Bearer ${token}` }, { [IS_CLIENTE_AUTH_KEY]: true });
+
+		await expect(guard.canActivate(ctx)).rejects.toThrow("Cliente não encontrado");
+	});
+
+	it("regressão: rota @Public segue passando sem token", async () => {
+		const { ctx } = contexto({}, { [IS_PUBLIC_KEY]: true });
+		await expect(guard.canActivate(ctx)).resolves.toBe(true);
 	});
 });

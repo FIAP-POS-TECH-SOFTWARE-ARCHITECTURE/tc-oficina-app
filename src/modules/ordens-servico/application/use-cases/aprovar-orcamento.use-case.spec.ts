@@ -12,7 +12,7 @@ const osMock = (overrides: any = {}) => ({
 	id: "os1",
 	numero: "OS-2026-000001",
 	status: OsStatus.AGUARDANDO_APROVACAO,
-	cliente: { nome: "Fulano", documento: "52998224725", email: null },
+	cliente: { id: "cliente-1", nome: "Fulano", documento: "52998224725", email: null },
 	itensInsumo: [],
 	...overrides,
 });
@@ -29,24 +29,24 @@ describe("AprovarOrcamentoUseCase", () => {
 
 	it("404 quando OS não existe", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(null);
-		expect((await makeSut().execute("x", { documento: "52998224725" })).status).toBe(404);
+		expect((await makeSut().execute("x", "cliente-1", {})).status).toBe(404);
 	});
 
-	it("403 quando documento não confere", async () => {
+	it("403 quando a OS não pertence ao cliente autenticado", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock());
-		expect((await makeSut().execute("OS-2026-000001", { documento: "11111111111" })).status).toBe(403);
+		expect((await makeSut().execute("OS-2026-000001", "outro-cliente", {})).status).toBe(403);
 		expect(gateway.executarAprovacao).not.toHaveBeenCalled();
 	});
 
 	it("422 quando status inválido", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock({ status: OsStatus.EM_EXECUCAO }));
-		expect((await makeSut().execute("OS-2026-000001", { documento: "52998224725" })).status).toBe(422);
+		expect((await makeSut().execute("OS-2026-000001", "cliente-1", {})).status).toBe(422);
 	});
 
 	it("200 aprova, executa aprovação e notifica EM_EXECUCAO", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock());
 		gateway.executarAprovacao.mockResolvedValue({ bloqueadaPorFaltaEstoque: false, faltantes: [] });
-		const res = await makeSut().execute("OS-2026-000001", { documento: "529.982.247-25" });
+		const res = await makeSut().execute("OS-2026-000001", "cliente-1", {});
 		expect(res.status).toBe(200);
 		expect(res.message).toBe("Orçamento aprovado");
 		expect(notificador.notificarMudancaStatus).toHaveBeenCalledWith(expect.objectContaining({ statusNovo: OsStatus.EM_EXECUCAO }));
@@ -55,7 +55,7 @@ describe("AprovarOrcamentoUseCase", () => {
 	it("200 com mensagem de bloqueio quando falta estoque e notifica BLOQUEADA", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock());
 		gateway.executarAprovacao.mockResolvedValue({ bloqueadaPorFaltaEstoque: true, faltantes: ["Filtro"] });
-		const res = await makeSut().execute("OS-2026-000001", { documento: "52998224725" });
+		const res = await makeSut().execute("OS-2026-000001", "cliente-1", {});
 		expect(res.status).toBe(200);
 		expect(res.message).toContain("bloqueada");
 		expect(notificador.notificarMudancaStatus).toHaveBeenCalledWith(expect.objectContaining({ statusNovo: OsStatus.BLOQUEADA }));
@@ -65,6 +65,6 @@ describe("AprovarOrcamentoUseCase", () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock());
 		gateway.executarAprovacao.mockResolvedValue({ bloqueadaPorFaltaEstoque: false, faltantes: [] });
 		notificador.notificarMudancaStatus.mockRejectedValue(new Error("down"));
-		expect((await makeSut().execute("OS-2026-000001", { documento: "52998224725" })).status).toBe(200);
+		expect((await makeSut().execute("OS-2026-000001", "cliente-1", {})).status).toBe(200);
 	});
 });

@@ -1,3 +1,4 @@
+import { IS_CLIENTE_AUTH_KEY } from "../../../common/decorators/cliente-auth.decorator";
 import { IS_PUBLIC_KEY } from "../../../common/decorators/public.decorator";
 import { ROLES_KEY } from "../../../common/decorators/roles.decorator";
 import { Role } from "../../../common/enums/role.enum";
@@ -32,6 +33,7 @@ describe("OrdensServicoController", () => {
 	let ucs: Record<(typeof useCaseNames)[number], { execute: jest.Mock }>;
 	let controller: OrdensServicoController;
 	const user = { id: "u1", email: "x@x", role: Role.MECANICO };
+	const cliente = { id: "c1", cpf: "52998224725", nome: "Fulano" };
 
 	beforeEach(() => {
 		ucs = Object.fromEntries(useCaseNames.map((n) => [n, { execute: jest.fn().mockResolvedValue({ status: 200 }) }])) as typeof ucs;
@@ -61,9 +63,9 @@ describe("OrdensServicoController", () => {
 			expect(ucs.tempoMedioServicos.execute).toHaveBeenCalledWith("ativos");
 		});
 
-		it("consultaPublica", async () => {
-			await controller.consultaPublica("OS-2026-000001", "529.982.247-25");
-			expect(ucs.consultaPublicaOs.execute).toHaveBeenCalledWith("OS-2026-000001", "529.982.247-25");
+		it("acompanhamento passa cliente.id", async () => {
+			await controller.acompanhamento("OS-2026-000001", cliente);
+			expect(ucs.consultaPublicaOs.execute).toHaveBeenCalledWith("OS-2026-000001", "c1");
 		});
 
 		it("findOne", async () => {
@@ -121,14 +123,14 @@ describe("OrdensServicoController", () => {
 			expect(ucs.gerarOrcamentoUc.execute).toHaveBeenCalledWith("os1", "u1");
 		});
 
-		it("aprovar (público) delega", async () => {
-			await controller.aprovar("OS-2026-000001", { documento: "529.982.247-25" });
-			expect(ucs.aprovarOrcamentoUc.execute).toHaveBeenCalledWith("OS-2026-000001", { documento: "529.982.247-25" });
+		it("aprovar delega com cliente.id", async () => {
+			await controller.aprovar("OS-2026-000001", cliente, { observacao: "ok" });
+			expect(ucs.aprovarOrcamentoUc.execute).toHaveBeenCalledWith("OS-2026-000001", "c1", { observacao: "ok" });
 		});
 
-		it("rejeitar (público) delega", async () => {
-			await controller.rejeitar("OS-2026-000001", { documento: "529.982.247-25" });
-			expect(ucs.rejeitarOrcamentoUc.execute).toHaveBeenCalledWith("OS-2026-000001", { documento: "529.982.247-25" });
+		it("rejeitar delega com cliente.id", async () => {
+			await controller.rejeitar("OS-2026-000001", cliente, { observacao: "não quero" });
+			expect(ucs.rejeitarOrcamentoUc.execute).toHaveBeenCalledWith("OS-2026-000001", "c1", { observacao: "não quero" });
 		});
 
 		it("finalizar passa user.id", async () => {
@@ -153,13 +155,16 @@ describe("OrdensServicoController", () => {
 	});
 
 	describe("decorators críticos", () => {
-		it("consultaPublica é @Public()", () => {
-			expect(Reflect.getMetadata(IS_PUBLIC_KEY, OrdensServicoController.prototype.consultaPublica)).toBe(true);
+		it("acompanhamento, aprovar e rejeitar exigem token de cliente (@ClienteAuth)", () => {
+			for (const m of ["acompanhamento", "aprovar", "rejeitar"] as const) {
+				expect(Reflect.getMetadata(IS_CLIENTE_AUTH_KEY, OrdensServicoController.prototype[m])).toBe(true);
+			}
 		});
 
-		it("aprovar e rejeitar são @Public()", () => {
-			expect(Reflect.getMetadata(IS_PUBLIC_KEY, OrdensServicoController.prototype.aprovar)).toBe(true);
-			expect(Reflect.getMetadata(IS_PUBLIC_KEY, OrdensServicoController.prototype.rejeitar)).toBe(true);
+		it("acompanhamento, aprovar e rejeitar não são mais @Public()", () => {
+			for (const m of ["acompanhamento", "aprovar", "rejeitar"] as const) {
+				expect(Reflect.getMetadata(IS_PUBLIC_KEY, OrdensServicoController.prototype[m])).toBeFalsy();
+			}
 		});
 
 		it("cancelar exige ADMINISTRADOR", () => {

@@ -9,7 +9,7 @@ interface RouteCase {
 	path: string;
 }
 
-// Todas as 57 rotas protegidas (autenticadas, não públicas).
+// Todas as 60 rotas protegidas (autenticadas, não públicas).
 // IDs falsos são UUIDs válidos (passam ParseUUIDPipe) e levam à autenticação primeiro.
 const FAKE_UUID = "00000000-0000-4000-8000-000000000000";
 
@@ -74,6 +74,9 @@ const ROUTES: RouteCase[] = [
 	{ method: "post", path: `/os/${FAKE_UUID}/itens-insumo` },
 	{ method: "delete", path: `/os/${FAKE_UUID}/itens-insumo/${FAKE_UUID}` },
 	{ method: "post", path: `/os/${FAKE_UUID}/orcamento/gerar` },
+	{ method: "get", path: "/os/acompanhamento/OS-9999-999999" },
+	{ method: "post", path: `/os/${FAKE_UUID}/orcamento/aprovar` },
+	{ method: "post", path: `/os/${FAKE_UUID}/orcamento/rejeitar` },
 	{ method: "post", path: `/os/${FAKE_UUID}/finalizar` },
 	{ method: "post", path: `/os/${FAKE_UUID}/entregar` },
 	{ method: "post", path: `/os/${FAKE_UUID}/desbloquear` },

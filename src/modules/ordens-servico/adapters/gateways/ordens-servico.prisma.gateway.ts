@@ -147,16 +147,76 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 				where: { id: t.id },
 				data: { ...extras, status: t.statusNovo },
 			});
-			await tx.osHistoricoStatus.create({
-				data: {
-					ordemServicoId: t.id,
-					statusAnterior: t.statusAnterior,
-					statusNovo: t.statusNovo,
-					usuarioId: t.usuarioId ?? undefined,
-					observacao: t.observacao ?? undefined,
-				},
+			await this.registrarTransicao(tx, {
+				ordemServicoId: t.id,
+				statusAnterior: t.statusAnterior,
+				statusNovo: t.statusNovo,
+				usuarioId: t.usuarioId ?? undefined,
+				observacao: t.observacao ?? undefined,
 			});
 		});
+	}
+
+	/**
+	 * Grava a linha de histórico de uma transição de status e emite o evento
+	 * de negócio `os.status.changed` consumido pelos dashboards.
+	 *
+	 * `durationMs` = tempo (ms) que a OS passou no status anterior, medido a
+	 * partir do `createdAt` da linha de histórico imediatamente anterior. Quando
+	 * não existe linha anterior (primeira transição após a criação), assume 0.
+	 */
+	private async registrarTransicao(
+		tx: Prisma.TransactionClient,
+		args: {
+			ordemServicoId: string;
+			numero?: string;
+			statusAnterior: PrismaOsStatus | OsStatus | null;
+			statusNovo: PrismaOsStatus | OsStatus;
+			usuarioId?: string;
+			observacao?: string;
+		},
+	): Promise<void> {
+		const anterior = await tx.osHistoricoStatus.findFirst({
+			where: { ordemServicoId: args.ordemServicoId },
+			orderBy: { createdAt: "desc" },
+			select: { createdAt: true },
+		});
+		const durationMs = anterior ? Date.now() - anterior.createdAt.getTime() : 0;
+
+		let numero = args.numero;
+		if (!numero) {
+			const os = await tx.ordemServico.findUnique({
+				where: { id: args.ordemServicoId },
+				select: { numero: true },
+			});
+			numero = os?.numero ?? undefined;
+		}
+
+		await tx.osHistoricoStatus.create({
+			data: {
+				ordemServicoId: args.ordemServicoId,
+				statusAnterior: args.statusAnterior,
+				statusNovo: args.statusNovo,
+				usuarioId: args.usuarioId ?? undefined,
+				observacao: args.observacao ?? undefined,
+			},
+		});
+
+		// Emitido dentro da transação: em 4 dos 5 chamadores é a última instrução
+		// antes do commit, então a janela pra um rollback posterior é mínima. O
+		// trade-off aceito é um evento eventualmente órfão em caso de rollback,
+		// preferível a perder o evento se o log falhasse fora da transação.
+		this.logger.log(
+			{
+				event: "os.status.changed",
+				osId: args.ordemServicoId,
+				numero,
+				fromStatus: args.statusAnterior,
+				toStatus: args.statusNovo,
+				durationMs,
+			},
+			OrdensServicoPrismaGateway.name,
+		);
 	}
 
 	calcularTotal(os: OsDetalhe): unknown {
@@ -271,13 +331,12 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 						aprovadoEm: agora,
 					},
 				});
-				await tx.osHistoricoStatus.create({
-					data: {
-						ordemServicoId: os.id,
-						statusAnterior: os.status,
-						statusNovo: PrismaOsStatus.BLOQUEADA,
-						observacao: observacao ?? `Orçamento aprovado, OS bloqueada por falta de estoque: ${planoBaixa.faltantes.join("; ")}`,
-					},
+				await this.registrarTransicao(tx, {
+					ordemServicoId: os.id,
+					numero: os.numero,
+					statusAnterior: os.status,
+					statusNovo: PrismaOsStatus.BLOQUEADA,
+					observacao: observacao ?? `Orçamento aprovado, OS bloqueada por falta de estoque: ${planoBaixa.faltantes.join("; ")}`,
 				});
 				return;
 			}
@@ -290,13 +349,12 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 					iniciadoExecucaoEm: agora,
 				},
 			});
-			await tx.osHistoricoStatus.create({
-				data: {
-					ordemServicoId: os.id,
-					statusAnterior: os.status,
-					statusNovo: PrismaOsStatus.EM_EXECUCAO,
-					observacao: observacao ?? "Orçamento aprovado pelo cliente",
-				},
+			await this.registrarTransicao(tx, {
+				ordemServicoId: os.id,
+				numero: os.numero,
+				statusAnterior: os.status,
+				statusNovo: PrismaOsStatus.EM_EXECUCAO,
+				observacao: observacao ?? "Orçamento aprovado pelo cliente",
 			});
 		});
 		return { bloqueadaPorFaltaEstoque, faltantes };
@@ -319,14 +377,13 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 					iniciadoExecucaoEm: os.iniciadoExecucaoEm ?? agora,
 				},
 			});
-			await tx.osHistoricoStatus.create({
-				data: {
-					ordemServicoId: os.id,
-					statusAnterior: os.status,
-					statusNovo: PrismaOsStatus.EM_EXECUCAO,
-					observacao: observacao ?? "OS desbloqueada após validação de estoque",
-					usuarioId,
-				},
+			await this.registrarTransicao(tx, {
+				ordemServicoId: os.id,
+				numero: os.numero,
+				statusAnterior: os.status,
+				statusNovo: PrismaOsStatus.EM_EXECUCAO,
+				observacao: observacao ?? "OS desbloqueada após validação de estoque",
+				usuarioId,
 			});
 			return { faltantes: [] as string[] };
 		});
@@ -366,14 +423,13 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 				where: { id: os.id },
 				data: { status: PrismaOsStatus.CANCELADA, canceladoEm: new Date() },
 			});
-			await tx.osHistoricoStatus.create({
-				data: {
-					ordemServicoId: os.id,
-					statusAnterior: os.status,
-					statusNovo: PrismaOsStatus.CANCELADA,
-					observacao: motivo ?? "OS cancelada",
-					usuarioId,
-				},
+			await this.registrarTransicao(tx, {
+				ordemServicoId: os.id,
+				numero: os.numero,
+				statusAnterior: os.status,
+				statusNovo: PrismaOsStatus.CANCELADA,
+				observacao: motivo ?? "OS cancelada",
+				usuarioId: usuarioId ?? undefined,
 			});
 		});
 	}

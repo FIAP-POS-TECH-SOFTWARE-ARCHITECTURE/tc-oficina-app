@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, "dev/**"]
+    branches: [main, develop]
   workflow_dispatch:
 
 concurrency:
@@ -67,14 +67,3 @@ jobs:
       - name: Testes e2e
         run: npm run test:e2e
 
-  terraform-check:
-    name: Terraform fmt/validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.8"
-      - run: terraform -chdir=infra fmt -check
-      - run: terraform -chdir=infra init -backend=false
-      - run: terraform -chdir=infra validate

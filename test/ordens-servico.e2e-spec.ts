@@ -3,7 +3,7 @@ import { Role } from "@prisma/client";
 import request from "supertest";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { setupApp } from "./helpers/app-factory";
-import { bearer, loginAs } from "./helpers/auth";
+import { bearer, loginAs, signClienteToken } from "./helpers/auth";
 import { truncateAll } from "./helpers/db";
 import { CPF_VALIDOS, createCliente, createInsumo, createOS, createServico, createVeiculo, nextPlaca } from "./helpers/factories";
 
@@ -100,24 +100,39 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 		expect(res.status).toBe(403);
 	});
 
-	it("GET /os/publica/:numero?documento=… happy (sem token) → 200, sem dados sensíveis", async () => {
+	it("GET /os/acompanhamento/:numero com token do dono → 200, sem dados sensíveis", async () => {
 		const { cliente, veiculo } = await setupClienteVeiculo();
 		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
-		const res = await request(app.getHttpServer()).get(`/os/publica/${os.numero}?documento=${cliente.documento}`);
+		const res = await request(app.getHttpServer())
+			.get(`/os/acompanhamento/${os.numero}`)
+			.set("Authorization", bearer(signClienteToken(app, cliente.id)));
 		expect(res.status).toBe(200);
 		expect(res.body.data.numero).toBe(os.numero);
 		expect(res.body.data.cliente).not.toBe(cliente.nome);
 	});
 
-	it("GET /os/publica/:numero documento errado → 403", async () => {
+	it("GET /os/acompanhamento/:numero sem token → 401", async () => {
+		const { cliente, veiculo } = await setupClienteVeiculo();
+		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
+		const res = await request(app.getHttpServer()).get(`/os/acompanhamento/${os.numero}`);
+		expect(res.status).toBe(401);
+	});
+
+	it("GET /os/acompanhamento/:numero com token de outro cliente → 403", async () => {
 		const { cliente, veiculo } = await setupClienteVeiculo(CPF_VALIDOS[0]);
 		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
-		const res = await request(app.getHttpServer()).get(`/os/publica/${os.numero}?documento=${CPF_VALIDOS[1]}`);
+		const outro = await createCliente(app, atendenteToken, { documento: CPF_VALIDOS[1] });
+		const res = await request(app.getHttpServer())
+			.get(`/os/acompanhamento/${os.numero}`)
+			.set("Authorization", bearer(signClienteToken(app, outro.id)));
 		expect(res.status).toBe(403);
 	});
 
-	it("GET /os/publica/:numero número inexistente → 404", async () => {
-		const res = await request(app.getHttpServer()).get(`/os/publica/OS-9999-999999?documento=${CPF_VALIDOS[0]}`);
+	it("GET /os/acompanhamento/:numero número inexistente → 404", async () => {
+		const cliente = await createCliente(app, atendenteToken, { documento: CPF_VALIDOS[0] });
+		const res = await request(app.getHttpServer())
+			.get("/os/acompanhamento/OS-9999-999999")
+			.set("Authorization", bearer(signClienteToken(app, cliente.id)));
 		expect(res.status).toBe(404);
 	});
 
@@ -276,17 +291,32 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 		expect(Number(res.body.data.valorTotal)).toBe(200);
 	});
 
-	it("POST /os/:id/orcamento/aprovar documento errado → 403", async () => {
+	it("POST /os/:numero/orcamento/aprovar sem token → 401", async () => {
 		const { cliente, veiculo } = await setupClienteVeiculo(CPF_VALIDOS[0]);
 		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
-		const res = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: CPF_VALIDOS[1] });
+		const res = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({});
+		expect(res.status).toBe(401);
+	});
+
+	it("POST /os/:numero/orcamento/aprovar com token de outro cliente → 403", async () => {
+		const { cliente, veiculo } = await setupClienteVeiculo(CPF_VALIDOS[0]);
+		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
+		const outro = await createCliente(app, atendenteToken, { documento: CPF_VALIDOS[1] });
+		const res = await request(app.getHttpServer())
+			.post(`/os/${os.numero}/orcamento/aprovar`)
+			.set("Authorization", bearer(signClienteToken(app, outro.id)))
+			.send({});
 		expect(res.status).toBe(403);
 	});
 
-	it("POST /os/:id/orcamento/rejeitar documento errado → 403", async () => {
+	it("POST /os/:numero/orcamento/rejeitar com token de outro cliente → 403", async () => {
 		const { cliente, veiculo } = await setupClienteVeiculo(CPF_VALIDOS[0]);
 		const os = await createOS(app, atendenteToken, cliente.id, veiculo.id);
-		const res = await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/rejeitar`).send({ documento: CPF_VALIDOS[1] });
+		const outro = await createCliente(app, atendenteToken, { documento: CPF_VALIDOS[1] });
+		const res = await request(app.getHttpServer())
+			.post(`/os/${os.numero}/orcamento/rejeitar`)
+			.set("Authorization", bearer(signClienteToken(app, outro.id)))
+			.send({});
 		expect(res.status).toBe(403);
 	});
 
@@ -301,7 +331,10 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer())
+			.post(`/os/${os.numero}/orcamento/aprovar`)
+			.set("Authorization", bearer(signClienteToken(app, cliente.id)))
+			.send({});
 
 		const res = await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
@@ -322,7 +355,10 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer())
+			.post(`/os/${os.numero}/orcamento/aprovar`)
+			.set("Authorization", bearer(signClienteToken(app, cliente.id)))
+			.send({});
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 			.set("Authorization", bearer(mecanicoToken));
@@ -382,7 +418,10 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer())
+			.post(`/os/${os.numero}/orcamento/aprovar`)
+			.set("Authorization", bearer(signClienteToken(app, cliente.id)))
+			.send({});
 
 		const res = await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/cancelar`)
@@ -403,7 +442,10 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer())
+			.post(`/os/${os.numero}/orcamento/aprovar`)
+			.set("Authorization", bearer(signClienteToken(app, cliente.id)))
+			.send({});
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 			.set("Authorization", bearer(mecanicoToken));
@@ -427,7 +469,10 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 			.send({ servicoId: s.id, quantidade: 1 });
 		const itemId = add.body.data.itensServico[0].id;
 		await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-		await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento: cliente.documento });
+		await request(app.getHttpServer())
+			.post(`/os/${os.numero}/orcamento/aprovar`)
+			.set("Authorization", bearer(signClienteToken(app, cliente.id)))
+			.send({});
 		await request(app.getHttpServer())
 			.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 			.set("Authorization", bearer(mecanicoToken));
@@ -450,7 +495,7 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 			return createOS(app, atendenteToken, clienteId, v.body.data.id);
 		}
 
-		async function levarAteExecucao(os: { id: string; numero: string }, documento: string) {
+		async function levarAteExecucao(os: { id: string; numero: string }, clienteId: string) {
 			await request(app.getHttpServer()).post(`/os/${os.id}/diagnostico/iniciar`).set("Authorization", bearer(mecanicoToken));
 			const s = await createServico(app, adminToken);
 			const add = await request(app.getHttpServer())
@@ -459,12 +504,15 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 				.send({ servicoId: s.id, quantidade: 1 });
 			const itemId = add.body.data.itensServico[0].id;
 			await request(app.getHttpServer()).post(`/os/${os.id}/orcamento/gerar`).set("Authorization", bearer(mecanicoToken));
-			await request(app.getHttpServer()).post(`/os/${os.numero}/orcamento/aprovar`).send({ documento });
+			await request(app.getHttpServer())
+				.post(`/os/${os.numero}/orcamento/aprovar`)
+				.set("Authorization", bearer(signClienteToken(app, clienteId)))
+				.send({});
 			return itemId;
 		}
 
-		async function levarAteEntregue(os: { id: string; numero: string }, documento: string) {
-			const itemId = await levarAteExecucao(os, documento);
+		async function levarAteEntregue(os: { id: string; numero: string }, clienteId: string) {
+			const itemId = await levarAteExecucao(os, clienteId);
 			await request(app.getHttpServer())
 				.post(`/os/${os.id}/itens-servico/${itemId}/iniciar`)
 				.set("Authorization", bearer(mecanicoToken));
@@ -487,10 +535,10 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 				.set("Authorization", bearer(mecanicoToken));
 
 			const emExecucao = await criarOsComVeiculo(cliente.id);
-			await levarAteExecucao(emExecucao, cliente.documento);
+			await levarAteExecucao(emExecucao, cliente.id);
 
 			const entregue = await criarOsComVeiculo(cliente.id);
-			await levarAteEntregue(entregue, cliente.documento);
+			await levarAteEntregue(entregue, cliente.id);
 
 			const res = await request(app.getHttpServer()).get("/os").set("Authorization", bearer(atendenteToken));
 			expect(res.status).toBe(200);
@@ -503,7 +551,7 @@ describe("Ordens de Serviço (e2e) - endpoints individuais", () => {
 		it("filtro explícito ?status=ENTREGUE ainda retorna as entregues", async () => {
 			const { cliente, veiculo } = await setupClienteVeiculo();
 			const entregue = await createOS(app, atendenteToken, cliente.id, veiculo.id);
-			await levarAteEntregue(entregue, cliente.documento);
+			await levarAteEntregue(entregue, cliente.id);
 
 			const res = await request(app.getHttpServer()).get("/os?status=ENTREGUE").set("Authorization", bearer(atendenteToken));
 			expect(res.status).toBe(200);

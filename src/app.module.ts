@@ -6,10 +6,27 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { ModulesModule } from "./modules/modules.module";
 import { HealthModule } from "./modules/health/health.module";
 import { JwtModule } from "@nestjs/jwt";
+import { LoggerModule } from "nestjs-pino";
+import { randomUUID } from "node:crypto";
 
 @Module({
 	imports: [
 		ConfigModule.forRoot(),
+		LoggerModule.forRoot({
+			pinoHttp: {
+				genReqId: (req) => {
+					const headerRequestId = req.headers["x-request-id"];
+					if (Array.isArray(headerRequestId)) return headerRequestId[0] ?? randomUUID();
+					return headerRequestId ?? randomUUID();
+				},
+				customProps: (req) => ({ requestId: req.id }),
+				redact: ["req.headers.authorization"],
+				autoLogging: {
+					ignore: (req) => req.url?.startsWith("/health") ?? false,
+				},
+				transport: process.env.NODE_ENV !== "production" ? { target: "pino-pretty" } : undefined,
+			},
+		}),
 		JwtModule.register({
 			global: true,
 			secret: process.env.JWT_SECRET,

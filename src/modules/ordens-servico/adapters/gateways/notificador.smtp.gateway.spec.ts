@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import nodemailer from "nodemailer";
 import { OsStatus } from "../../domain/os-status";
 import { NotificacaoMudancaStatus } from "../../application/ports/notificador.gateway";
@@ -44,6 +45,24 @@ describe("SmtpNotificadorGateway", () => {
 		sendMail.mockRejectedValueOnce(new Error("smtp down"));
 		const sut = new SmtpNotificadorGateway();
 		await expect(sut.notificarMudancaStatus(notificacao)).resolves.toBeUndefined();
+	});
+
+	it("emite evento integration.error quando o envio falha", async () => {
+		const errorSpy = jest.spyOn(Logger.prototype, "error").mockImplementation(() => undefined);
+		sendMail.mockRejectedValueOnce(new Error("smtp down"));
+		const sut = new SmtpNotificadorGateway();
+
+		await sut.notificarMudancaStatus(notificacao);
+
+		expect(errorSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				event: "integration.error",
+				integration: "smtp",
+				osNumero: "OS-2026-000001",
+				error: "smtp down",
+			}),
+		);
+		errorSpy.mockRestore();
 	});
 
 	describe("configuração do transporte", () => {

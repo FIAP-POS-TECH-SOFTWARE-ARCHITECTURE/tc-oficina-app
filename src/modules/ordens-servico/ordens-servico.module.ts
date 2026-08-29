@@ -28,7 +28,7 @@ import { BuscarOsUseCase } from "./application/use-cases/buscar-os.use-case";
 import { CancelarItemServicoUseCase } from "./application/use-cases/cancelar-item-servico.use-case";
 import { CancelarOsUseCase } from "./application/use-cases/cancelar-os.use-case";
 import { ConcluirItemServicoUseCase } from "./application/use-cases/concluir-item-servico.use-case";
-import { ConsultaPublicaOsUseCase } from "./application/use-cases/consulta-publica-os.use-case";
+import { ConsultaAcompanhamentoOsUseCase } from "./application/use-cases/consulta-publica-os.use-case";
 import { CriarOsUseCase } from "./application/use-cases/criar-os.use-case";
 import { DesbloquearOsUseCase } from "./application/use-cases/desbloquear-os.use-case";
 import { EntregarOsUseCase } from "./application/use-cases/entregar-os.use-case";
@@ -49,7 +49,7 @@ const useCases = [
 	BuscarOsUseCase,
 	HistoricoOsUseCase,
 	TempoMedioServicosUseCase,
-	ConsultaPublicaOsUseCase,
+	ConsultaAcompanhamentoOsUseCase,
 	IniciarDiagnosticoUseCase,
 	AtualizarDiagnosticoUseCase,
 	AddItemServicoUseCase,

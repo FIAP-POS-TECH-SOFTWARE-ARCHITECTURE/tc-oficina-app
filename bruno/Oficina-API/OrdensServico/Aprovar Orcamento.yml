@@ -6,18 +6,18 @@ info:
 http:
   method: POST
   url: "{{url}}/os/{{osNumero}}/orcamento/aprovar"
+  auth: none
   body:
     type: json
     data: |-
       {
-          "documento": "{{documentoCliente}}",
           "observacao": "Pode iniciar o serviço"
         }
 
-runtime:
-  variables:
-    - name: documentoCliente
-      value: "52998224725"
+headers:
+  - name: Authorization
+    value: "Bearer {{clienteToken}}"
+    enabled: true
 
 settings:
   encodeUrl: true

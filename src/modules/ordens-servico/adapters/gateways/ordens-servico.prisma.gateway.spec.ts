@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { OsStatus as PrismaOsStatus, TipoMovimentoEstoque } from "@prisma/client";
 import { OsStatus } from "../../domain/os-status";
 import { OsDetalhe } from "../../application/ports/os-types";
@@ -5,8 +6,8 @@ import { OrdensServicoPrismaGateway } from "./ordens-servico.prisma.gateway";
 
 function baseTx() {
 	return {
-		ordemServico: { create: jest.fn(), update: jest.fn() },
-		osHistoricoStatus: { create: jest.fn() },
+		ordemServico: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn().mockResolvedValue({ numero: "OS-2026-000001" }) },
+		osHistoricoStatus: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
 		osItemServico: { update: jest.fn() },
 		insumo: { findUnique: jest.fn(), update: jest.fn() },
 		movimentoEstoque: { create: jest.fn() },
@@ -16,8 +17,10 @@ function baseTx() {
 describe("OrdensServicoPrismaGateway", () => {
 	let prisma: any;
 	let gateway: OrdensServicoPrismaGateway;
+	let logSpy: jest.SpyInstance;
 
 	beforeEach(() => {
+		logSpy = jest.spyOn(Logger.prototype, "log").mockImplementation(() => undefined);
 		prisma = {
 			ordemServico: {
 				create: jest.fn(),
@@ -33,6 +36,10 @@ describe("OrdensServicoPrismaGateway", () => {
 			$queryRaw: jest.fn(),
 		};
 		gateway = new OrdensServicoPrismaGateway(prisma);
+	});
+
+	afterEach(() => {
+		logSpy.mockRestore();
 	});
 
 	const osDetalhe = (overrides: Partial<OsDetalhe> = {}): OsDetalhe =>
@@ -133,6 +140,64 @@ describe("OrdensServicoPrismaGateway", () => {
 				usuarioId: "u1",
 			}),
 		});
+	});
+
+	it("transicionarComHistorico emite evento os.status.changed com payload do contrato", async () => {
+		const tx = baseTx();
+		prisma.$transaction.mockImplementationOnce(async (fn: any) => fn(tx));
+
+		await gateway.transicionarComHistorico({
+			id: "os1",
+			statusAnterior: OsStatus.FINALIZADA,
+			statusNovo: OsStatus.ENTREGUE,
+			usuarioId: "u1",
+		});
+
+		expect(logSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				event: "os.status.changed",
+				osId: "os1",
+				numero: "OS-2026-000001",
+				fromStatus: OsStatus.FINALIZADA,
+				toStatus: OsStatus.ENTREGUE,
+				durationMs: 0,
+			}),
+			"OrdensServicoPrismaGateway",
+		);
+	});
+
+	it("os.status.changed calcula durationMs a partir da linha de histórico anterior", async () => {
+		const tx = baseTx();
+		tx.osHistoricoStatus.findFirst.mockResolvedValueOnce({ createdAt: new Date(Date.now() - 60_000) });
+		prisma.$transaction.mockImplementationOnce(async (fn: any) => fn(tx));
+
+		await gateway.transicionarComHistorico({
+			id: "os1",
+			statusAnterior: OsStatus.RECEBIDA,
+			statusNovo: OsStatus.EM_DIAGNOSTICO,
+		});
+
+		const payload = logSpy.mock.calls.find((c) => c[0]?.event === "os.status.changed")?.[0];
+		expect(typeof payload.durationMs).toBe("number");
+		expect(payload.durationMs).toBeGreaterThanOrEqual(60_000);
+		expect(payload.durationMs).toBeLessThan(65_000);
+	});
+
+	it("executarCancelamento emite os.status.changed", async () => {
+		const tx = baseTx();
+		prisma.$transaction.mockImplementationOnce(async (fn: any) => fn(tx));
+
+		await gateway.executarCancelamento(osDetalhe({ status: OsStatus.BLOQUEADA }), "u1", null, false);
+
+		expect(logSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				event: "os.status.changed",
+				osId: "os1",
+				numero: "OS-2026-000001",
+				toStatus: PrismaOsStatus.CANCELADA,
+			}),
+			"OrdensServicoPrismaGateway",
+		);
 	});
 
 	it("executarAprovacao com estoque suficiente baixa estoque e vai a EM_EXECUCAO", async () => {

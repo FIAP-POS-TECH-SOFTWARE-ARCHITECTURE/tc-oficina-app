@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { IServiceResponse } from "semantic-response";
 import { SR } from "../../../../common/utils/service-response.util";
 import { gerarNumeroOs } from "../../domain/numero-os";
@@ -13,6 +13,8 @@ import { ORDENS_SERVICO_GATEWAY, type OrdensServicoGatewayPort } from "../ports/
 
 @Injectable()
 export class CriarOsUseCase {
+	private readonly logger = new Logger(CriarOsUseCase.name);
+
 	constructor(
 		@Inject(ORDENS_SERVICO_GATEWAY) private readonly gateway: OrdensServicoGatewayPort,
 		@Inject(CLIENTES_CONSULTA) private readonly clientes: ClientesConsultaPort,
@@ -38,6 +40,8 @@ export class CriarOsUseCase {
 			clienteId: os.clienteId,
 			veiculoId: os.veiculoId,
 		});
+		this.logger.log({ event: "os.created", osId: created.id, numero: os.numero }, CriarOsUseCase.name);
+
 		const detalhe = await this.gateway.buscarDetalhePorId(created.id);
 		return SR.created(detalhe, "OS criada");
 	}
