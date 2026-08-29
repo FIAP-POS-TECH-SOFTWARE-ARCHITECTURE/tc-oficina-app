@@ -38,6 +38,7 @@
 		"express-rate-limit": "^8.4.1",
 		"helmet": "^8.1.0",
 		"nestjs-pino": "^4.6.1",
+		"newrelic": "^14.3.9",
 		"nodemailer": "^9.0.3",
 		"pino": "^10.3.1",
 		"pino-http": "^11.0.0",
