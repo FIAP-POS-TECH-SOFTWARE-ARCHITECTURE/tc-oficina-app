@@ -1,9 +1,11 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { ApiEnvelopedResponse } from "../../../common/decorators/api-enveloped-response.decorator";
+import { ClienteAuth } from "../../../common/decorators/cliente-auth.decorator";
+import { CurrentCliente } from "../../../common/decorators/current-cliente.decorator";
+import type { AuthenticatedCliente } from "../../../common/decorators/current-cliente.decorator";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
-import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { Role } from "../../../common/enums/role.enum";
 import { AddItemInsumoDto, AddItemServicoDto } from "../dto/add-item.dto";
@@ -100,12 +102,13 @@ export class OrdensServicoController {
 		return this.tempoMedioServicos.execute(query.filtro);
 	}
 
-	@Public()
-	@Get("publica/:numero")
-	@ApiOperation({ summary: "Consulta pública da OS pelo número e documento do cliente" })
+	@ClienteAuth()
+	@Get("acompanhamento/:numero")
+	@ApiBearerAuth()
+	@ApiOperation({ summary: "Acompanhamento da OS pelo cliente autenticado (token via CPF)" })
 	@ApiEnvelopedResponse(OsConsultaPublicaResponseDto)
-	consultaPublica(@Param("numero") numero: string, @Query("documento") documento: string) {
-		return this.consultaPublicaOs.execute(numero, documento);
+	acompanhamento(@Param("numero") numero: string, @CurrentCliente() cliente: AuthenticatedCliente) {
+		return this.consultaPublicaOs.execute(numero, cliente.id);
 	}
 
 	@Get(":id")
@@ -196,20 +199,22 @@ export class OrdensServicoController {
 		return this.gerarOrcamentoUc.execute(id, user.id);
 	}
 
-	@Public()
+	@ClienteAuth()
 	@Post(":numero/orcamento/aprovar")
-	@ApiOperation({ summary: "Aprovação de orçamento pelo cliente (público)" })
+	@ApiBearerAuth()
+	@ApiOperation({ summary: "Aprovação de orçamento pelo cliente autenticado" })
 	@ApiEnvelopedResponse(OsResponseDto)
-	aprovar(@Param("numero") numero: string, @Body() dto: AprovacaoPublicaDto) {
-		return this.aprovarOrcamentoUc.execute(numero, dto);
+	aprovar(@Param("numero") numero: string, @CurrentCliente() cliente: AuthenticatedCliente, @Body() dto: AprovacaoPublicaDto) {
+		return this.aprovarOrcamentoUc.execute(numero, cliente.id, dto);
 	}
 
-	@Public()
+	@ClienteAuth()
 	@Post(":numero/orcamento/rejeitar")
-	@ApiOperation({ summary: "Rejeição de orçamento pelo cliente (público)" })
+	@ApiBearerAuth()
+	@ApiOperation({ summary: "Rejeição de orçamento pelo cliente autenticado" })
 	@ApiEnvelopedResponse(OsResponseDto)
-	rejeitar(@Param("numero") numero: string, @Body() dto: AprovacaoPublicaDto) {
-		return this.rejeitarOrcamentoUc.execute(numero, dto);
+	rejeitar(@Param("numero") numero: string, @CurrentCliente() cliente: AuthenticatedCliente, @Body() dto: AprovacaoPublicaDto) {
+		return this.rejeitarOrcamentoUc.execute(numero, cliente.id, dto);
 	}
 
 	@Post(":id/finalizar")

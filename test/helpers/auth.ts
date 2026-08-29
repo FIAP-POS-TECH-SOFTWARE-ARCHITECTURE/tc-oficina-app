@@ -1,4 +1,5 @@
 import { INestApplication } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { Role } from "@prisma/client";
 import * as argon2 from "argon2";
 import { randomUUID } from "node:crypto";
@@ -32,4 +33,12 @@ export async function loginAs(app: INestApplication, prisma: PrismaService, role
 
 export function bearer(token: string): string {
 	return `Bearer ${token}`;
+}
+
+/**
+ * Assina um JWT de cliente equivalente ao emitido pela Lambda de autenticação por CPF
+ * (`type: "cliente"`, `sub` = id do cliente), usando o secret real da aplicação de teste.
+ */
+export function signClienteToken(app: INestApplication, clienteId: string): string {
+	return app.get(JwtService).sign({ sub: clienteId, type: "cliente" });
 }

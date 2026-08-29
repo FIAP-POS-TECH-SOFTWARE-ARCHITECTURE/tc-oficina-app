@@ -12,7 +12,7 @@ const osMock = (overrides: any = {}) => ({
 	id: "os1",
 	numero: "OS-2026-000001",
 	status: OsStatus.AGUARDANDO_APROVACAO,
-	cliente: { nome: "Fulano", documento: "52998224725", email: null },
+	cliente: { id: "cliente-1", nome: "Fulano", documento: "52998224725", email: null },
 	...overrides,
 });
 
@@ -28,22 +28,22 @@ describe("RejeitarOrcamentoUseCase", () => {
 
 	it("404 quando OS não existe", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(null);
-		expect((await makeSut().execute("x", { documento: "52998224725" })).status).toBe(404);
+		expect((await makeSut().execute("x", "cliente-1", {})).status).toBe(404);
 	});
 
-	it("403 documento errado", async () => {
+	it("403 quando a OS não pertence ao cliente autenticado", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock());
-		expect((await makeSut().execute("OS-2026-000001", { documento: "00000000000" })).status).toBe(403);
+		expect((await makeSut().execute("OS-2026-000001", "outro-cliente", {})).status).toBe(403);
 	});
 
 	it("422 quando status inválido", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock({ status: OsStatus.EM_EXECUCAO }));
-		expect((await makeSut().execute("OS-2026-000001", { documento: "52998224725" })).status).toBe(422);
+		expect((await makeSut().execute("OS-2026-000001", "cliente-1", {})).status).toBe(422);
 	});
 
 	it("200 cancela com canceladoEm e notifica", async () => {
 		gateway.buscarPorNumero.mockResolvedValue(osMock());
-		const res = await makeSut().execute("OS-2026-000001", { documento: "529.982.247-25" });
+		const res = await makeSut().execute("OS-2026-000001", "cliente-1", {});
 		expect(res.status).toBe(200);
 		expect(gateway.transicionarComHistorico).toHaveBeenCalledWith(
 			expect.objectContaining({

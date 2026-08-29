@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { IServiceResponse } from "semantic-response";
 import { SR } from "../../../../common/utils/service-response.util";
-import { normalizeCpfOrCnpj } from "../../../../common/validators/cpf-cnpj.validator";
 import { canTransition } from "../../domain/fluxo-estados-os";
 import { OsStatus } from "../../domain/os-status";
 import { NOTIFICADOR, type NotificadorPort } from "../ports/notificador.gateway";
@@ -16,12 +15,11 @@ export class AprovarOrcamentoUseCase {
 		@Inject(NOTIFICADOR) private readonly notificador: NotificadorPort,
 	) {}
 
-	async execute(numero: string, dto: { documento: string; observacao?: string | null }): Promise<IServiceResponse<unknown>> {
+	async execute(numero: string, clienteId: string, dto: { observacao?: string | null }): Promise<IServiceResponse<unknown>> {
 		const os = await this.gateway.buscarPorNumero(numero);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
 
-		if (normalizeCpfOrCnpj(dto.documento) !== os.cliente.documento)
-			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
+		if (os.cliente.id !== clienteId) return SR.forbidden(undefined, "OS não pertence ao cliente autenticado");
 
 		if (!canTransition(os.status, "aprovar_orcamento"))
 			return SR.unprocessableEntity(undefined, `Não é possível aprovar a OS no status ${os.status}`);

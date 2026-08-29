@@ -44,7 +44,7 @@ export interface OsChaveOrdenacao {
 
 export interface OsDetalhe extends OsResumo {
 	valorTotal: unknown;
-	cliente: { nome: string; documento: string; email: string | null; [extra: string]: unknown };
+	cliente: { id: string; nome: string; documento: string; email: string | null; [extra: string]: unknown };
 	veiculo: { placa: string; marca: string; modelo: string; [extra: string]: unknown };
 	itensServico: OsItemServicoApp[];
 	itensInsumo: OsItemInsumoApp[];

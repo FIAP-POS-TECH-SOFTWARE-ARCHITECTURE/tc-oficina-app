@@ -1,19 +1,17 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { IServiceResponse } from "semantic-response";
 import { SR } from "../../../../common/utils/service-response.util";
-import { normalizeCpfOrCnpj } from "../../../../common/validators/cpf-cnpj.validator";
 import { ORDENS_SERVICO_GATEWAY, type OrdensServicoGatewayPort } from "../ports/ordens-servico.gateway";
 
 @Injectable()
 export class ConsultaPublicaOsUseCase {
 	constructor(@Inject(ORDENS_SERVICO_GATEWAY) private readonly gateway: OrdensServicoGatewayPort) {}
 
-	async execute(numero: string, documento: string): Promise<IServiceResponse<unknown>> {
+	async execute(numero: string, clienteId: string): Promise<IServiceResponse<unknown>> {
 		const os = await this.gateway.buscarPorNumero(numero);
 		if (!os) return SR.notFound(undefined, "OS não encontrada");
 
-		if (normalizeCpfOrCnpj(documento) !== os.cliente.documento)
-			return SR.forbidden(undefined, "Documento não confere com o cliente da OS");
+		if (os.cliente.id !== clienteId) return SR.forbidden(undefined, "OS não pertence ao cliente autenticado");
 
 		const nomeMascarado = this.mascararNome(os.cliente.nome);
 
