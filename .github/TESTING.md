@@ -2,7 +2,7 @@
 
 Roteiro completo para validar o fluxo de CD (build da imagem → push no ECR → migração do banco → deploy no EKS → smoke test) a partir da sua máquina, antes e depois de disparar o pipeline de verdade.
 
-> **Dependência:** a infraestrutura precisa estar de pé (siga [infra/TESTING.md](../infra/TESTING.md) até o passo 6, cluster com nodes `Ready`, secret `oficina-secrets` criado e manifestos aplicados). Sem isso, só os passos 2 e 3 funcionam.
+> **Dependência:** a infraestrutura precisa estar de pé (cluster com nodes `Ready`, secret `oficina-secrets` criado e manifestos aplicados); o provisionamento fica nos repositórios `tc-oficina-infra-k8s` (VPC/EKS/ECR) e `tc-oficina-infra-db` (RDS). Sem isso, só os passos 2 e 3 funcionam.
 
 ## Pré-requisitos
 
@@ -157,7 +157,7 @@ kubectl get deployment oficina-api -o jsonpath='{.spec.template.spec.containers[
 
 ## 8. Testar o runbook de credencial expirada (opcional)
 
-Com a sessão do lab encerrada, re-rodar o workflow (`gh run rerun <id>`): os jobs `docker`/`deploy` falham com `ExpiredToken`/`UnrecognizedClientException` no log. Seguir o runbook do [infra/README.md](../infra/README.md): reiniciar o lab, rodar o script de refresh e `gh run rerun --failed`, deve passar.
+Com a sessão do lab encerrada, re-rodar o workflow (`gh run rerun <id>`): os jobs `docker`/`deploy` falham com `ExpiredToken`/`UnrecognizedClientException` no log. Seguir o runbook do repositório `tc-oficina-infra-k8s`: reiniciar o lab, rodar o script de refresh e `gh run rerun --failed`, deve passar.
 
 ## 9. Limpeza
 
@@ -166,7 +166,7 @@ kubectl delete job oficina-db-migrate --ignore-not-found
 aws ecr batch-delete-image --repository-name oficina-api --region us-east-1 --image-ids imageTag=teste-local
 ```
 
-Teardown completo da infra: passo 9 do [infra/TESTING.md](../infra/TESTING.md).
+Teardown completo da infra: ver os repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`.
 
 ## Checklist final
 
@@ -183,11 +183,11 @@ Teardown completo da infra: passo 9 do [infra/TESTING.md](../infra/TESTING.md).
 
 | Sintoma                                           | Causa provável                                    | Ação                                                                       |
 | ------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
-| `ExpiredToken` / `UnrecognizedClientException`    | Sessão do lab expirou                             | Runbook do [infra/README.md](../infra/README.md): refresh + `gh run rerun` |
+| `ExpiredToken` / `UnrecognizedClientException`    | Sessão do lab expirou                             | Runbook do repositório `tc-oficina-infra-k8s`: refresh + `gh run rerun` |
 | `no basic auth credentials` no push               | Login do ECR expirou (12h)                        | Repetir o `docker login` do passo 4                                        |
 | Job de migração em `Error`/`BackoffLimitExceeded` | `DATABASE_URL` errada no secret ou RDS fora do ar | `kubectl logs job/oficina-db-migrate`; conferir secret e RDS               |
 | `kubectl wait` estoura timeout                    | Imagem grande (pull lento) ou migração travada    | `kubectl describe job oficina-db-migrate` e logs do pod                    |
 | Smoke test falha com DNS                          | ELB recém-criado ainda propagando                 | Aguardar ~2-3 min e repetir o curl                                         |
 | `docker`/`deploy` skipped num push na main        | Evento não é `push` (ex.: rerun de PR antigo)     | Conferir `github.event_name` no log do run                                 |
 | Rollout trava com `ImagePullBackOff`              | Tag inexistente no ECR ou repo errado             | `aws ecr describe-images`; conferir output `image` do job docker           |
-| Pod `0/1` com erro Prisma `URL must start with postgresql://` | Secret `oficina-secrets` com valores placeholder (sobrescrito ou criado errado) | `kubectl describe secret oficina-secrets` (todas as chaves com 9 bytes = `CHANGE_ME`); recriar o secret (passo 6 do [infra/TESTING.md](../infra/TESTING.md)) |
+| Pod `0/1` com erro Prisma `URL must start with postgresql://` | Secret `oficina-secrets` com valores placeholder (sobrescrito ou criado errado) | `kubectl describe secret oficina-secrets` (todas as chaves com 9 bytes = `CHANGE_ME`); recriar o secret (ver repositório `tc-oficina-infra-k8s`) |

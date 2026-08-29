@@ -85,13 +85,13 @@ receba um EXTERNAL-IP acessível.
 | SMTP | Mailhog (`k8s/local/mailhog.yaml`) | Provedor real; `SMTP_HOST` sobrescrito no ConfigMap |
 | Imagem | `oficina-api:local` construída no minikube | Imagem do ECR; a pipeline injeta repo+tag no overlay (placeholders `ci-placeholder-image`/`ci-placeholder-tag`) antes do `kubectl apply -k` |
 | Service | `minikube service` / `tunnel` | `LoadBalancer` com ELB real |
-| Métricas p/ HPA | addon `metrics-server` | metrics-server **não vem por padrão no EKS**: instalar manualmente (ver [infra/TESTING.md](../infra/TESTING.md)) |
+| Métricas p/ HPA | addon `metrics-server` | metrics-server **não vem por padrão no EKS**: instalar manualmente (ver repositório `tc-oficina-infra-k8s`) |
 
 ## Troubleshooting
 
 - **HPA `TARGETS: <unknown>`** → metrics-server ausente ou ainda coletando.
   - Minikube: habilitar o addon (`minikube addons enable metrics-server`) e aguardar ~30s.
-  - EKS: metrics-server **não vem instalado por padrão**, ver seção "Metrics-server (pré-requisito do HPA)" em [infra/TESTING.md](../infra/TESTING.md).
+  - EKS: metrics-server **não vem instalado por padrão**, ver a documentação do repositório `tc-oficina-infra-k8s`.
   - O HPA exige `resources.requests.cpu` no Deployment (já configurado).
 - **Pod em `ImagePullBackOff`** → a imagem `oficina-api:local` não existe no minikube. Rode o
   `minikube image build` (passo 1). `imagePullPolicy: IfNotPresent` impede busca em registry.
