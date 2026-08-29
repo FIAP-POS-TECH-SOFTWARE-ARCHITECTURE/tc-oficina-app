@@ -58,7 +58,7 @@ describe("SmtpNotificadorGateway", () => {
 			expect.objectContaining({
 				event: "integration.error",
 				integration: "smtp",
-				osId: "OS-2026-000001",
+				osNumero: "OS-2026-000001",
 				error: "smtp down",
 			}),
 		);

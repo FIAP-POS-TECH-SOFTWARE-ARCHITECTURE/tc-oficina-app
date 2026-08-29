@@ -202,6 +202,10 @@ export class OrdensServicoPrismaGateway implements OrdensServicoGatewayPort {
 			},
 		});
 
+		// Emitido dentro da transação: em 4 dos 5 chamadores é a última instrução
+		// antes do commit, então a janela pra um rollback posterior é mínima. O
+		// trade-off aceito é um evento eventualmente órfão em caso de rollback,
+		// preferível a perder o evento se o log falhasse fora da transação.
 		this.logger.log(
 			{
 				event: "os.status.changed",

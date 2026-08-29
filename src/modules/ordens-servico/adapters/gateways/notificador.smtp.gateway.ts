@@ -43,7 +43,7 @@ export class SmtpNotificadorGateway implements NotificadorPort {
 			this.logger.error({
 				event: "integration.error",
 				integration: "smtp",
-				osId: n.numeroOs,
+				osNumero: n.numeroOs,
 				error: (error as Error).message,
 			});
 		}
