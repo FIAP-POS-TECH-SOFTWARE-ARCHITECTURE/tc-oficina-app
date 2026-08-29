@@ -2,7 +2,7 @@ import { NestFactory, Reflector } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import morgan from "morgan";
+import { Logger } from "nestjs-pino";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
@@ -17,7 +17,8 @@ async function bootstrap() {
 	if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET não definido no .env");
 	if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL não definido no .env");
 
-	const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create(AppModule, { bufferLogs: true });
+	app.useLogger(app.get(Logger));
 
 	app.enableCors();
 	app.use(helmet());
@@ -49,8 +50,6 @@ async function bootstrap() {
 	app.useGlobalInterceptors(new ResponseInterceptor());
 	app.useGlobalFilters(new AllExceptionsFilter());
 
-	app.use(morgan("dev"));
-
 	const config = new DocumentBuilder()
 		.setTitle("Oficina API")
 		.setDescription("API para Gerenciamento de Oficina Mecânica")
@@ -62,9 +61,9 @@ async function bootstrap() {
 
 	await app.listen(process.env.PORT);
 
-	console.log(`🚀 Aplicação rodando em: http://localhost:${process.env.PORT}`);
-
-	console.log(`📚 Documentação disponível em: http://localhost:${process.env.PORT}/docs`);
+	const logger = app.get(Logger);
+	logger.log(`🚀 Aplicação rodando em: http://localhost:${process.env.PORT}`);
+	logger.log(`📚 Documentação disponível em: http://localhost:${process.env.PORT}/docs`);
 }
 
 void bootstrap();
