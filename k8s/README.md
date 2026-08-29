@@ -3,7 +3,7 @@
 Manifestos de deploy da aplicação, organizados com **Kustomize**: `k8s/base/` tem os
 recursos comuns e `k8s/overlays/<env>/` os ajustes por ambiente (`homolog`, `prod`).
 `k8s/local/` contém dependências que **só existem para validação local no minikube**:
-em produção o banco é o RDS provisionado via Terraform (`infra/`) e o SMTP é um
+em produção o banco é o RDS provisionado via Terraform no repositório `tc-oficina-infra-db` e o SMTP é um
 provedor real.
 
 ## Arquivos
@@ -14,7 +14,7 @@ provedor real.
 | `base/app-deployment.yaml` | Deployment `oficina-api` | 2 réplicas, probes, `resources.requests/limits`, env do agente New Relic (`NODE_OPTIONS=-r newrelic`) |
 | `base/app-service.yaml` | Service `oficina-api` | `LoadBalancer` (EKS) / `minikube service` (local) |
 | `base/app-hpa.yaml` | HPA `oficina-api-hpa` | CPU 70%, 2→10 réplicas (`autoscaling/v2`) |
-| `base/db-migrate-job.yaml` | Job `oficina-api-migrate` | Migração Prisma; **fora do kustomize**, aplicado pelo pipeline por ambiente |
+| `base/db-migrate-job.yaml` | Job `oficina-db-migrate` | Migração Prisma; **fora do kustomize**, aplicado pelo pipeline por ambiente |
 | `base/kustomization.yaml` | — | Lista os recursos da base (sem o Job) |
 | `overlays/homolog/kustomization.yaml` | — | `namespace: homolog`, `NEW_RELIC_APP_NAME=oficina-api-homolog` |
 | `overlays/prod/kustomization.yaml` | — | `namespace: prod`, `NEW_RELIC_APP_NAME=oficina-api-prod` |
@@ -83,7 +83,7 @@ receba um EXTERNAL-IP acessível.
 |---|---|---|
 | Banco | `k8s/local/postgres.yaml` (Service `postgres`) | RDS via Terraform; `DATABASE_URL` no Secret aponta para o endpoint do RDS |
 | SMTP | Mailhog (`k8s/local/mailhog.yaml`) | Provedor real; `SMTP_HOST` sobrescrito no ConfigMap |
-| Imagem | `oficina-api:local` construída no minikube | Imagem do ECR; pipeline faz `kubectl set image` |
+| Imagem | `oficina-api:local` construída no minikube | Imagem do ECR; a pipeline injeta repo+tag no overlay (placeholders `ci-placeholder-image`/`ci-placeholder-tag`) antes do `kubectl apply -k` |
 | Service | `minikube service` / `tunnel` | `LoadBalancer` com ELB real |
 | Métricas p/ HPA | addon `metrics-server` | metrics-server **não vem por padrão no EKS**: instalar manualmente (ver [infra/TESTING.md](../infra/TESTING.md)) |
 

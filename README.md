@@ -93,18 +93,19 @@ Recursos completos, trade-offs do AWS Academy e comandos: [tc-oficina-infra-k8s]
 
 ### 2.3 Fluxo de deploy (CI/CD)
 
-Workflow único [.github/workflows/ci.yml](.github/workflows/ci.yml), estratégia de branches **GitHub Flow** (main implantável + feature branches + PRs):
+Dois workflows: [.github/workflows/ci.yml](.github/workflows/ci.yml) (roda em PRs para `main`/`develop`) e [.github/workflows/cd.yml](.github/workflows/cd.yml) (build + deploy, dispara em `push` para `develop`/`main` e por `workflow_dispatch`). Estratégia de branches: `develop` → homolog, `main` → prod, feature branches + PRs.
 
 ```mermaid
 flowchart LR
-    PUSH["push / PR"] --> Q["quality<br/>lint · build · testes unitários"]
-    PUSH --> E2E["e2e<br/>Testcontainers (Postgres real)"]
-    Q --> DOCKER["docker<br/>build + push ECR (tag = SHA)"]
-    E2E --> DOCKER
-    DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -k k8s/overlays/&lt;env&gt;<br/>kubectl set image<br/>smoke test /health"]
+    PR["PR → main/develop"] --> Q["ci: quality<br/>lint · build · testes unitários"]
+    PR --> E2E["ci: e2e<br/>Testcontainers (Postgres real)"]
+    MERGE["push develop/main"] --> DOCKER["cd: build + push ECR (tag = env-SHA)"]
+    DOCKER --> MIG["cd: migração RDS (Job prisma migrate deploy)"]
+    MIG --> APPLY["cd: kubectl apply -k k8s/overlays/&lt;env&gt;<br/>(imagem injetada no overlay)"]
+    APPLY --> SMOKE["cd: rollout status + smoke test /health"]
 ```
 
-O `terraform apply` é **manual e documentado nos repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. Esta pipeline (app) faz o deploy da aplicação (migração RDS, kubectl apply, set image).
+O `terraform apply` é **manual e documentado nos repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. Esta pipeline (app) faz o deploy da aplicação (migração RDS, kubectl apply do overlay já com a imagem do build).
 
 ## 3. Como executar
 
@@ -206,8 +207,8 @@ Mapeamento dos requisitos obrigatórios para os endpoints reais (os nomes de rot
 | Requisito                                                                                                                                    | Endpoint                                                                                                                                                                                       | Auth                                         |
 | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | Abertura de OS (retorna id único, número `OS-<ano>-<seq>`)                                                                                   | `POST /os`                                                                                                                                                                                     | JWT (atendente/admin)                        |
-| Consulta de status                                                                                                                           | `GET /os/publica/:numero?documento=` (sem dados sensíveis) · `GET /os/:id`                                                                                                                     | Pública · JWT                                |
-| Webhook aprovação/recusa de orçamento                                                                                                        | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Pública (validação por documento do cliente) |
+| Consulta de status                                                                                                                           | `GET /os/acompanhamento/:numero` (sem dados sensíveis) · `GET /os/:id`                                                                                                                         | Token de cliente (CPF) · JWT                 |
+| Webhook aprovação/recusa de orçamento                                                                                                        | `POST /os/:numero/orcamento/aprovar` · `POST /os/:numero/orcamento/rejeitar`                                                                                                                   | Token de cliente (CPF)                       |
 | Listagem ordenada (Execução > Aguard. Aprovação > Diagnóstico > Recebida; antigas primeiro; Finalizada/Entregue ocultas por exclusão lógica) | `GET /os`                                                                                                                                                                                      | JWT                                          |
 | Atualização de status com notificação por e-mail                                                                                             | `POST /os/:id/diagnostico/iniciar`, `POST /os/:id/orcamento/gerar`, `POST /os/:id/finalizar`, `POST /os/:id/entregar` etc.; cada transição dispara e-mail via `NotificadorPort` (SMTP/Mailhog) | JWT                                          |
 

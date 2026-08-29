@@ -23,19 +23,22 @@ gh secret list                # 3 secrets AWS_* com data de hoje
 
 ## 2. Validar o workflow localmente (sem AWS)
 
+CI e CD são workflows separados: `ci.yml` roda em pull requests para `[main, develop]` (jobs `quality` e `e2e`); `cd.yml` é o de build + deploy, disparado por `push` em `[develop, main]` e por `workflow_dispatch`.
+
 ```powershell
 npx --yes yaml-lint .github/workflows/ci.yml
+npx --yes yaml-lint .github/workflows/cd.yml
 ```
 
-**Esperado:** `YAML Lint successful.`
+**Esperado:** `YAML Lint successful.` nos dois.
 
-Conferir a lógica de gate do deploy (`push` na `main` ou disparo manual):
+Conferir os triggers e a escolha de ambiente por branch:
 
 ```powershell
-Select-String -Path .github/workflows/ci.yml -Pattern "if: github.event_name"
+Select-String -Path .github/workflows/cd.yml -Pattern "branches:|github.ref_name|environment="
 ```
 
-**Esperado:** `if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && github.event_name == 'push')` no job `docker`. O job `deploy` herda o gate via `needs: docker`.
+**Esperado:** `branches: [develop, main]`; o step "Definir ambiente pela branch" mapeia `main` → `prod` e qualquer outra (`develop`) → `homolog`. Não há job com gate `if:` — o próprio trigger do `cd.yml` já restringe às duas branches.
 
 ## 3. Validar o Terraform check localmente
 
@@ -86,10 +89,15 @@ kubectl logs job/oficina-db-migrate -n $env
 **Esperado:** Job `Complete`; logs mostram `No pending migrations` ou a lista de migrações aplicadas.
 
 ```powershell
-# 5.2 Manifestos + imagem nova
+# 5.2 Manifestos + imagem nova (a pipeline injeta a imagem no overlay via sed
+#     nos placeholders ci-placeholder-image / ci-placeholder-tag antes do apply)
+$repo, $tag = $image -split ":", 2
+(Get-Content k8s/overlays/$env/kustomization.yaml -Raw) `
+  -replace "ci-placeholder-image", $repo -replace "ci-placeholder-tag", $tag `
+  | Set-Content k8s/overlays/$env/kustomization.yaml
 kubectl apply -k k8s/overlays/$env
-kubectl set image deployment/oficina-api oficina-api=$image -n $env
 kubectl rollout status deployment/oficina-api -n $env --timeout=300s
+git checkout k8s/overlays/$env/kustomization.yaml   # desfaz a substituição local
 ```
 
 **Esperado:** `deployment "oficina-api" successfully rolled out`.
@@ -102,19 +110,18 @@ curl.exe -fsS "http://$url/health"
 
 **Esperado:** resposta 200 do `/health`. O ELB pode levar ~2-3 min para ficar resolvível após o primeiro apply. Repetir o curl se der falha de DNS.
 
-## 6. Testar o gate: branch dev NÃO faz deploy
+## 6. Testar o gate: branch de feature NÃO dispara CD
 
 ```powershell
-git push origin HEAD    # push desta branch dev/**
-gh run watch --exit-status
-gh run view --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
+git push origin HEAD    # push de uma branch feature/** ou fix/** qualquer
+gh run list --workflow cd.yml --branch (git branch --show-current)
 ```
 
-**Esperado:** `quality`, `e2e` e `terraform-check` concluídos; `docker` e `deploy` como `skipped`. Esse é o teste negativo do gate.
+**Esperado:** nenhum run do `cd.yml` — o trigger é só `push` em `[develop, main]`. Abrir um PR dessa branch para `develop`/`main` dispara o `ci.yml` (`quality` + `e2e`), nunca o CD. Esse é o teste negativo: só `develop` e `main` fazem deploy (homolog e prod, respectivamente).
 
 ## 6.5. Testar o caminho de produção SEM merge (workflow_dispatch)
 
-O trigger `workflow_dispatch` roda a pipeline completa (build → ECR → migração → deploy → smoke) a partir de qualquer branch, sem tocar na main.
+O trigger `workflow_dispatch` do `cd.yml` roda a pipeline completa (build → ECR → migração → deploy → smoke) a partir de qualquer branch. O ambiente vem da branch escolhida (`main` → prod, qualquer outra → homolog).
 
 **Antes de disparar (checklist local):**
 
@@ -128,11 +135,11 @@ git push origin HEAD                     # branch atualizada no remoto (o dispat
 **Disparar e acompanhar:**
 
 ```powershell
-gh workflow run ci.yml --ref dev/lucas/cd-ecr-eks
+gh workflow run cd.yml --ref develop
 gh run watch --exit-status
 ```
 
-**Esperado:** todos os jobs rodam (nenhum `skipped`); deployment termina com a imagem `:<sha do HEAD da branch>`; `/health` responde 200. Também dá pra disparar pela interface: **Actions → CI/CD → Run workflow**, escolhendo a branch.
+**Esperado:** o job `deploy` roda inteiro; deployment termina com a imagem `:<env>-<sha do HEAD da branch>`; `/health` responde 200. Também dá pra disparar pela interface: **Actions → CD → Run workflow**, escolhendo a branch.
 
 ## 7. Disparo real: push na main
 
@@ -144,7 +151,7 @@ gh pr create --base main --title "..." --body "..."
 gh run watch --exit-status
 ```
 
-**Esperado:** todos os jobs verdes na ordem `quality`+`e2e` → `docker` → `deploy`. Depois:
+**Esperado:** `ci.yml` (`quality` + `e2e`) verde no PR; após o merge na `main`, o `cd.yml` roda o job `deploy` (build → push ECR → migração → apply → rollout → smoke). Depois:
 
 ```powershell
 kubectl get deployment oficina-api -o jsonpath='{.spec.template.spec.containers[0].image}'
@@ -167,13 +174,13 @@ Teardown completo da infra: passo 9 do [infra/TESTING.md](../infra/TESTING.md).
 
 ## Checklist final
 
-- [ ] `yaml-lint` do workflow passa
+- [ ] `yaml-lint` de `ci.yml` e `cd.yml` passa
 - [ ] `terraform fmt -check` + `validate` passam (job `terraform-check` vai passar no CI)
 - [ ] Build + push manual chegou no ECR
 - [ ] Job de migração completa e loga migrações (ou `No pending migrations`)
 - [ ] `rollout status` OK com a imagem nova; `/health` responde 200 via ELB
-- [ ] Push em branch `dev/**`: `docker` e `deploy` aparecem como `skipped`
-- [ ] Push na main (via PR): pipeline inteiro verde, deployment rodando a imagem `:<sha>`
+- [ ] Push em branch de feature: `cd.yml` não dispara (só `develop`/`main`)
+- [ ] Push na `develop`/`main`: `cd.yml` verde, deployment rodando a imagem `:<env>-<sha>`
 - [ ] Runbook de credencial expirada funciona (`gh run rerun --failed` após refresh)
 
 ## Problemas comuns
