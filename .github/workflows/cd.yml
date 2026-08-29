@@ -77,7 +77,7 @@ jobs:
           ENV=${{ steps.env.outputs.environment }}
           URL=""
           for i in $(seq 1 30); do
-            HOST=$(kubectl get svc oficina-api -n "$ENV" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            HOST=$(kubectl get svc oficina-api -n "$ENV" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' || true)
             if [ -n "$HOST" ] && curl -fsS "http://$HOST/health" > /dev/null; then
               URL="$HOST"
               break

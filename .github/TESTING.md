@@ -40,16 +40,12 @@ Select-String -Path .github/workflows/cd.yml -Pattern "branches:|github.ref_name
 
 **Esperado:** `branches: [develop, main]`; o step "Definir ambiente pela branch" mapeia `main` → `prod` e qualquer outra (`develop`) → `homolog`. Não há job com gate `if:` — o próprio trigger do `cd.yml` já restringe às duas branches.
 
-## 3. Validar o Terraform check localmente
+## 3. Terraform
 
-Mesmos comandos que o job `terraform-check` roda:
-
-```powershell
-terraform -chdir=infra fmt -check     # sem saída = ok
-terraform -chdir=infra validate      # Success! The configuration is valid.
-```
-
-> Se o `validate` reclamar de state/S3, é só o cache local de backend: no CI o job roda `init -backend=false` num checkout limpo e não toca o S3.
+Este repositório não tem mais Terraform: a infra foi extraída para `tc-oficina-infra-k8s`
+(VPC/EKS/ECR) e `tc-oficina-infra-db` (RDS), cada um com seu próprio CI de
+`fmt -check` + `validate`. O `cd.yml` daqui só consome os contratos via SSM
+(`/oficina/<env>/database-url`, `/oficina/<env>/jwt-secret`).
 
 ## 4. Simular o job docker (build + push manual no ECR)
 
@@ -175,7 +171,7 @@ Teardown completo da infra: passo 9 do [infra/TESTING.md](../infra/TESTING.md).
 ## Checklist final
 
 - [ ] `yaml-lint` de `ci.yml` e `cd.yml` passa
-- [ ] `terraform fmt -check` + `validate` passam (job `terraform-check` vai passar no CI)
+- [ ] Contratos SSM (`/oficina/<env>/database-url`, `/oficina/<env>/jwt-secret`) existem
 - [ ] Build + push manual chegou no ECR
 - [ ] Job de migração completa e loga migrações (ou `No pending migrations`)
 - [ ] `rollout status` OK com a imagem nova; `/health` responde 200 via ELB
