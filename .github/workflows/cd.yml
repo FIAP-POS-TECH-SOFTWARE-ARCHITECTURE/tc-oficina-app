@@ -62,22 +62,27 @@ jobs:
           sed "s|PLACEHOLDER_IMAGE|${{ steps.meta.outputs.image }}|" k8s/base/db-migrate-job.yaml | kubectl apply -n "$ENV" -f -
           kubectl wait --for=condition=complete job/oficina-db-migrate -n "$ENV" --timeout=300s
 
-      - name: Aplicar manifests (kustomize)
-        run: kubectl apply -k k8s/overlays/${{ steps.env.outputs.environment }}
-
-      - name: Atualizar imagem
+      - name: Aplicar manifests (kustomize) com a imagem do build
         run: |
           ENV=${{ steps.env.outputs.environment }}
-          kubectl set image deployment/oficina-api oficina-api="${{ steps.meta.outputs.image }}" -n "$ENV"
+          IMAGE="${{ steps.meta.outputs.image }}"
+          REPO="${IMAGE%:*}"
+          TAG="${IMAGE##*:}"
+          sed -i "s|ci-placeholder-image|$REPO|; s|ci-placeholder-tag|$TAG|" "k8s/overlays/$ENV/kustomization.yaml"
+          kubectl apply -k "k8s/overlays/$ENV"
           kubectl rollout status deployment/oficina-api -n "$ENV" --timeout=300s
 
       - name: Smoke test e publicação do hostname
         run: |
           ENV=${{ steps.env.outputs.environment }}
-          URL=$(kubectl get svc oficina-api -n "$ENV" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          URL=""
           for i in $(seq 1 30); do
-            if curl -fsS "http://$URL/health" > /dev/null; then break; fi
-            [ "$i" = "30" ] && { echo "health check falhou"; exit 1; }
+            HOST=$(kubectl get svc oficina-api -n "$ENV" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "$HOST" ] && curl -fsS "http://$HOST/health" > /dev/null; then
+              URL="$HOST"
+              break
+            fi
+            [ "$i" = "30" ] && { echo "health check falhou (hostname='$HOST')"; exit 1; }
             sleep 10
           done
           aws ssm put-parameter --name "/oficina/$ENV/app-lb-hostname" \
