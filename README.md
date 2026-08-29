@@ -101,7 +101,7 @@ flowchart LR
     PUSH --> E2E["e2e<br/>Testcontainers (Postgres real)"]
     Q --> DOCKER["docker<br/>build + push ECR (tag = SHA)"]
     E2E --> DOCKER
-    DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -f k8s/<br/>kubectl set image<br/>smoke test /health"]
+    DOCKER -->|"só na main"| DEPLOY["deploy<br/>migração RDS (prisma migrate deploy)<br/>kubectl apply -k k8s/overlays/&lt;env&gt;<br/>kubectl set image<br/>smoke test /health"]
 ```
 
 O `terraform apply` é **manual e documentado nos repositórios `tc-oficina-infra-k8s` e `tc-oficina-infra-db`**: as credenciais do AWS Academy expiram por sessão, e um apply automático quebraria a pipeline de forma intermitente. Esta pipeline (app) faz o deploy da aplicação (migração RDS, kubectl apply, set image).
@@ -147,14 +147,14 @@ npm run start:dev
 
 ### 3.2 Kubernetes local (minikube)
 
-Os manifestos de `k8s/` (Deployment com probes e resources, Service LoadBalancer, ConfigMap, Secret via `kubectl create secret`, HPA 2→10 réplicas) sobem tanto no minikube quanto no EKS. Resumo minikube:
+Os manifestos de `k8s/` são organizados com Kustomize (`k8s/base/` + `k8s/overlays/{homolog,prod}/`): Deployment com probes e resources, Service LoadBalancer, ConfigMap, Secret via `kubectl create secret`, HPA 2→10 réplicas. Sobem tanto no minikube quanto no EKS. Resumo minikube:
 
 ```bash
 minikube start && minikube addons enable metrics-server
 minikube image build -t oficina-api:local .
 kubectl apply -f k8s/local/        # Postgres + Mailhog (só local)
 kubectl create secret generic oficina-secrets --from-literal=...   # ver k8s/README.md
-kubectl apply -f k8s/
+kubectl apply -k k8s/base
 ```
 
 Passo a passo completo, acesso à aplicação, troubleshooting e teste de carga: [k8s/README.md](k8s/README.md).
