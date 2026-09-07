@@ -1,0 +1,274 @@
+{
+  "name": "Oficina — Plataforma",
+  "description": "Saúde técnica: latência das APIs, taxa de erro HTTP, CPU/memória dos pods, escalabilidade (HPA) e uptime. Uma página por ambiente. Fontes: agente APM Node (Transaction), nri-bundle/kube-state-metrics (K8s*Sample) e Synthetics (SyntheticCheck).",
+  "permissions": "PUBLIC_READ_WRITE",
+  "pages": [
+    {
+      "name": "Homolog",
+      "description": "Ambiente de homologação (appName oficina-api-homolog / namespace homolog).",
+      "widgets": [
+        {
+          "title": "Latência da API — p50 / p95 / p99 (segundos)",
+          "layout": { "column": 1, "row": 1, "width": 8, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'oficina-api-homolog' TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "Uptime do healthcheck (24h)",
+          "layout": { "column": 9, "row": 1, "width": 4, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.billboard" },
+          "rawConfiguration": {
+            "dataFormatters": [],
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT percentage(count(*), WHERE result = 'SUCCESS') AS 'uptime %' FROM SyntheticCheck WHERE monitorName = 'oficina-health-homolog' SINCE 1 day ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "thresholds": [
+              { "alertSeverity": "CRITICAL", "value": 95 },
+              { "alertSeverity": "WARNING", "value": 99 }
+            ]
+          }
+        },
+        {
+          "title": "Latência média por transação (ms)",
+          "layout": { "column": 1, "row": 4, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.bar" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT average(duration) * 1000 AS 'ms' FROM Transaction WHERE appName = 'oficina-api-homolog' FACET name SINCE 3 hours ago LIMIT 20"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false }
+          }
+        },
+        {
+          "title": "Taxa de erro HTTP (%)",
+          "layout": { "column": 7, "row": 4, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT percentage(count(*), WHERE error IS true) FROM Transaction WHERE appName = 'oficina-api-homolog' TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "CPU dos pods (cores)",
+          "layout": { "column": 1, "row": 7, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT average(cpuUsedCores) FROM K8sContainerSample WHERE clusterName = 'oficina-eks' AND containerName = 'oficina-api' AND namespaceName = 'homolog' FACET podName TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "Memória dos pods — working set (MiB)",
+          "layout": { "column": 7, "row": 7, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT average(memoryWorkingSetBytes) / 1048576 AS 'MiB' FROM K8sContainerSample WHERE clusterName = 'oficina-eks' AND containerName = 'oficina-api' AND namespaceName = 'homolog' FACET podName TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "Réplicas disponíveis x desejadas (evidência do HPA)",
+          "layout": { "column": 1, "row": 10, "width": 12, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT latest(podsAvailable), latest(podsDesired) FROM K8sDeploymentSample WHERE clusterName = 'oficina-eks' AND deploymentName = 'oficina-api' AND namespaceName = 'homolog' TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Prod",
+      "description": "Ambiente de produção (appName oficina-api-prod / namespace prod).",
+      "widgets": [
+        {
+          "title": "Latência da API — p50 / p95 / p99 (segundos)",
+          "layout": { "column": 1, "row": 1, "width": 8, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT percentile(duration, 50, 95, 99) FROM Transaction WHERE appName = 'oficina-api-prod' TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "Uptime do healthcheck (24h)",
+          "layout": { "column": 9, "row": 1, "width": 4, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.billboard" },
+          "rawConfiguration": {
+            "dataFormatters": [],
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT percentage(count(*), WHERE result = 'SUCCESS') AS 'uptime %' FROM SyntheticCheck WHERE monitorName = 'oficina-health-prod' SINCE 1 day ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "thresholds": [
+              { "alertSeverity": "CRITICAL", "value": 95 },
+              { "alertSeverity": "WARNING", "value": 99 }
+            ]
+          }
+        },
+        {
+          "title": "Latência média por transação (ms)",
+          "layout": { "column": 1, "row": 4, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.bar" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT average(duration) * 1000 AS 'ms' FROM Transaction WHERE appName = 'oficina-api-prod' FACET name SINCE 3 hours ago LIMIT 20"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false }
+          }
+        },
+        {
+          "title": "Taxa de erro HTTP (%)",
+          "layout": { "column": 7, "row": 4, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT percentage(count(*), WHERE error IS true) FROM Transaction WHERE appName = 'oficina-api-prod' TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "CPU dos pods (cores)",
+          "layout": { "column": 1, "row": 7, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT average(cpuUsedCores) FROM K8sContainerSample WHERE clusterName = 'oficina-eks' AND containerName = 'oficina-api' AND namespaceName = 'prod' FACET podName TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "Memória dos pods — working set (MiB)",
+          "layout": { "column": 7, "row": 7, "width": 6, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT average(memoryWorkingSetBytes) / 1048576 AS 'MiB' FROM K8sContainerSample WHERE clusterName = 'oficina-eks' AND containerName = 'oficina-api' AND namespaceName = 'prod' FACET podName TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        },
+        {
+          "title": "Réplicas disponíveis x desejadas (evidência do HPA)",
+          "layout": { "column": 1, "row": 10, "width": 12, "height": 3 },
+          "linkedEntityGuids": null,
+          "visualization": { "id": "viz.line" },
+          "rawConfiguration": {
+            "facet": { "showOtherSeries": false },
+            "legend": { "enabled": true },
+            "nrqlQueries": [
+              {
+                "accountIds": [0],
+                "query": "SELECT latest(podsAvailable), latest(podsDesired) FROM K8sDeploymentSample WHERE clusterName = 'oficina-eks' AND deploymentName = 'oficina-api' AND namespaceName = 'prod' TIMESERIES SINCE 3 hours ago"
+              }
+            ],
+            "platformOptions": { "ignoreTimeRange": false },
+            "yAxisLeft": { "zero": true }
+          }
+        }
+      ]
+    }
+  ],
+  "variables": []
+}
