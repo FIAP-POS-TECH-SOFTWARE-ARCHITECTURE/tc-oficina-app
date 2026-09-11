@@ -19,6 +19,11 @@ O sistema da Fase 1 gerencia o ciclo completo de uma oficina: autenticação e u
 
 ## 2. Arquitetura
 
+> **Documentação arquitetural completa da Fase 3** (diagrama de componentes, diagramas de
+> sequência, RFCs, ADRs e justificativa do banco com DER):
+> [`docs/arquitetura/`](docs/arquitetura/README.md). Observabilidade (dashboards, alertas e
+> runbook): [`docs/observabilidade/`](docs/observabilidade/README.md).
+
 ### 2.1 Camadas da aplicação (Clean Architecture)
 
 Cada módulo de `src/modules/` (`auth`, `usuarios`, `clientes`, `veiculos`, `servicos`, `insumos`, `ordens-servico`) segue a mesma estrutura em camadas, com a regra de dependência apontando sempre para dentro:
