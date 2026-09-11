@@ -5,10 +5,10 @@
 
 ## Integrantes
 
-| Nome completo | RM | Discord | E-mail |
-|---|---|---|---|
-| Lucas Gardini Dias | 372237 | @kowalskijr | `«PREENCHER»` |
-| Thiago Aio | 372238 | @thiag0___ | `«PREENCHER»` |
+| Nome completo | RM | Discord |
+|---|---|---|
+| Lucas Gardini Dias | 372237 | @kowalskijr |
+| Thiago Aio | 372238 | @thiag0___ |
 
 ## Repositórios
 
