@@ -16,7 +16,7 @@
             "dataFormatters": [],
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) AS 'OS criadas' FROM Log WHERE event = 'os.created' AND (entity.name = 'oficina-api-homolog' OR namespace_name = 'homolog') SINCE 30 days ago"
               }
             ],
@@ -34,7 +34,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) FROM Log WHERE event = 'os.created' AND (entity.name = 'oficina-api-homolog' OR namespace_name = 'homolog') SINCE 30 days ago TIMESERIES 1 day"
               }
             ],
@@ -52,7 +52,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT average(numeric(durationMs)) / 60000 AS 'minutos' FROM Log WHERE event = 'os.status.changed' AND (entity.name = 'oficina-api-homolog' OR namespace_name = 'homolog') FACET fromStatus SINCE 7 days ago"
               }
             ],
@@ -69,7 +69,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) FROM Log WHERE event = 'os.status.changed' AND (entity.name = 'oficina-api-homolog' OR namespace_name = 'homolog') FACET toStatus SINCE 1 day ago"
               }
             ],
@@ -86,7 +86,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) FROM Log WHERE event = 'integration.error' AND (entity.name = 'oficina-api-homolog' OR namespace_name = 'homolog') FACET integration SINCE 7 days ago TIMESERIES"
               }
             ],
@@ -104,7 +104,7 @@
             "facet": { "showOtherSeries": false },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT timestamp, integration, osNumero, error, requestId FROM Log WHERE event = 'integration.error' AND (entity.name = 'oficina-api-homolog' OR namespace_name = 'homolog') SINCE 7 days ago LIMIT 50"
               }
             ],
@@ -126,7 +126,7 @@
             "dataFormatters": [],
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) AS 'OS criadas' FROM Log WHERE event = 'os.created' AND (entity.name = 'oficina-api-prod' OR namespace_name = 'prod') SINCE 30 days ago"
               }
             ],
@@ -144,7 +144,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) FROM Log WHERE event = 'os.created' AND (entity.name = 'oficina-api-prod' OR namespace_name = 'prod') SINCE 30 days ago TIMESERIES 1 day"
               }
             ],
@@ -162,7 +162,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT average(numeric(durationMs)) / 60000 AS 'minutos' FROM Log WHERE event = 'os.status.changed' AND (entity.name = 'oficina-api-prod' OR namespace_name = 'prod') FACET fromStatus SINCE 7 days ago"
               }
             ],
@@ -179,7 +179,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) FROM Log WHERE event = 'os.status.changed' AND (entity.name = 'oficina-api-prod' OR namespace_name = 'prod') FACET toStatus SINCE 1 day ago"
               }
             ],
@@ -196,7 +196,7 @@
             "legend": { "enabled": true },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT count(*) FROM Log WHERE event = 'integration.error' AND (entity.name = 'oficina-api-prod' OR namespace_name = 'prod') FACET integration SINCE 7 days ago TIMESERIES"
               }
             ],
@@ -214,7 +214,7 @@
             "facet": { "showOtherSeries": false },
             "nrqlQueries": [
               {
-                "accountIds": [0],
+                "accountIds": [8421772],
                 "query": "SELECT timestamp, integration, osNumero, error, requestId FROM Log WHERE event = 'integration.error' AND (entity.name = 'oficina-api-prod' OR namespace_name = 'prod') SINCE 7 days ago LIMIT 50"
               }
             ],
